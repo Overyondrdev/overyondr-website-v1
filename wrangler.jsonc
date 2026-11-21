@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "overyondr-website-v1",
+  "compatibility_date": "2026-11-20",
+  // Static assets only: no Worker script needed for V1.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "drop-trailing-slash"
+  },
+  "observability": { "enabled": true }
+  // Custom domains (overyondr.com, www) are added only at cutover, after sign-off.
+}
