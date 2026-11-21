@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 10
     steps:
       # Pin third-party actions to a commit SHA before going live (Dependabot keeps them current).
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
