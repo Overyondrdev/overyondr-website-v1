@@ -8,6 +8,11 @@
     "not_found_handling": "404-page",
     "html_handling": "drop-trailing-slash"
   },
-  "observability": { "enabled": true }
-  // Custom domains (overyondr.com, www) are added only at cutover, after sign-off.
+  "observability": { "enabled": true },
+  // Dev domain: every deploy of main is served here.
+  // The production domains (overyondr.com, www) are added only at cutover, after sign-off.
+  "routes": [
+    { "pattern": "overyondrdev.com", "custom_domain": true },
+    { "pattern": "www.overyondrdev.com", "custom_domain": true }
+  ]
 }

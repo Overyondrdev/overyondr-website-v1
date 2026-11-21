@@ -30,8 +30,8 @@ npm run preview  # build, then serve with Cloudflare's runtime
 1. Branch from `main`, open a pull request.
 2. CI builds the site, checks links, and fails if anything still loads from the Squarespace CDN.
 3. Cloudflare posts a preview URL on the pull request.
-4. After review and merge, Cloudflare deploys `main` automatically.
+4. After review and merge, Cloudflare deploys `main` automatically to https://overyondrdev.com.
 
 ## Status
 
-Scaffold only. No content migrated, and the live domain still points to Squarespace.
+Scaffold only. No content migrated. The dev site is at overyondrdev.com; the live domain (overyondr.com) still points to Squarespace.
