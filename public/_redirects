@@ -1,0 +1,5 @@
+# Old Squarespace URL -> new URL. Keep URLs identical wherever possible.
+# Format: <from> <to> <status>
+/phonefree-spaces /phone-free-spaces 301
+# /cart -> decision pending (Home Tray page or Shopify storefront)
+/cart /home-tray 302
