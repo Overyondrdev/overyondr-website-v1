@@ -1,2 +1,5 @@
-# Every change needs review from the web admins.
-* @Yondr-Chad
+# Day-to-day site changes (pages, components, styles, content) need no code-owner review,
+# so PRs from CoWork/Claude can merge once the "build" check passes.
+# Deploy, domain and CI config still need a web admin's review.
+/wrangler.jsonc   @Yondr-Chad
+/.github/         @Yondr-Chad
