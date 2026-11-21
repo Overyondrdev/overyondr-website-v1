@@ -9,6 +9,8 @@
     "html_handling": "drop-trailing-slash"
   },
   "observability": { "enabled": true },
+  // Pull requests get a workers.dev preview URL from Cloudflare's preview builds.
+  "preview_urls": true,
   // Dev domain: every deploy of main is served here.
   // The production domains (overyondr.com, www) are added only at cutover, after sign-off.
   "routes": [

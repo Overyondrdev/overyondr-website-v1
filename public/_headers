@@ -1,0 +1,10 @@
+# Keep the dev domain and preview URLs out of search results.
+# overyondr.com is not listed here, so production stays indexable at cutover.
+https://overyondrdev.com/*
+  X-Robots-Tag: noindex
+
+https://www.overyondrdev.com/*
+  X-Robots-Tag: noindex
+
+https://:worker.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex
