@@ -1,0 +1,47 @@
+/* Styles for behaviour that /js/site.js re-implements (replacing Squarespace scripts),
+   plus fixes for bugs found during migration. Loaded after the Squarespace stylesheets. */
+
+/* Marquee blocks: straight scrolling text track */
+.Marquee .Marquee-display { overflow: hidden; position: relative; }
+.v1-marquee-track { display: flex; width: max-content; color: inherit; text-decoration: none; will-change: transform; }
+.v1-marquee-group { display: flex; flex-shrink: 0; align-items: center; }
+.v1-marquee-item { margin: 0; padding: 0 .35em; white-space: nowrap; }
+.v1-marquee--pause:hover { animation-play-state: paused !important; }
+@keyframes v1-marquee { from { transform: translateX(0); } to { transform: translateX(var(--v1-marquee-shift)); } }
+@media (prefers-reduced-motion: reduce) { .v1-marquee-track { animation: none !important; } }
+
+/* Gallery lightbox */
+.v1-lightbox { position: fixed; inset: 0; z-index: 10000; background: rgb(0 0 0 / .9);
+  display: flex; align-items: center; justify-content: center; }
+.v1-lightbox[hidden] { display: none; }
+.v1-lightbox img { max-width: 90vw; max-height: 88vh; object-fit: contain; }
+.v1-lightbox button { position: absolute; background: none; border: 0; color: #fff; font-size: 44px;
+  line-height: 1; cursor: pointer; padding: 12px 18px; }
+.v1-lightbox button:focus-visible { outline: 2px solid #fff; }
+.v1-lightbox-close { top: 8px; right: 8px; }
+.v1-lightbox-prev { left: 8px; top: 50%; transform: translateY(-50%); }
+.v1-lightbox-next { right: 8px; top: 50%; transform: translateY(-50%); }
+
+/* Squarespace hides header, sections and footer for up to 2s ("hideContent") as a fallback while
+   its scripts load. Without those scripts that would be a 2s blank page, so cancel it;
+   /js/site.js applies the scroll-in animation classes instead. */
+body[class*="tweak-global-animations-animation-type"] header,
+body[class*="tweak-global-animations-animation-type"] footer,
+body[class*="tweak-global-animations-animation-type"] section > .content-wrapper { animation: none !important; }
+
+/* Legacy gallery blocks (laid out by /js/site.js from each block's settings) */
+.v1-gallery-grid .sqs-gallery { display: grid; grid-template-columns: repeat(var(--v1-cols), minmax(0, 1fr)); gap: var(--v1-gap); }
+.v1-gallery-grid .sqs-gallery .slide { min-width: 0; float: none; width: auto; }
+.v1-gallery-grid .slide .margin-wrapper { position: relative; }
+.v1-gallery-grid .slide .margin-wrapper a.image-slide-anchor,
+.v1-gallery-grid .slide .margin-wrapper .content-wrapper { display: block; position: relative; padding-bottom: 0; height: auto; aspect-ratio: var(--v1-ratio); overflow: hidden; }
+.v1-gallery-grid img.thumb-image { position: absolute; inset: 0; width: 100%; height: 100%; }
+@media (max-width: 640px) { .v1-gallery-grid .sqs-gallery { grid-template-columns: repeat(min(var(--v1-cols), 2), minmax(0, 1fr)); } }
+.v1-gallery-slideshow .sqs-gallery { position: relative; aspect-ratio: var(--v1-ratio); overflow: hidden; }
+.v1-gallery-slideshow .sqs-gallery > .slide { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .6s ease, visibility .6s; }
+.v1-gallery-slideshow .sqs-gallery > .slide.v1-active { opacity: 1; visibility: visible; }
+.v1-gallery-slideshow .sqs-gallery img.thumb-image { position: absolute; inset: 0; width: 100%; height: 100%; }
+.v1-gallery-slideshow .sqs-gallery-thumbnails { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.v1-gallery-slideshow .sqs-gallery-thumbnails img { width: 80px; height: 80px; cursor: pointer; opacity: .6; transition: opacity .2s; }
+.v1-gallery-slideshow .sqs-gallery-thumbnails img.sqs-active-slide, .v1-gallery-slideshow .sqs-gallery-thumbnails img:hover { opacity: 1; }
+.v1-gallery-slideshow .sqs-gallery-thumbnails img:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

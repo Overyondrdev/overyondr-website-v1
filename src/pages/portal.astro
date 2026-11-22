@@ -1,0 +1,24 @@
+---
+// Served at https://overyondrdev.com/ by the Worker (src/worker/index.js).
+import Portal from '../layouts/Portal.astro';
+---
+<Portal title="Yondr Website — Dev">
+  <p class="kicker">overyondrdev.com</p>
+  <h1>Yondr Website</h1>
+  <p class="lede">Internal preview of the Yondr website. Choose a version to open.</p>
+  <div class="choices">
+    <a class="choice" href="https://v1.overyondrdev.com/">
+      <span class="badge">Current site</span>
+      <span class="label">Yondr Website V1</span>
+      <span class="desc">The overyondr.com Squarespace site, rebuilt and self-hosted. Same pages, same URLs.</span>
+      <span class="go">Open V1 <span aria-hidden="true">→</span></span>
+    </a>
+    <a class="choice" href="https://v2.overyondrdev.com/">
+      <span class="badge">Redesign</span>
+      <span class="label">Yondr Website V2</span>
+      <span class="desc">The next version of the site. Work in progress.</span>
+      <span class="go">Open V2 <span aria-hidden="true">→</span></span>
+    </a>
+  </div>
+  <footer>Access limited to @overyondr.com accounts.</footer>
+</Portal>

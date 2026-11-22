@@ -1,0 +1,31 @@
+{
+ "css": [
+  "/css/squarespace/components.css",
+  "/css/squarespace/site.css",
+  "/css/squarespace/template.css",
+  "/css/squarespace/custom.css"
+ ],
+ "queryRoutes": {
+  "/blog/category/Hidden": "/__q/blog_category_Hidden",
+  "/blog/category/Normal": "/__q/blog_category_Normal",
+  "/blog/tag/Digital-wellbeing": "/__q/blog_tag_Digital-wellbeing",
+  "/blog/tag/Hackersjack": "/__q/blog_tag_Hackersjack",
+  "/blog/tag/Yondr": "/__q/blog_tag_Yondr",
+  "/blog/tag/Phone-free": "/__q/blog_tag_Phone-free",
+  "/blog-sandbox/category/Hidden": "/__q/blog-sandbox_category_Hidden",
+  "/blog?format=rss": "/__q/blog_format_rss.xml",
+  "/blog-sandbox?format=rss": "/__q/blog-sandbox_format_rss.xml",
+  "/blog?offset=1763153572385": "/__q/blog_offset_1763153572385",
+  "/blog?author=6a0367b1389fad0b0105a088": "/__q/blog_author_6a0367b1389fad0b0105a088",
+  "/blog?author=6a61013f35b92f1b4925f417": "/__q/blog_author_6a61013f35b92f1b4925f417",
+  "/blog?author=6257123eba90120e66c59d77": "/__q/blog_author_6257123eba90120e66c59d77",
+  "/blog?author=697660abc2b7d4426335d5eb": "/__q/blog_author_697660abc2b7d4426335d5eb",
+  "/blog?author=67898aa4b82c1c68cee87254": "/__q/blog_author_67898aa4b82c1c68cee87254",
+  "/blog?author=673d10b45099fc70f765e250": "/__q/blog_author_673d10b45099fc70f765e250",
+  "/blog-sandbox?author=697660abc2b7d4426335d5eb": "/__q/blog-sandbox_author_697660abc2b7d4426335d5eb",
+  "/blog?offset=1762810380171&reversePaginate=true": "/__q/blog_offset_1762810380171_reversePaginate_true",
+  "/blog?offset=1747954516150": "/__q/blog_offset_1747954516150",
+  "/blog?offset=1745445056684&reversePaginate=true": "/__q/blog_offset_1745445056684_reversePaginate_true",
+  "/blog?offset=1794249637440&reversePaginate=true": "/__q/blog_offset_1794249637440_reversePaginate_true"
+ }
+}

@@ -1,37 +1,39 @@
 # overyondr.com — V1
 
-The **V1** site: a faithful copy of the Squarespace site at overyondr.com, rebuilt
-as a static [Astro](https://astro.build) site and served by Cloudflare Workers
-(static assets). The redesign (V2) will live in its own repository.
+The **V1** site: the Squarespace site at overyondr.com migrated page-for-page to a static
+[Astro](https://astro.build) build, served by a Cloudflare Worker with static assets.
+Same pages, same URLs, same look — without Squarespace's platform scripts, and with every
+image, file, video and font self-hosted. The redesign (V2) will live in its own repository.
+
+## Where it runs
+| URL | What |
+| --- | --- |
+| https://overyondrdev.com | Portal: **Yondr Website V1** / **Yondr Website V2** buttons |
+| https://v1.overyondrdev.com | This site |
+| https://v2.overyondrdev.com | V2 placeholder |
+
+All three are protected by Cloudflare Access (one-time code emailed to `@overyondr.com` addresses).
+overyondr.com itself still points to Squarespace until cutover.
 
 ## Run locally
-
 ```sh
-nvm use          # Node 22
+nvm use            # Node 22
 npm ci
-npm run dev      # http://localhost:4321
-npm run preview  # build, then serve with Cloudflare's runtime
+npm run build      # build + check nothing still loads from Squarespace
+npx wrangler dev   # http://localhost:8787 serves V1 through the real Worker
 ```
 
-## Where things live
-
-| Path | What |
-| --- | --- |
-| `src/pages/` | One file per URL, matching the Squarespace paths exactly |
-| `src/content/blog/` | Blog posts (Markdown). File name = URL slug |
-| `src/content/legislation/` | Phone-free legislation hub, one file per state |
-| `src/data/nav.ts` | Header and footer navigation |
-| `public/images`, `public/files` | Images and PDFs copied off the Squarespace CDN |
-| `public/_redirects` | Old URL → new URL redirects |
-| `wrangler.jsonc` | Cloudflare Worker config |
-
 ## How changes ship
-
 1. Branch from `main`, open a pull request.
-2. CI builds the site, checks links, and fails if anything still loads from the Squarespace CDN.
-3. Cloudflare posts a preview URL on the pull request.
-4. After review and merge, Cloudflare deploys `main` automatically to https://overyondrdev.com.
+2. CI builds the site and fails if anything still loads from Squarespace.
+3. After merge, Cloudflare Workers Builds deploys `main` automatically.
+
+## Migration
+`scripts/migrate/` holds the tooling used to move the site off Squarespace:
+`crawl.py` snapshots every page, `build.py` turns the snapshot into `src/v1/pages` and
+self-hosted assets, and `compare.mjs` screenshots live vs migrated pages. See `CLAUDE.md`
+for the full map of the repo and the rules for changing it.
 
 ## Status
-
-Scaffold only. No content migrated. The dev site is at overyondrdev.com; the live domain (overyondr.com) still points to Squarespace.
+All 135 pages, the blog (59 posts, author/tag pages, older-posts pages, RSS) and the 404 page
+are migrated. Analytics tags and production domains are added at cutover.

@@ -1,5 +1,8 @@
-# Old Squarespace URL -> new URL. Keep URLs identical wherever possible.
+# Redirects carried over from the Squarespace site (same status codes as live, except where noted).
 # Format: <from> <to> <status>
-/phonefree-spaces /phone-free-spaces 301
-# /cart -> decision pending (Home Tray page or Shopify storefront)
+/phonefree-spaces /phone-free-spaces 302
+/home /home-tray 301
+# Live site did this with a client-side script on every page; now a proper server redirect.
+/schools /phone-free-schools 301
+# /cart was Squarespace's built-in cart page; there is no Squarespace checkout on the static site.
 /cart /home-tray 302

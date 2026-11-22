@@ -3,13 +3,13 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-const PATTERN = /(images|static1)\.squarespace(-cdn)?\.com/;
+const PATTERN = /(images|static1|video|file)\.squarespace(-cdn)?\.com|definitions\.sqspcdn\.com|assets\.squarespace\.com/;
 const offenders = [];
 async function walk(dir) {
   for (const e of await readdir(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
     if (e.isDirectory()) await walk(p);
-    else if (/\.(html|css|js|xml|json)$/.test(e.name) && PATTERN.test(await readFile(p, 'utf8'))) offenders.push(p);
+    else if (/\.(html|css|js|xml|json|txt)$/.test(e.name) && PATTERN.test(await readFile(p, 'utf8'))) offenders.push(p);
   }
 }
 await walk('dist');
