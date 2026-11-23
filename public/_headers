@@ -8,3 +8,9 @@ https://www.overyondrdev.com/*
 
 https://:worker.:subdomain.workers.dev/*
   X-Robots-Tag: noindex
+
+# Brand kit (official files from the Yondr Brand Hub). CORS allows the Access sign-in page to use the
+# fonts if /brand is ever made public; today it is behind Access like everything else.
+/brand/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=86400

@@ -5,7 +5,18 @@
 import site from '../v1/site.json';
 
 const PORTAL_HOSTS = new Set(['overyondrdev.com', 'www.overyondrdev.com']);
-const SHARED_ASSET = /^\/(css|fonts|js|images)\//;
+const SHARED_ASSET = /^\/(css|fonts|js|images|brand|_astro)\//;
+
+// Portal pages: show who is signed in (Cloudflare Access adds this header after login).
+async function portalPage(env, request, path) {
+  const res = await serve(env, request, path);
+  const email = request.headers.get('Cf-Access-Authenticated-User-Email');
+  if (!email) return res;
+  return new HTMLRewriter()
+    .on('[data-user-email]', { element(el) { el.setInnerContent(email); } })
+    .on('[data-who]', { element(el) { el.removeAttribute('data-anon'); } })
+    .transform(res);
+}
 
 function serve(env, request, path) {
   const url = new URL(request.url);
@@ -33,12 +44,12 @@ export default {
     const host = url.hostname;
 
     if (PORTAL_HOSTS.has(host)) {
-      if (url.pathname === '/') return serve(env, request, '/portal');
+      if (url.pathname === '/') return portalPage(env, request, '/portal');
       if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
       return Response.redirect(new URL('/', url), 302);
     }
     if (host.startsWith('v2.')) {
-      if (url.pathname === '/') return serve(env, request, '/portal-v2');
+      if (url.pathname === '/') return portalPage(env, request, '/portal-v2');
       if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
       return Response.redirect(new URL('/', url), 302);
     }

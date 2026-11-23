@@ -1,24 +1,136 @@
 ---
-// Served at https://overyondrdev.com/ by the Worker (src/worker/index.js).
+// Served at https://overyondrdev.com/ by the Worker (src/worker/index.js), which also fills in
+// the signed-in email from Cloudflare Access.
 import Portal from '../layouts/Portal.astro';
+const versions = [
+  {
+    key: '1', href: 'https://v1.overyondrdev.com/', name: 'V1', variant: 'v1',
+    tag: 'Live replica', status: 'live',
+    blurb: 'Today’s overyondr.com, rebuilt off Squarespace. Every page, image and URL carried over — faster and self-hosted.',
+    facts: ['208 pages', 'Same URLs as overyondr.com'],
+  },
+  {
+    key: '2', href: 'https://v2.overyondrdev.com/', name: 'V2', variant: 'v2',
+    tag: 'In design', status: 'progress',
+    blurb: 'The next Yondr website, built in the 2026 brand. Follow along as it takes shape.',
+    facts: ['Redesign', 'Coming soon'],
+  },
+];
 ---
-<Portal title="Yondr Website — Dev">
-  <p class="kicker">overyondrdev.com</p>
-  <h1>Yondr Website</h1>
-  <p class="lede">Internal preview of the Yondr website. Choose a version to open.</p>
-  <div class="choices">
-    <a class="choice" href="https://v1.overyondrdev.com/">
-      <span class="badge">Current site</span>
-      <span class="label">Yondr Website V1</span>
-      <span class="desc">The overyondr.com Squarespace site, rebuilt and self-hosted. Same pages, same URLs.</span>
-      <span class="go">Open V1 <span aria-hidden="true">→</span></span>
-    </a>
-    <a class="choice" href="https://v2.overyondrdev.com/">
-      <span class="badge">Redesign</span>
-      <span class="label">Yondr Website V2</span>
-      <span class="desc">The next version of the site. Work in progress.</span>
-      <span class="go">Open V2 <span aria-hidden="true">→</span></span>
-    </a>
+<Portal title="Yondr Website Preview">
+  <style>
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    .card {
+      position: relative; display: flex; flex-direction: column; min-height: 100%;
+      border-radius: var(--radius); overflow: hidden; text-decoration: none; isolation: isolate;
+      transition: transform .35s var(--ease), box-shadow .35s var(--ease);
+    }
+    .card:hover { transform: translateY(-6px); box-shadow: 0 28px 60px -24px rgb(0 0 0 / .55); }
+    .card:focus-visible { outline-offset: 6px; border-radius: var(--radius); }
+    .media { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
+    .media img.shot { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; transition: transform .6s var(--ease); }
+    .card:hover .media img.shot { transform: scale(1.04); }
+    .body { display: flex; flex-direction: column; gap: 14px; padding: 26px 28px 28px; flex: 1; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .tag { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; padding: 6px 12px; border-radius: 999px; }
+    .tag i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .tag[data-status="live"] i { animation: pulse 2.4s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: .35 } }
+    .last { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; opacity: .75; }
+    .last[hidden] { display: none; }
+    kbd { font: 600 12px/1 var(--sans); padding: 5px 8px; border-radius: 6px; border: 1px solid currentColor; opacity: .55; }
+    h2 { font: 400 clamp(2rem, 3.4vw, 2.75rem)/1 var(--serif); margin: 2px 0 0; letter-spacing: -.01em; }
+    h2 small { display: block; font: 400 13px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase; opacity: .7; margin-bottom: 10px; }
+    .blurb { margin: 0; font-size: 16px; }
+    .facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .facts li { font-size: 13px; padding: 5px 11px; border-radius: 999px; }
+    .cta { margin-top: auto; padding-top: 10px; display: inline-flex; align-items: center; gap: 10px; align-self: flex-start;
+           font-weight: 700; font-size: 15px; padding: 13px 20px; border-radius: 999px; transition: gap .25s var(--ease), filter .25s; }
+    .cta svg { transition: transform .25s var(--ease); }
+    .card:hover .cta svg { transform: translateX(4px); }
+
+    /* V1: light Off White surface */
+    .v1 { background: var(--off-white); color: var(--off-black); }
+    .v1 .tag { background: var(--green); color: var(--lichen); }
+    .v1 .facts li { background: rgb(28 48 11 / .08); color: var(--green); }
+    .v1 h2 { color: var(--green); }
+    .v1 .blurb { color: rgb(30 30 30 / .78); }
+    .v1 .cta { background: var(--green); color: var(--lichen); }
+    .v1 .media::after { content: ''; position: absolute; inset: auto 0 0 0; height: 36%; background: linear-gradient(transparent, rgb(244 249 209 / .0)); }
+
+    /* V2: deep green with Lichen line art (official brand icons) */
+    .v2 { background: var(--deep); color: var(--off-white); box-shadow: inset 0 0 0 1px var(--line); }
+    .v2 .media { background: var(--green-2); display: grid; place-items: center;
+      background-image: radial-gradient(rgb(218 255 107 / .16) 1px, transparent 1.4px); background-size: 22px 22px; }
+    .v2 .art { display: flex; align-items: center; gap: clamp(18px, 4vw, 40px); }
+    .v2 .art img { width: clamp(38px, 6vw, 64px); height: auto; opacity: .95; }
+    .v2 .art img:nth-child(2) { transform: translateY(-10px); }
+    .v2 .art img:nth-child(4) { transform: translateY(8px); }
+    .v2 .tag { background: rgb(218 255 107 / .12); color: var(--lichen); box-shadow: inset 0 0 0 1px rgb(218 255 107 / .35); }
+    .v2 .facts li { background: rgb(244 249 209 / .08); }
+    .v2 h2 { color: var(--lichen); }
+    .v2 .blurb { color: var(--muted); }
+    .v2 .cta { background: transparent; color: var(--lichen); box-shadow: inset 0 0 0 1.5px var(--lichen); }
+    .card.v2:hover .art img { animation: drift 2.4s ease-in-out infinite; }
+    .card.v2:hover .art img:nth-child(2n) { animation-delay: -1.2s; }
+    @keyframes drift { 0%, 100% { translate: 0 0 } 50% { translate: 0 -6px } }
+
+    .hint { margin: 28px 0 0; font-size: 14px; color: var(--muted); }
+    .hint kbd { opacity: .8; margin: 0 2px; }
+    @media (max-width: 860px) { .cards { grid-template-columns: 1fr; } }
+    @media (hover: none) { .hint, .card kbd { display: none; } }
+  </style>
+
+  <p class="eyebrow"><img src="/brand/icons/circle-lichen.png" alt="" width="22" height="22" />Yondr website preview</p>
+  <h1>Choose a version<br /><em>to explore.</em></h1>
+  <p class="lede">Both versions are private to the Yondr team. Changes merged on GitHub appear here within about a minute.</p>
+
+  <div class="cards">
+    {versions.map((v) => (
+      <a class={`card ${v.variant}`} href={v.href} data-version={v.variant} data-key={v.key}
+         aria-label={`Open Yondr Website ${v.name}: ${v.tag}`}>
+        <div class="media" aria-hidden="true">
+          {v.variant === 'v1'
+            ? <img class="shot" src="/brand/v1-preview.webp" alt="" width="1200" height="650" />
+            : <div class="art">
+                <img src="/brand/icons/circle-lichen.png" alt="" />
+                <img src="/brand/icons/triangle-lichen.png" alt="" />
+                <img src="/brand/icons/sunray-lichen.png" alt="" />
+                <img src="/brand/icons/wayfinders-lichen.png" alt="" />
+              </div>}
+        </div>
+        <div class="body">
+          <div class="row">
+            <span class="tag" data-status={v.status}><i aria-hidden="true"></i>{v.tag}</span>
+            <span class="last" data-last hidden>Last opened</span>
+            <kbd aria-hidden="true">{v.key}</kbd>
+          </div>
+          <h2><small>Yondr Website</small>{v.name}</h2>
+          <p class="blurb">{v.blurb}</p>
+          <ul class="facts">{v.facts.map((f) => <li>{f}</li>)}</ul>
+          <span class="cta">Open {v.name}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+      </a>
+    ))}
   </div>
-  <footer>Access limited to @overyondr.com accounts.</footer>
+  <p class="hint">Tip: press <kbd>1</kbd> or <kbd>2</kbd> to jump straight in.</p>
+
+  <script is:inline>
+    (function () {
+      var KEY = 'yondr-portal-last';
+      var last = null;
+      try { last = localStorage.getItem(KEY); } catch (e) {}
+      document.querySelectorAll('.card').forEach(function (card) {
+        if (last && card.dataset.version === last) card.querySelector('[data-last]').hidden = false;
+        card.addEventListener('click', function () { try { localStorage.setItem(KEY, card.dataset.version); } catch (e) {} });
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea/i.test(e.target.tagName)) return;
+        var card = document.querySelector('.card[data-key="' + e.key + '"]');
+        if (card) card.click();
+      });
+    })();
+  </script>
 </Portal>

@@ -3,8 +3,45 @@
 import Portal from '../layouts/Portal.astro';
 ---
 <Portal title="Yondr Website V2 — Coming soon">
-  <p class="kicker">v2.overyondrdev.com</p>
-  <h1>Yondr Website V2</h1>
-  <p class="lede">The redesign hasn't been published yet. It will appear here when the first version is ready.</p>
-  <p><a class="back" href="https://overyondrdev.com/">← Back to overyondrdev.com</a></p>
+  <style>
+    .split { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; padding: 14px 22px;
+           border-radius: 999px; text-decoration: none; transition: transform .25s var(--ease), background .25s; }
+    .btn:hover { transform: translateY(-2px); }
+    .btn--primary { background: var(--lichen); color: var(--green); }
+    .btn--ghost { color: var(--off-white); box-shadow: inset 0 0 0 1.5px var(--line); }
+    .btn--ghost:hover { box-shadow: inset 0 0 0 1.5px var(--lichen); }
+    .panel { aspect-ratio: 1; border-radius: var(--radius); background: var(--deep); box-shadow: inset 0 0 0 1px var(--line);
+      background-image: radial-gradient(rgb(218 255 107 / .16) 1px, transparent 1.4px); background-size: 22px 22px;
+      display: grid; grid-template-columns: repeat(2, 1fr); place-items: center; padding: 12%; }
+    .panel img { width: 42%; height: auto; }
+    .steps { list-style: none; margin: 0 0 36px; padding: 0; display: grid; gap: 12px; }
+    .steps li { display: flex; gap: 14px; align-items: baseline; color: var(--muted); }
+    .steps b { color: var(--lichen); font-weight: 400; font-family: var(--serif); font-size: 20px; min-width: 1.4em; }
+    @media (max-width: 860px) { .split { grid-template-columns: 1fr; } .panel { max-width: 360px; } }
+  </style>
+  <div class="split">
+    <div>
+      <p class="eyebrow"><img src="/brand/icons/sunray-lichen.png" alt="" width="22" height="22" />Yondr Website V2</p>
+      <h1>The redesign<br /><em>is on its way.</em></h1>
+      <p class="lede">V2 is the next Yondr website, built in the 2026 brand. It will appear right here as soon as the first version is published.</p>
+      <ol class="steps">
+        <li><b>1</b>Design and flow are shaped in CoWork.</li>
+        <li><b>2</b>Changes are reviewed as pull requests on GitHub.</li>
+        <li><b>3</b>Merged work goes live on v2.overyondrdev.com.</li>
+      </ol>
+      <div class="actions">
+        <a class="btn btn--primary" href="https://v1.overyondrdev.com/">Open V1 instead
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a class="btn btn--ghost" href="https://overyondrdev.com/">All versions</a>
+      </div>
+    </div>
+    <div class="panel" aria-hidden="true">
+      <img src="/brand/icons/circle-lichen.png" alt="" />
+      <img src="/brand/icons/triangle-lichen.png" alt="" />
+      <img src="/brand/icons/wayfinders-lichen.png" alt="" />
+      <img src="/brand/icons/sunray-lichen.png" alt="" />
+    </div>
+  </div>
 </Portal>

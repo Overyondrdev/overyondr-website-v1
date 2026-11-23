@@ -1,0 +1,83 @@
+<!doctype html>
+<!--
+  Yondr-branded Cloudflare Access login page (custom page template, type "Login").
+  Requires Zero Trust Pay-as-you-go or Enterprise. Install: Cloudflare One > Reusable components >
+  Custom pages > Access custom pages > Create (type Login) > paste this file > Publish, then assign it
+  to the "overyondrdev.com (Yondr website dev)" application (Login page > Custom page).
+  Fonts and logo load from https://overyondrdev.com/brand/. That path must be reachable before sign-in
+  (an Access bypass policy for overyondrdev.com/brand) — otherwise the page falls back to system fonts and no logo.
+  Access requires exactly one <cf-access-authbox> and forbids custom JavaScript.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Sign in · Yondr website preview</title>
+    <style>
+      @font-face { font-family: 'Exposure'; src: url(https://overyondrdev.com/brand/fonts/exposure.woff2) format('woff2'); font-display: swap; }
+      @font-face { font-family: 'Milling'; src: url(https://overyondrdev.com/brand/fonts/milling.woff2) format('woff2'); font-display: swap; }
+      :root { --green: #1c300b; --deep: #12210a; --lichen: #daff6b; --off-white: #f4f9d1; --off-black: #1e1e1e;
+              --serif: 'Exposure', Georgia, serif; --sans: 'Milling', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body { font: 400 16px/1.55 var(--sans); color: var(--off-black); background: var(--off-white); -webkit-font-smoothing: antialiased; }
+      .page { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+      .brand { position: relative; background: var(--green); color: var(--off-white); padding: 48px clamp(28px, 5vw, 72px);
+               display: flex; flex-direction: column; justify-content: space-between; gap: 48px; overflow: hidden;
+               background-image: radial-gradient(900px 500px at 100% 0%, rgba(218,255,107,.10), transparent 60%); }
+      .brand::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 14px;
+                      background: repeating-linear-gradient(90deg, var(--lichen) 0 14px, transparent 14px 28px); }
+      .logo { width: 112px; height: auto; display: block; }
+      .eyebrow { margin: 0 0 18px; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--lichen); }
+      h1 { margin: 0 0 20px; font: 400 clamp(2.4rem, 4.6vw, 4rem)/1.03 var(--serif); letter-spacing: -.01em; }
+      h1 span { color: var(--lichen); }
+      .lede { margin: 0; max-width: 40ch; font-size: 17px; color: rgba(244,249,209,.72); }
+      .steps { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 14px; }
+      .steps li { display: flex; gap: 14px; align-items: baseline; color: rgba(244,249,209,.8); font-size: 15px; }
+      .steps b { font: 400 20px/1 var(--serif); color: var(--lichen); min-width: 1.3em; }
+      .form { display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+      .card { width: 100%; max-width: 420px; }
+      .card h2 { margin: 0 0 8px; font: 400 2.1rem/1.1 var(--serif); color: var(--green); }
+      .card .hint { margin: 0 0 28px; color: rgba(30,30,30,.72); }
+      .card .hint strong { color: var(--green); }
+      .notice { margin: 0 0 20px; padding: 12px 14px; border-radius: 12px; background: rgba(28,48,11,.08); color: var(--green); font-size: 15px; }
+      cf-access-authbox { display: block; }
+      .help { margin: 28px 0 0; font-size: 14px; color: rgba(30,30,30,.65); }
+      .help a { color: var(--green); }
+      @media (max-width: 860px) {
+        .page { grid-template-columns: 1fr; }
+        .brand { gap: 28px; padding: 32px 24px 44px; }
+        .steps { display: none; }
+        .lede { font-size: 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="brand" aria-label="Yondr">
+        <img class="logo" src="https://overyondrdev.com/brand/yondr-lichen.svg" alt="Yondr" width="112" height="27" />
+        <div>
+          <p class="eyebrow">Website preview</p>
+          <h1>Welcome to the<br /><span>Yondr website.</span></h1>
+          <p class="lede">A private preview for the Yondr team. Sign in with your work email — no password needed.</p>
+        </div>
+        <ol class="steps">
+          <li><b>1</b>Enter your @overyondr.com email.</li>
+          <li><b>2</b>Type in the 6-digit code we email you.</li>
+          <li><b>3</b>You’re in — and stay signed in for 7 days.</li>
+        </ol>
+      </section>
+      <main class="form">
+        <div class="card">
+          <h2>Sign in</h2>
+          <p class="hint">Use your <strong>@overyondr.com</strong> email address and we’ll send you a one-time code.</p>
+          {% if message.text.size > 0 %}<p class="notice" role="status">{{ message.text }}</p>{% endif %}
+          <cf-access-authbox></cf-access-authbox>
+          <p class="help">Trouble signing in? Codes expire after 10 minutes — request a new one, or email
+            <a href="mailto:marketing@overyondr.com">marketing@overyondr.com</a>.</p>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
