@@ -64,10 +64,8 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
       h1 em { font-style: normal; color: var(--lichen); }
       .lede { margin: 0 0 44px; max-width: 54ch; font-size: 18px; color: var(--muted); }
 
-      /* Checker strip (Yondr border pattern) */
-      .checker { height: 14px; background: repeating-linear-gradient(90deg, var(--lichen) 0 14px, transparent 14px 28px); opacity: .9; }
       .site-foot { padding: 0 0 28px; color: var(--muted); font-size: 14px; }
-      .site-foot .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; padding-top: 22px; }
+      .site-foot .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; padding-top: 22px; border-top: 1px solid var(--line); }
       .site-foot nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
       .site-foot a { text-decoration: none; color: var(--off-white); opacity: .8; }
       .site-foot a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
@@ -98,7 +96,6 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
     </header>
     <main id="main"><div class="wrap"><slot /></div></main>
     <footer class="site-foot">
-      <div class="checker" aria-hidden="true"></div>
       <div class="wrap">
         <span>© 2026 Yondr, Inc. · Internal preview — please don't share links externally.</span>
         <nav aria-label="Footer">
