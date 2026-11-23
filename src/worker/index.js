@@ -1,6 +1,6 @@
 // Routes requests by hostname; all content is static assets in dist/.
 //   overyondrdev.com, www.  -> portal page (V1 / V2 buttons)
-//   v2.overyondrdev.com     -> V2 placeholder
+//   (v2.overyondrdev.com is served by the overyondr-website-v2 Worker, not this one)
 //   anything else (v1.overyondrdev.com, and overyondr.com after cutover) -> the V1 site
 import site from '../v1/site.json';
 
@@ -45,11 +45,6 @@ export default {
 
     if (PORTAL_HOSTS.has(host)) {
       if (url.pathname === '/') return portalPage(env, request, '/portal');
-      if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
-      return Response.redirect(new URL('/', url), 302);
-    }
-    if (host.startsWith('v2.')) {
-      if (url.pathname === '/') return portalPage(env, request, '/portal-v2');
       if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
       return Response.redirect(new URL('/', url), 302);
     }

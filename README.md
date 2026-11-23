@@ -10,7 +10,7 @@ image, file, video and font self-hosted. The redesign (V2) will live in its own 
 | --- | --- |
 | https://overyondrdev.com | Portal: **Yondr Website V1** / **Yondr Website V2** buttons |
 | https://v1.overyondrdev.com | This site |
-| https://v2.overyondrdev.com | V2 placeholder |
+| https://v2.overyondrdev.com | V2 redesign (deployed from the `overyondr-website-v2` repo) |
 
 All three are protected by Cloudflare Access (one-time code emailed to `@overyondr.com` addresses).
 overyondr.com itself still points to Squarespace until cutover.
