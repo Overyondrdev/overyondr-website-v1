@@ -56,6 +56,8 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
       .who a { color: var(--off-white); text-decoration: none; border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; transition: border-color .2s, background .2s; white-space: nowrap; }
       .who a:hover { border-color: var(--lichen); background: rgb(218 255 107 / .08); }
       .who[data-anon] .signed { display: none; }
+      .who a[hidden] { display: none; }
+      .who a[data-admin-link] { border-color: rgb(218 255 107 / .5); color: var(--l); }
 
       main { flex: 1; display: flex; align-items: center; padding: 24px 0 56px; }
       .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 18px; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--lichen); }
@@ -90,6 +92,7 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
         <div class="who" data-who data-anon>
           <span class="dot" aria-hidden="true"></span>
           <span class="signed"><span class="label">Signed in as </span><span class="email" data-user-email></span></span>
+          <a href="https://overyondrdev.com/admin" data-admin-link hidden>Feedback dashboard</a>
           <a href="/cdn-cgi/access/logout">Sign out</a>
         </div>
       </div>

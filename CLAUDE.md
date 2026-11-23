@@ -21,6 +21,19 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
   that happens only at cutover, after sign-off. The Worker already serves V1 for any non-dev host.
 - Dev hosts are `noindex` via `public/_headers`. Keep it that way.
 
+## Feedback tool
+Yondr staff leave feedback on any dev page through a widget; the team reviews it at **overyondrdev.com/admin**.
+- Widget: `public/__feedback/widget.js` (Shadow DOM, no dependencies). The Worker injects it into HTML on
+  `*.overyondrdev.com` only — never on overyondr.com. Screenshots use the browser's screen-capture API
+  (one "Share this tab" prompt), then a mark-up editor; images can also be pasted, dropped or uploaded.
+- API: `src/worker/feedback/api.js` at `/__feedback/api/*`. Identity = Cloudflare Access email, verified from the
+  `Cf-Access-Jwt-Assertion` token (`auth.js`). Data: D1 `yondr-feedback` (`env.DB`, schema in `schema.js`, applied
+  automatically), screenshots in KV (`env.SHOTS`), AI summaries via Workers AI (`env.AI`).
+- Admin: `src/pages/admin.astro` + `public/__feedback/admin.{js,css}`. Roles live in the `admins` table (owner/admin);
+  owners/admins add others under People & access. Non-admins see an "Admins only" page.
+- Local dev: `DEV_EMAIL="you@overyondr.com"` in `.dev.vars` (git-ignored) signs you in without Access. Make yourself an
+  admin locally with `npx wrangler d1 execute yondr-feedback --local --command "INSERT INTO admins ..."`.
+
 ## How to ship a change
 1. Branch from `main` (`design/<short-name>`, `content/<page>` or `fix/<thing>`).
 2. Make the change, then `npm ci` (first time) and `npm run build`. It must pass.
@@ -42,6 +55,8 @@ Never force-push `main`. Never commit `dist/`, `node_modules/`, `.migrate/`, `.e
 | `public/js/site.js` | All V1 behaviour (menus, accordions, marquee, slideshows, lightbox…). Replaces Squarespace's scripts and jQuery |
 | `public/images`, `public/files`, `public/s`, `public/videos`, `public/fonts` | Self-hosted assets (`/s/…` keeps the old Squarespace file URLs) |
 | `public/_redirects` | Redirects (same as the live site) |
+| `src/worker/feedback/`, `public/__feedback/`, `src/pages/admin.astro` | Feedback widget, API and admin dashboard |
+| `public/brand/` | Official Yondr brand files (wordmarks, icons, Exposure + Milling fonts) |
 | `scripts/migrate/` | One-off migration tooling: `crawl.py` (snapshot live site), `build.py` (generate the above), `compare.mjs` (live vs local screenshots) |
 | `scripts/migrate/missing-on-live-site.txt` | Assets that are already broken on the live Squarespace site |
 
