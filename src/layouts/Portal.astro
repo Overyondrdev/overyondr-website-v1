@@ -1,7 +1,7 @@
 ---
 // Shell for the overyondrdev.com portal pages (not part of the V1 site).
-// Yondr 2026 brand: Dark Green #1c300b, Lichen #daff6b, Off White #f4f9d1, Off Black #1e1e1e;
-// Exposure (display serif) + Milling (sans). Assets live in /brand (official files from the Brand Hub).
+// Follows the Yondr Brand Guidelines v1.0: Paper page, one Dark Green panel, Fraunces + Inter Tight.
+// Assets live in /brand (official wordmarks from the Brand Hub; fonts are the free OFL releases).
 interface Props { title: string; description?: string }
 const { title, description = 'Private preview of the Yondr website.' } = Astro.props;
 ---
@@ -12,70 +12,75 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#1c300b" />
+    <meta name="theme-color" content="#FAFBF7" />
     <title>{title}</title>
-    <link rel="icon" href="/brand/icons/circle-lichen.png" />
-    <link rel="preload" href="/brand/fonts/exposure.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/brand/fonts/milling.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="icon" href="/brand/yondr-dark-green.svg" type="image/svg+xml" />
+    <link rel="preload" href="/brand/fonts/fraunces-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/brand/fonts/inter-tight-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <style is:global>
-      @font-face { font-family: 'Exposure'; src: url(/brand/fonts/exposure.woff2) format('woff2'); font-display: swap; }
-      @font-face { font-family: 'Milling'; src: url(/brand/fonts/milling.woff2) format('woff2'); font-display: swap; }
+      @font-face { font-family: 'Fraunces'; src: url(/brand/fonts/fraunces-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+      @font-face { font-family: 'Fraunces'; src: url(/brand/fonts/fraunces-latin-500-normal.woff2) format('woff2'); font-weight: 500; font-display: swap; }
+      @font-face { font-family: 'Inter Tight'; src: url(/brand/fonts/inter-tight-latin-400-normal.woff2) format('woff2'); font-weight: 400; font-display: swap; }
+      @font-face { font-family: 'Inter Tight'; src: url(/brand/fonts/inter-tight-latin-600-normal.woff2) format('woff2'); font-weight: 600; font-display: swap; }
+      @font-face { font-family: 'Inter Tight'; src: url(/brand/fonts/inter-tight-latin-700-normal.woff2) format('woff2'); font-weight: 700; font-display: swap; }
+      /* Yondr Brand Guidelines v1.0, section 1 (design tokens). */
       :root {
-        --green: #1c300b; --green-2: #243d10; --green-3: #2f4d16; --deep: #12210a;
-        --lichen: #daff6b; --off-white: #f4f9d1; --off-black: #1e1e1e;
-        --muted: rgb(244 249 209 / .68); --line: rgb(244 249 209 / .14);
-        --radius: 20px; --ease: cubic-bezier(.2, .7, .2, 1);
-        --serif: 'Exposure', 'Iowan Old Style', Georgia, serif;
-        --sans: 'Milling', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-        color-scheme: dark;
+        --yondr-forest: #1C300B; --yondr-ink: #1E1E1E; --yondr-lichen: #DAFF6B;
+        --yondr-offwhite: #F4F9D1; --yondr-paper: #FAFBF7; --yondr-mist: #E7ECDF;
+        --yondr-stone: #D3D6C8; --yondr-sage: #9DAE7E; --yondr-moss: #4F6B35;
+        --yondr-forest-deep: #2A4216;
+        --yondr-font-display: 'Fraunces', Georgia, serif;
+        --yondr-font-text: 'Inter Tight', Arial, sans-serif;
+        --yondr-radius: 16px;
+        --ease: cubic-bezier(.2, .7, .2, 1);
       }
       *, *::before, *::after { box-sizing: border-box; }
       html, body { margin: 0; }
       body {
         min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
-        background: var(--green); color: var(--off-white); font: 400 16px/1.55 var(--sans);
+        background: var(--yondr-paper); color: var(--yondr-ink); font: 400 16px/1.5 var(--yondr-font-text);
         -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
-        background-image: radial-gradient(1200px 600px at 85% -10%, rgb(218 255 107 / .09), transparent 60%),
-                          radial-gradient(900px 500px at -10% 110%, rgb(0 0 0 / .25), transparent 60%);
       }
       a { color: inherit; }
-      :focus-visible { outline: 3px solid var(--lichen); outline-offset: 4px; border-radius: 6px; }
-      .wrap { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 24px; }
-      .skip { position: absolute; left: -9999px; top: 8px; background: var(--lichen); color: var(--green); padding: 8px 14px; border-radius: 8px; font-weight: 700; z-index: 10; }
+      :focus-visible { outline: 3px solid var(--yondr-forest); outline-offset: 4px; border-radius: 6px; }
+      .dark :focus-visible { outline-color: var(--yondr-lichen); }
+      .wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+      .skip { position: absolute; left: -9999px; top: 8px; background: var(--yondr-forest); color: var(--yondr-offwhite); padding: 8px 14px; border-radius: 8px; font-weight: 700; z-index: 10; }
       .skip:focus { left: 16px; }
+      .eyebrow { margin: 0 0 16px; font: 600 13px/1.4 var(--yondr-font-text); letter-spacing: .14em; text-transform: uppercase; color: var(--yondr-moss); }
+      .dark .eyebrow { color: var(--yondr-lichen); }
 
       /* Top bar */
-      .top { padding: 22px 0; }
-      .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-      .brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+      .top { padding: 24px 0; }
+      .top .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; }
+      .brand { display: inline-flex; align-items: center; gap: 14px; text-decoration: none; }
       .brand img { width: 104px; height: auto; display: block; }
-      .brand span { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding-left: 12px; border-left: 1px solid var(--line); }
-      .who { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); min-width: 0; }
-      .who .email { color: var(--off-white); max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .who .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lichen); box-shadow: 0 0 0 4px rgb(218 255 107 / .18); flex: none; }
-      .who a { color: var(--off-white); text-decoration: none; border: 1px solid var(--line); padding: 6px 12px; border-radius: 999px; transition: border-color .2s, background .2s; white-space: nowrap; }
-      .who a:hover { border-color: var(--lichen); background: rgb(218 255 107 / .08); }
+      .brand span { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--yondr-moss); padding-left: 14px; border-left: 1px solid var(--yondr-stone); }
+      .who { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: 14px; color: var(--yondr-moss); min-width: 0; }
+      .who .email { color: var(--yondr-ink); font-weight: 600; max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .who a { color: var(--yondr-forest); font-weight: 600; text-decoration: none; border: 1px solid var(--yondr-stone); padding: 7px 14px; border-radius: 999px; transition: border-color .2s, background .2s; white-space: nowrap; }
+      .who a:hover { border-color: var(--yondr-forest); background: var(--yondr-mist); }
       .who[data-anon] .signed { display: none; }
       .who a[hidden] { display: none; }
-      .who a[data-admin-link] { border-color: rgb(218 255 107 / .5); color: var(--l); }
 
-      main { flex: 1; display: flex; align-items: center; padding: 24px 0 56px; }
-      .eyebrow { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 18px; font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--lichen); }
-      .eyebrow img { width: 22px; height: 22px; }
-      h1 { font: 400 clamp(2.6rem, 6.2vw, 4.75rem)/1.02 var(--serif); letter-spacing: -.01em; margin: 0 0 18px; color: var(--off-white); }
-      h1 em { font-style: normal; color: var(--lichen); }
-      .lede { margin: 0 0 44px; max-width: 54ch; font-size: 18px; color: var(--muted); }
+      main { flex: 1; padding: 8px 0 48px; }
 
-      .site-foot { padding: 0 0 28px; color: var(--muted); font-size: 14px; }
-      .site-foot .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; padding-top: 22px; border-top: 1px solid var(--line); }
+      .site-foot { padding: 0 0 32px; color: var(--yondr-moss); font-size: 14px; }
+      .site-foot .rule { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; align-items: center; border-top: 2px solid var(--yondr-stone); padding-top: 24px; }
+      .tagline { font: 500 22px/1 var(--yondr-font-display); color: var(--yondr-forest); margin: 0; }
+      .site-foot small { font-size: 14px; }
       .site-foot nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
-      .site-foot a { text-decoration: none; color: var(--off-white); opacity: .8; }
-      .site-foot a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
+      .site-foot a { text-decoration: none; color: var(--yondr-forest); font-weight: 600; }
+      .site-foot a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+      /* Motion (guidelines §6): fade and rise, 0.7 s, staggered 0.1 s; nothing loops. */
+      @keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+      .rise { animation: rise .7s var(--ease) both; animation-delay: calc(var(--i, 0) * .1s); }
 
       @media (max-width: 640px) {
         .brand span { display: none; }
-        .who .signed, .who .dot { display: none; }
-        .lede { font-size: 16px; margin-bottom: 32px; }
+        .who .signed { display: none; }
+        .who a { padding: 6px 12px; font-size: 13px; }
       }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
     </style>
@@ -86,11 +91,10 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
     <header class="top">
       <div class="wrap">
         <a class="brand" href="https://overyondrdev.com/" aria-label="Yondr website preview — home">
-          <img src="/brand/yondr-lichen.svg" alt="Yondr" width="104" height="25" />
+          <img src="/brand/yondr-dark-green.svg" alt="Yondr" width="104" height="25" />
           <span>Website preview</span>
         </a>
         <div class="who" data-who data-anon>
-          <span class="dot" aria-hidden="true"></span>
           <span class="signed"><span class="label">Signed in as </span><span class="email" data-user-email></span></span>
           <a href="https://overyondrdev.com/admin" data-admin-link hidden>Feedback dashboard</a>
           <a href="/cdn-cgi/access/logout">Sign out</a>
@@ -99,13 +103,14 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
     </header>
     <main id="main"><div class="wrap"><slot /></div></main>
     <footer class="site-foot">
-      <div class="wrap">
-        <span>© 2026 Yondr, Inc. · Internal preview — please don't share links externally.</span>
+      <div class="wrap"><div class="rule">
+        <p class="tagline">Be Here Now</p>
+        <small>© 2026 Yondr, Inc. · Internal preview. Please don't share links outside Yondr.</small>
         <nav aria-label="Footer">
           <a href="https://www.overyondr.com/" rel="noopener">Live site ↗</a>
           <a href="mailto:marketing@overyondr.com">Need access? marketing@overyondr.com</a>
         </nav>
-      </div>
+      </div></div>
     </footer>
   </body>
 </html>

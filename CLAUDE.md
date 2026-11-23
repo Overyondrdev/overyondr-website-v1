@@ -56,7 +56,7 @@ Never force-push `main`. Never commit `dist/`, `node_modules/`, `.migrate/`, `.e
 | `public/images`, `public/files`, `public/s`, `public/videos`, `public/fonts` | Self-hosted assets (`/s/…` keeps the old Squarespace file URLs) |
 | `public/_redirects` | Redirects (same as the live site) |
 | `src/worker/feedback/`, `public/__feedback/`, `src/pages/admin.astro` | Feedback widget, API and admin dashboard |
-| `public/brand/` | Official Yondr brand files (wordmarks, icons, Exposure + Milling fonts) |
+| `public/brand/` | Official Yondr brand files (wordmarks, icons) and the brand fonts Fraunces + Inter Tight (OFL). Portal, widget and admin follow the Yondr Brand Guidelines v1.0 |
 | `scripts/migrate/` | One-off migration tooling: `crawl.py` (snapshot live site), `build.py` (generate the above), `compare.mjs` (live vs local screenshots) |
 | `scripts/migrate/missing-on-live-site.txt` | Assets that are already broken on the live Squarespace site |
 
