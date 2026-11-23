@@ -12,6 +12,19 @@
     "html_handling": "drop-trailing-slash"
   },
   "observability": { "enabled": true },
+  // Feedback tool (src/worker/feedback): records in D1, screenshots in KV, summaries via Workers AI.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "yondr-feedback", "database_id": "d1284d94-c7e8-4b9e-9526-b108c8425d87" }
+  ],
+  "kv_namespaces": [
+    { "binding": "SHOTS", "id": "de8a09b9bbdf43a59e761a7f57c6a85b" }
+  ],
+  "ai": { "binding": "AI" },
+  "vars": {
+    // Cloudflare Access: team domain + the overyondrdev.com application's AUD tag (used to verify sign-in tokens).
+    "ACCESS_TEAM_DOMAIN": "overyondr.cloudflareaccess.com",
+    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8"
+  },
   // No public *.workers.dev or preview URLs: they would bypass the Cloudflare Access login.
   "workers_dev": false,
   "preview_urls": false,
