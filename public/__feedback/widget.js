@@ -441,7 +441,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
           title: v === SITE ? 'You’re on ' + v.toUpperCase() : 'Open ' + v.toUpperCase() + ' (home page)', text: v.toUpperCase() });
       })),
       el('div', { class: 'right' }, [
-        el('button', { class: 'b-tour', type: 'button', 'aria-label': 'Take the tour', html: ICON.help, onclick: function () { startTour(); } },
+        el('button', { class: 'b-tour', type: 'button', 'aria-label': 'Take the tour', html: ICON.help, onclick: function () { if (!tourEl) startTour(0, false); } },
           [el('span', { class: 'l', text: 'Tour' })]),
         barFb,
       ]),
@@ -456,14 +456,40 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     window.addEventListener('load', queueShift);
   }
 
-  // ------------------------------------------------------------------ first-visit tour
-  // Shown once per person across overyondrdev.com and its subdomains (cookie on .overyondrdev.com).
+  // ------------------------------------------------------------------ tour (first visits)
+  // Offered on a person's first three visits (a visit = back after 30+ minutes away), at most once per visit.
+  //  - Finishing it ends it for good.
+  //  - "Skip for now" the first time: we point at the Tour button and offer to resume next visit.
+  //  - Skipping a second time: one last pointer to the Tour button, then never shown automatically again.
+  //  - Someone who stopped part-way (and hasn't skipped twice) is still offered the rest after visit three.
+  // State lives in one cookie on .overyondrdev.com, so it's shared by the version page, V1 and V2.
   var SHARED = /(^|\.)overyondrdev\.com$/.test(location.hostname);
-  function tourDone() { return SHARED ? /(^|;\s*)yfb_tour=done/.test(document.cookie) : store.get('tour', false); }
-  function setTourDone() {
-    if (SHARED) document.cookie = 'yfb_tour=done; domain=.overyondrdev.com; path=/; max-age=31536000; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
-    store.set('tour', true);
+  var TOUR_KEYS = ['v', 's', 'st', 'd', 't', 'sh'];   // visits, skips, step reached, done, last seen (s), shown this visit
+  var TOUR_MAX_VISITS = 3, TOUR_SKIPS = 2, VISIT_GAP = 30 * 60;
+  function readTour() {
+    var raw = SHARED ? (document.cookie.match(/(?:^|;\s*)yfb_tour=([^;]*)/) || [])[1] : store.get('tourState', null);
+    var t = { v: 0, s: 0, st: 0, d: 0, t: 0, sh: 0 };
+    if (raw === 'done') { t.d = 1; return t; }   // finished before this version
+    if (raw) decodeURIComponent(raw).split('.').forEach(function (p) {
+      var m = p.match(/^([a-z]+)(\d+)$/);
+      if (m && TOUR_KEYS.indexOf(m[1]) > -1) t[m[1]] = +m[2];
+    });
+    return t;
   }
+  function saveTour() {
+    var val = TOUR_KEYS.map(function (k) { return k + tour[k]; }).join('.');
+    if (SHARED) document.cookie = 'yfb_tour=' + val + '; domain=.overyondrdev.com; path=/; max-age=31536000; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+    else store.set('tourState', val);
+  }
+  var tour = readTour();
+  (function countVisit() {
+    var now = Math.floor(Date.now() / 1000);
+    if (!tour.t || now - tour.t > VISIT_GAP) { tour.v++; tour.sh = 0; }
+    tour.t = now;
+    saveTour();
+  })();
+  function tourButton() { return bar ? bar.querySelector('.b-tour') : document.querySelector('[data-yfb-tour]'); }
+
   function tourSteps() {
     var how = { wide: true, eyebrow: 'Giving feedback', title: 'Three steps, about a minute', how: [
       ['Pick a type and say what you noticed', 'Bug, Design, Copy, Idea, Question or Love it. Plain words are perfect.'],
@@ -490,26 +516,34 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     ];
   }
   var tourEl = null;
-  function startTour() {
+  // Shows a sequence of cards. Each card can spotlight a target (`target()`), and either uses the standard
+  // Back / Next / Skip for now buttons or its own `actions`.
+  function runCards(steps, startAt, hooks) {
     if (tourEl) return;
     if (state.open) toggle(false);
-    var steps = tourSteps(), idx = 0;
+    hooks = hooks || {};
+    var idx = 0;
     var veil = el('div', { class: 'veil' });
     var spot = el('div', { class: 'spot hidden' });
     var card = el('div', { class: 'tcard', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'yfb-tour-title' });
     tourEl = el('div', { class: 'tour' }, [veil, spot, card]);
     root.appendChild(tourEl);
-    function end(openPanel) {
-      setTourDone();
+    function close() {
       document.removeEventListener('keydown', onKey, true);
       window.removeEventListener('resize', place);
-      tourEl.remove(); tourEl = null;
+      if (tourEl) tourEl.remove();
+      tourEl = null;
+    }
+    function finish(openPanel) {
+      close();
+      if (hooks.onFinish) hooks.onFinish();
       if (openPanel) toggle(true); else if (barFb) barFb.focus(); else launcher.focus();
     }
+    function skip() { close(); if (hooks.onSkip) hooks.onSkip(idx); }
     function onKey(e) {
-      if (e.key === 'Escape') { e.preventDefault(); end(false); }
-      else if (e.key === 'ArrowRight' && idx < steps.length - 1) { e.preventDefault(); go(idx + 1); }
-      else if (e.key === 'ArrowLeft' && idx > 0) { e.preventDefault(); go(idx - 1); }
+      if (e.key === 'Escape') { e.preventDefault(); skip(); }
+      else if (steps.length > 1 && e.key === 'ArrowRight' && idx < steps.length - 1) { e.preventDefault(); go(idx + 1); }
+      else if (steps.length > 1 && e.key === 'ArrowLeft' && idx > 0) { e.preventDefault(); go(idx - 1); }
     }
     // A target that is hidden or not laid out has no size; show the step as a centred card instead
     // of spotlighting the top-left corner.
@@ -520,6 +554,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       return r.width > 0 && r.height > 0 ? t : null;
     }
     function place() {
+      if (!tourEl) return;
       var st = steps[idx], t = visibleTarget(st);
       var vw = window.innerWidth, vh = window.innerHeight, cw = card.offsetWidth, ch = card.offsetHeight, gap = 14, m = 12;
       if (!t) {
@@ -553,44 +588,103 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     }
     function go(i) {
       idx = i;
+      if (hooks.onStep) hooks.onStep(i);
       var st = steps[i];
       card.className = 'tcard' + (st.wide ? ' wide' : '');
       card.innerHTML = '';
       if (st.logo) card.appendChild(el('img', { class: 'wmk', src: '/brand/yondr-dark-green.svg', alt: 'Yondr' }));
-      card.appendChild(el('p', { class: 'eyebrow', text: st.eyebrow + ' · ' + (i + 1) + ' of ' + steps.length }));
+      card.appendChild(el('p', { class: 'eyebrow', text: st.eyebrow + (steps.length > 1 ? ' · ' + (i + 1) + ' of ' + steps.length : '') }));
       card.appendChild(el('h2', { id: 'yfb-tour-title', text: st.title }));
       if (st.text) card.appendChild(el('p', { text: st.text }));
       if (st.how) card.appendChild(el('ol', {}, st.how.map(function (h, n) {
         return el('li', {}, [el('b', { text: String(n + 1) }), el('strong', { text: h[0] }), el('span', { text: h[1] })]);
       })));
-      var dots = el('div', { class: 'tdots', 'aria-hidden': 'true' }, steps.map(function (_, n) { return el('i', { class: n === i ? 'on' : '' }); }));
-      var next = el('button', { class: 'primary', type: 'button', text: st.last ? 'Give feedback now' : i === 0 ? 'Start the tour' : 'Next',
-        onclick: function () { if (st.last) end(true); else go(i + 1); } });
-      var nav = el('div', { class: 'tnav' }, [dots,
-        st.last ? el('button', { class: 'ghost', type: 'button', text: 'Start exploring', onclick: function () { end(false); } })
-          : el('button', { class: 'tskip', type: 'button', text: i === 0 ? 'Skip' : 'Back', onclick: function () { if (i === 0) end(false); else go(i - 1); } }),
-        next]);
-      card.appendChild(nav);
+      var primary;
+      var buttons;
+      if (st.actions) {
+        buttons = st.actions.map(function (a) {
+          var b = el('button', { class: a.kind || 'primary', type: 'button', text: a.label, onclick: function () { a.run({ finish: finish, skip: skip, close: close, go: go }); } });
+          if ((a.kind || 'primary') === 'primary') primary = b;
+          return b;
+        });
+      } else if (st.last) {
+        buttons = [el('button', { class: 'ghost', type: 'button', text: 'Start exploring', onclick: function () { finish(false); } })];
+        primary = el('button', { class: 'primary', type: 'button', text: 'Give feedback now', onclick: function () { finish(true); } });
+        buttons.push(primary);
+      } else {
+        buttons = [el('button', { class: 'tskip', type: 'button', text: 'Skip for now', onclick: skip })];
+        if (i > 0) buttons.push(el('button', { class: 'tskip', type: 'button', text: 'Back', onclick: function () { go(i - 1); } }));
+        primary = el('button', { class: 'primary', type: 'button', text: i === 0 ? 'Start the tour' : 'Next', onclick: function () { go(i + 1); } });
+        buttons.push(primary);
+      }
+      var dots = steps.length > 1 ? el('div', { class: 'tdots', 'aria-hidden': 'true' }, steps.map(function (_, n) { return el('i', { class: n === i ? 'on' : '' }); }))
+        : el('div', { class: 'tdots' });
+      card.appendChild(el('div', { class: 'tnav' }, [dots].concat(buttons)));
       var t = visibleTarget(st);
       if (t && t.getRootNode() === document) {
         var r = t.getBoundingClientRect();
         if (r.top < 0 || r.top > window.innerHeight * 0.6) { t.scrollIntoView({ block: 'start', behavior: 'smooth' }); setTimeout(place, 450); }
       }
       place();
-      next.focus();
+      if (primary) primary.focus();
     }
     document.addEventListener('keydown', onKey, true);
     window.addEventListener('resize', place);
-    go(0);
+    go(Math.min(Math.max(0, startAt || 0), steps.length - 1));
+  }
+
+  // The tour itself. `auto` = we opened it (counts skips, remembers progress); otherwise the person asked for it.
+  function startTour(startAt, auto) {
+    runCards(tourSteps(), startAt || 0, {
+      onStep: function (i) { if (auto) { tour.st = i; saveTour(); } },
+      onFinish: function () { tour.d = 1; tour.st = 0; saveTour(); },
+      onSkip: function () { if (auto) skippedTour(); },
+    });
+  }
+  // After a skip: point at the Tour button. The second skip is the last time we bring it up.
+  function skippedTour() {
+    tour.s++;
+    saveTour();
+    var final = tour.s >= TOUR_SKIPS;
+    var where = bar ? 'the ? Tour button in the top bar' : 'Take the tour at the top of this page';
+    runCards([{
+      target: tourButton, eyebrow: 'Tour',
+      title: final ? 'The tour is here whenever you need it' : 'No problem, pick it up anytime',
+      text: final ? 'We won’t bring it up again. Click ' + where + ' to take it whenever you like.'
+        : 'Next time you visit, we’ll offer to pick up where you left off. Or click ' + where + ' to take it now.',
+      actions: [{ label: 'Got it', run: function (c) { c.close(); if (barFb) barFb.focus(); else launcher.focus(); } }],
+    }], 0, {});
+  }
+  // A returning visitor who skipped or stopped part-way: ask before showing it again.
+  function offerResume() {
+    var steps = tourSteps(), at = Math.min(tour.st, steps.length - 1), started = at > 0;
+    runCards([{
+      wide: true, logo: true, eyebrow: 'Quick tour',
+      title: started ? 'Pick up where you left off?' : 'Want the quick tour now?',
+      text: started ? 'You stopped at step ' + (at + 1) + ' of ' + steps.length + '. It takes less than a minute to finish.'
+        : 'It takes about a minute and shows you how to get around the preview and how to give feedback.',
+      actions: [
+        { label: 'Not now', kind: 'tskip', run: function (c) { c.skip(); } },
+        { label: started ? 'Continue the tour' : 'Start the tour', run: function (c) { c.close(); startTour(at, true); } },
+      ],
+    }], 0, { onSkip: skippedTour });
+  }
+  function autoTour() {
+    if (tour.d || tour.s >= TOUR_SKIPS || tour.sh) return;
+    var partWay = tour.st > 0;
+    if (tour.v > TOUR_MAX_VISITS && !partWay) return;
+    tour.sh = 1;
+    saveTour();
+    if (tour.s === 0 && !partWay) startTour(0, true); else offerResume();
   }
   // Pages can offer the tour too (e.g. the version page): any element with data-yfb-tour starts it.
   document.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('[data-yfb-tour]');
-    if (t) { e.preventDefault(); startTour(); }
+    if (t) { e.preventDefault(); if (!tourEl) startTour(0, false); }
     var o = e.target.closest && e.target.closest('[data-yfb-open]');
     if (o) { e.preventDefault(); if (tourEl) return; toggle(true); }
   });
-  if (!tourDone() && window.top === window) setTimeout(function () { if (!tourDone()) startTour(); }, 700);
+  if (window.top === window) setTimeout(autoTour, 700);
 
   // ------------------------------------------------------------------ render
   var headEl, bodyEl, footEl;
@@ -615,7 +709,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     headEl.appendChild(el('div', { class: 'top' }, [
       el('div', { class: 'brand' }, [el('img', { src: '/brand/yondr-lichen.svg', alt: 'Yondr' }), el('span', { text: 'Feedback' })]),
       el('div', { style: 'display:flex;gap:2px' }, [
-        el('button', { class: 'icon-btn', 'aria-label': 'Take the tour', title: 'Take the tour', html: ICON.help, onclick: function () { toggle(false); startTour(); } }),
+        el('button', { class: 'icon-btn', 'aria-label': 'Take the tour', title: 'Take the tour', html: ICON.help, onclick: function () { toggle(false); startTour(0, false); } }),
         minBtn, hideBtn]),
     ]));
     var tabs = el('div', { class: 'tabs', role: 'tablist' });
