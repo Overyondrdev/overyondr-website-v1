@@ -16,7 +16,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       # Pin third-party actions to a commit SHA before going live (Dependabot keeps them current).
       - uses: actions/checkout@v7
@@ -25,7 +25,9 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npm run build          # also fails on any Squarespace CDN reference
+      - run: npm run build          # V1 + V2 (v2/), merged into dist/; fails on any Squarespace CDN reference
+      - run: npm run format:check --prefix v2
+      - run: npm run check:links --prefix v2   # V2 internal links (blocking)
       # Internal broken-link check. Fails until every nav page is migrated; made blocking at parity sign-off.
       - run: npm run check:links
         continue-on-error: true

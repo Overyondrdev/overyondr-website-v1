@@ -11,9 +11,9 @@ const versions = [
   },
   {
     key: '2', href: 'https://v2.overyondrdev.com/', name: 'V2', variant: 'v2',
-    tag: 'In design', status: 'progress',
-    blurb: 'The next Yondr website, built in the 2026 brand. Follow along as it takes shape.',
-    facts: ['Redesign', 'Coming soon'],
+    tag: 'Redesign preview', status: 'live',
+    blurb: 'The next Yondr website: new design, clearer journeys and the 2026 brand. Explore it and tell us what you think.',
+    facts: ['90 pages', 'New information architecture'],
   },
 ];
 ---
@@ -60,20 +60,12 @@ const versions = [
 
     /* V2: deep green with Lichen line art (official brand icons) */
     .v2 { background: var(--deep); color: var(--off-white); box-shadow: inset 0 0 0 1px var(--line); }
-    .v2 .media { background: var(--green-2); display: grid; place-items: center;
-      background-image: radial-gradient(rgb(218 255 107 / .16) 1px, transparent 1.4px); background-size: 22px 22px; }
-    .v2 .art { display: flex; align-items: center; gap: clamp(18px, 4vw, 40px); }
-    .v2 .art img { width: clamp(38px, 6vw, 64px); height: auto; opacity: .95; }
-    .v2 .art img:nth-child(2) { transform: translateY(-10px); }
-    .v2 .art img:nth-child(4) { transform: translateY(8px); }
+    .v2 .media { background: var(--green-2); }
     .v2 .tag { background: rgb(218 255 107 / .12); color: var(--lichen); box-shadow: inset 0 0 0 1px rgb(218 255 107 / .35); }
     .v2 .facts li { background: rgb(244 249 209 / .08); }
     .v2 h2 { color: var(--lichen); }
     .v2 .blurb { color: var(--muted); }
     .v2 .cta { background: transparent; color: var(--lichen); box-shadow: inset 0 0 0 1.5px var(--lichen); }
-    .card.v2:hover .art img { animation: drift 2.4s ease-in-out infinite; }
-    .card.v2:hover .art img:nth-child(2n) { animation-delay: -1.2s; }
-    @keyframes drift { 0%, 100% { translate: 0 0 } 50% { translate: 0 -6px } }
 
     .hint { margin: 28px 0 0; font-size: 14px; color: var(--muted); }
     .hint kbd { opacity: .8; margin: 0 2px; }
@@ -83,21 +75,14 @@ const versions = [
 
   <p class="eyebrow"><img src="/brand/icons/circle-lichen.png" alt="" width="22" height="22" />Yondr website preview</p>
   <h1>Choose a version<br /><em>to explore.</em></h1>
-  <p class="lede">Both versions are private to the Yondr team. Changes merged on GitHub appear here within about a minute.</p>
+  <p class="lede">Both versions are private to the Yondr team. Use the Feedback tab on any page to tell us what works and what doesn’t.</p>
 
   <div class="cards">
     {versions.map((v) => (
       <a class={`card ${v.variant}`} href={v.href} data-version={v.variant} data-key={v.key}
          aria-label={`Open Yondr Website ${v.name}: ${v.tag}`}>
         <div class="media" aria-hidden="true">
-          {v.variant === 'v1'
-            ? <img class="shot" src="/brand/v1-preview.webp" alt="" width="1200" height="650" />
-            : <div class="art">
-                <img src="/brand/icons/circle-lichen.png" alt="" />
-                <img src="/brand/icons/triangle-lichen.png" alt="" />
-                <img src="/brand/icons/sunray-lichen.png" alt="" />
-                <img src="/brand/icons/wayfinders-lichen.png" alt="" />
-              </div>}
+          <img class="shot" src={`/brand/${v.variant}-preview.webp`} alt="" width="1200" height="650" />
         </div>
         <div class="body">
           <div class="row">

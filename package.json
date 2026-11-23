@@ -1,14 +1,15 @@
 {
   "name": "overyondr-website-v1",
   "version": "1.0.0-alpha.0",
-  "description": "overyondr.com V1 — Squarespace migration replica (Astro + Cloudflare Workers)",
+  "description": "overyondr.com V1 \u2014 Squarespace migration replica (Astro + Cloudflare Workers)",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && npm run build:v2",
     "postbuild": "node scripts/check-no-squarespace-cdn.mjs",
     "preview": "npm run build && wrangler dev",
     "check:links": "linkinator dist --recurse --clean-urls --skip \"linkedin\\\\.com|ashbyhq\\\\.com|^mailto:\"",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "build:v2": "npm ci --prefix v2 --no-audit --no-fund && npm run build --prefix v2 && node scripts/merge-v2.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {

@@ -1,6 +1,6 @@
 // Routes requests by hostname; all content is static assets in dist/.
 //   overyondrdev.com, www.  -> portal page (V1 / V2 buttons)
-//   v2.overyondrdev.com     -> V2 placeholder
+//   v2.overyondrdev.com     -> the V2 redesign (built from v2/ into dist/__v2)
 //   anything else (v1.overyondrdev.com, and overyondr.com after cutover) -> the V1 site
 import site from '../v1/site.json';
 import { handleFeedbackApi } from './feedback/api.js';
@@ -32,6 +32,61 @@ function serve(env, request, path) {
   url.pathname = path;
   url.search = '';
   return env.ASSETS.fetch(new Request(url, request));
+}
+
+// ---------------------------------------------------------------- V2 (served from dist/__v2)
+const V2_PREFIX = '/__v2';
+let v2Routes = null;
+async function routesV2(env, request) {
+  if (!v2Routes) {
+    const res = await serve(env, request, V2_PREFIX + '/__routes.json');
+    v2Routes = res.ok ? await res.json() : { redirects: [], headers: [] };
+  }
+  return v2Routes;
+}
+function patternToRegex(p) {
+  const esc = p.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '(.*)').replace(/:[A-Za-z]\w*/g, '[^/.]+');
+  return new RegExp('^' + esc + '$');
+}
+function redirectV2(routes, url) {
+  for (const r of routes.redirects) {
+    if (r.from.endsWith('*')) {
+      const base = r.from.slice(0, -1);
+      if (url.pathname.startsWith(base)) return { to: r.to.replace(':splat', url.pathname.slice(base.length)), status: r.status };
+    } else if (r.from === url.pathname) return { to: r.to, status: r.status };
+  }
+  return null;
+}
+async function serveV2(request, env) {
+  const url = new URL(request.url);
+  if (/^\/brand\//.test(url.pathname)) return env.ASSETS.fetch(request);
+  const routes = await routesV2(env, request);
+  const hop = redirectV2(routes, url);
+  if (hop) return Response.redirect(new URL(hop.to + (hop.to.includes('?') ? '' : url.search), url), hop.status);
+  const path = url.pathname === '/' ? V2_PREFIX : V2_PREFIX + url.pathname;
+  const target = new URL(url); target.pathname = path;
+  let res = await env.ASSETS.fetch(new Request(target, request));
+  if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
+    // Keep the internal /__v2 prefix out of redirects (e.g. trailing-slash normalisation).
+    const loc = new URL(res.headers.get('location'), url);
+    if (loc.pathname.startsWith(V2_PREFIX)) loc.pathname = loc.pathname.slice(V2_PREFIX.length) || '/';
+    return Response.redirect(new URL(loc.pathname + loc.search, url), res.status);
+  }
+  if (res.status === 404) {
+    const nf = await serve(env, request, V2_PREFIX + '/404');
+    res = new Response(nf.body, { status: 404, headers: nf.headers });
+  } else {
+    res = new Response(res.body, res);
+  }
+  for (const rule of routes.headers) {
+    const isUrl = /^https?:/.test(rule.pattern);
+    const subject = isUrl ? 'https://' + url.hostname + url.pathname : url.pathname;
+    const pattern = isUrl ? rule.pattern.replace(/^http:/, 'https:') : rule.pattern;
+    if (patternToRegex(pattern).test(isUrl ? subject.replace(/^http:/, 'https:') : subject)) {
+      for (const [k, v] of Object.entries(rule.set)) res.headers.set(k, v);
+    }
+  }
+  return res;
 }
 
 // Squarespace served some pages only via query strings (blog authors, older-posts pages, RSS).
@@ -70,14 +125,10 @@ async function route(request, env) {
     if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
     return Response.redirect(new URL('/', url), 302);
   }
-  if (host.startsWith('v2.')) {
-    if (url.pathname === '/') return portalPage(env, request, '/portal-v2');
-    if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
-    return Response.redirect(new URL('/', url), 302);
-  }
+  if (host.startsWith('v2.')) return serveV2(request, env);
 
   // V1 site
-  if (/^\/(portal|admin|__q\/)/.test(url.pathname)) return serve(env, request, '/__not_found__');
+  if (/^\/(portal|admin|__q\/|__v2)/.test(url.pathname)) return serve(env, request, '/__not_found__');
   const routed = queryRoute(url);
   if (routed) {
     const res = await serve(env, request, routed);
