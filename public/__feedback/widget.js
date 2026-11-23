@@ -474,14 +474,14 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       { wide: true, logo: true, eyebrow: 'Welcome', title: 'Welcome to the Yondr website preview',
         text: 'Two versions of the Yondr website live here, private to the Yondr team. This short tour shows you how to get around and how to tell us what you think.' },
       { target: function () { return document.querySelector('.cards') || document.querySelector('main'); }, eyebrow: 'Choose', title: 'Pick a version',
-        text: 'V1 is today’s overyondr.com, rebuilt. V2 is the current redesign: a work in progress, not the final design, so your feedback shapes where it goes next. Open either one: a toolbar at the top of every page brings you back here or switches versions.' },
+        text: 'V1 is today’s overyondr.com, rebuilt. V2 is the Loba redesign: a work in progress on the way to our new website, not the final version, so your feedback shapes where it goes next. Open either one: a toolbar at the top of every page brings you back here or switches versions.' },
       { target: function () { return document.querySelector('[data-yfb-open]') || launcher; }, eyebrow: 'Feedback', title: 'Give feedback from the top bar',
         text: 'Thought of something already? Use Give feedback right here. It’s also in the top bar of every V1 and V2 page, so you can send feedback wherever you are.' },
       how,
     ];
     return [
       { wide: true, logo: true, eyebrow: 'Welcome', title: 'Welcome to the Yondr website preview',
-        text: 'You’re looking at ' + (SITE === 'v1' ? 'V1, today’s overyondr.com rebuilt' : 'V2, the current redesign. It’s a work in progress, not the final design, so your feedback shapes where it goes next') + '. This short tour shows you how to get around and how to tell us what you think.' },
+        text: 'You’re looking at ' + (SITE === 'v1' ? 'V1, today’s overyondr.com rebuilt' : 'V2, the Loba redesign. It’s a work in progress on the way to our new website, not the final version, so your feedback shapes where it goes next') + '. This short tour shows you how to get around and how to tell us what you think.' },
       { target: function () { return bar.querySelector('.b-back'); }, eyebrow: 'Navigate', title: 'Back to all versions', text: 'Return to the version page at any time.' },
       { target: function () { return bar.querySelector('.b-switch'); }, eyebrow: 'Compare', title: 'Switch between V1 and V2', text: 'Jump to the other version to compare. You’ll land on its home page.' },
       { target: function () { return barFb; }, eyebrow: 'Feedback', title: 'Give feedback from the top bar',
