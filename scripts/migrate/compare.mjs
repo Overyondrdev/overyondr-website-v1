@@ -34,14 +34,24 @@ async function shot(ctx, url, file) {
   await page.screenshot({ path: file, fullPage: true });
   await page.close();
 }
+// Work queue: every (viewport, page) pair, CONCURRENCY at a time; pairs already on disk are skipped.
+const CONCURRENCY = Number(process.env.CONCURRENCY || 5);
+const contexts = {};
 for (const vp of viewports) {
-  const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 1 });
-  for (const p of list) {
+  contexts[vp.name] = await browser.newContext({ viewport: { width: vp.width, height: vp.height }, deviceScaleFactor: 1 });
+}
+const jobs = viewports.flatMap((vp) => list.map((p) => ({ vp, p })));
+async function worker() {
+  while (jobs.length) {
+    const { vp, p } = jobs.shift();
     const slug = (p === '/' ? 'index' : p.replace(/^\//, '').replace(/[^A-Za-z0-9_-]+/g, '_')) + '.' + vp.name;
-    await shot(ctx, LIVE + p, path.join(outDir, slug + '.live.png'));
-    await shot(ctx, localBase + p, path.join(outDir, slug + '.local.png'));
+    const live = path.join(outDir, slug + '.live.png');
+    const local = path.join(outDir, slug + '.local.png');
+    if (fs.existsSync(live) && fs.existsSync(local)) continue;
+    await shot(contexts[vp.name], LIVE + p, live);
+    await shot(contexts[vp.name], localBase + p, local);
     console.log('shot', vp.name, p);
   }
-  await ctx.close();
 }
+await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 await browser.close();
