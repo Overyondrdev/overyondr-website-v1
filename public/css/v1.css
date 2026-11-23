@@ -81,7 +81,7 @@ body[class*="tweak-global-animations-animation-type"] section > .content-wrapper
 .v1-search { padding-top: calc(var(--header-height, 150px) + 40px); padding-bottom: 80px; max-width: 1324px; margin: 0 auto; }
 .v1-search-form { display: flex; align-items: center; gap: 14px; border: 1px solid #000; outline: 2px solid #000; outline-offset: 4px;
   padding: 16px 18px; margin: 6px 6px 48px; background: #fff; color: #000; }
-.v1-search-form input { flex: 1; border: 0; outline: 0; font: 400 30px/1.2 nunito-sans, sans-serif; color: #000; background: transparent; min-width: 0; }
+.v1-search-form input { flex: 1; border: 0 !important; outline: 0; padding: 0 !important; height: auto !important; margin: 0 !important; box-shadow: none !important; font: 400 30px/1.2 nunito-sans, sans-serif; color: #000; background: transparent; min-width: 0; }
 .v1-search-notice { margin: 0 0 24px; }
 .v1-search-result { display: flex; gap: 20px; padding: 26px 0; border-top: 1px solid #e6e6e6; color: inherit; text-decoration: none; }
 .v1-search-img { flex: 0 0 245px; height: 245px; overflow: hidden; background: #f3f3f3; }
