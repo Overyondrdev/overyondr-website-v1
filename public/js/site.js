@@ -595,7 +595,17 @@
     input.focus();
   }
 
+  /* ---- Blog listings: Squarespace's script added .is-loaded to each post card, which fades it in
+     (the cards start at opacity 0). Without it every blog list page (/blog, tags, authors) looked empty. */
+  function blogLists() {
+    var cards = document.querySelectorAll('.blog-list .blog-item, .blog-list .blog-basic-grid--container, .blog-list .blog-single-column--container');
+    if (!cards.length) return;
+    requestAnimationFrame(function () {
+      cards.forEach(function (c) { c.classList.add('is-loaded'); });
+    });
+  }
+
   function run(fn) { try { fn(); } catch (e) { if (window.console) console.warn('site.js', fn.name, e); } }
   [headerHeight, centredHeaderNav, desktopFolders, mobileMenu, accordions, marquees, logoStrips,
-    listItemLinks, slideshows, fullscreenSlideshows, legacyGalleries, galleryStrips, lazyImages, textHighlights, lightbox, scrollAnimations, linkTargets, contactRouting, siteSearch, cookieBanner].forEach(run);
+    listItemLinks, slideshows, fullscreenSlideshows, legacyGalleries, galleryStrips, lazyImages, textHighlights, blogLists, lightbox, scrollAnimations, linkTargets, contactRouting, siteSearch, cookieBanner].forEach(run);
 })();

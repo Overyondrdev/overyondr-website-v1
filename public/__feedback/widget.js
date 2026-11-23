@@ -115,15 +115,20 @@ button{font:inherit;color:inherit;cursor:pointer}\
 :focus-visible{outline:2.5px solid var(--l);outline-offset:2px;border-radius:8px}\
 .launcher{position:fixed;right:0;top:50%;z-index:2147483000;display:flex;flex-direction:column;align-items:center;gap:10px;\
  padding:14px 9px 16px;border:0;border-radius:14px 0 0 14px;background:var(--g);color:var(--l);\
- box-shadow:-6px 10px 30px -10px rgba(0,0,0,.45),0 0 0 1px rgba(218,255,107,.22);transform:translate(4px,-50%);\
+ box-shadow:0 0 0 2px var(--ow),0 0 0 3.5px rgba(18,33,10,.35),-10px 14px 34px -8px rgba(0,0,0,.5);transform:translate(4px,-50%);\
  transition:transform .25s cubic-bezier(.2,.7,.2,1),padding .25s}\
 .launcher:hover,.launcher:focus-visible{transform:translate(0,-50%);padding-right:13px}\
 .launcher svg{width:18px;height:18px}\
 .launcher .lbl{writing-mode:vertical-rl;transform:rotate(180deg);font-weight:600;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}\
 .launcher .dot{position:absolute;top:7px;left:7px;width:9px;height:9px;border-radius:50%;background:var(--l);box-shadow:0 0 0 2px var(--g)}\
-.panel{position:fixed;right:20px;bottom:calc(20px + var(--yfb-lift,0px));z-index:2147483001;width:400px;max-width:calc(100vw - 24px);\
- height:min(640px,calc(100vh - 40px));display:flex;flex-direction:column;background:var(--paper);border-radius:22px;overflow:hidden;\
- box-shadow:0 30px 80px -20px rgba(0,0,0,.5),0 0 0 1px rgba(28,48,11,.08);transform-origin:bottom right;animation:pop .28s cubic-bezier(.2,.7,.2,1)}\
+.panel{position:fixed;top:0;right:0;bottom:0;z-index:2147483001;width:420px;max-width:100vw;\
+ display:flex;flex-direction:column;background:var(--paper);border-radius:24px 0 0 24px;overflow:hidden;\
+ box-shadow:0 0 0 1.5px var(--ow),0 0 0 3px var(--g),-40px 0 90px -20px rgba(0,0,0,.6);animation:slide .32s cubic-bezier(.2,.7,.2,1)}\
+.scrim{position:fixed;inset:0;z-index:2147483000;pointer-events:none;animation:fade .32s;\
+ background:linear-gradient(90deg,rgba(18,33,10,.10),rgba(18,33,10,.28) 55%,rgba(18,33,10,.5))}\
+.panel.hidden+.scrim{display:none}\
+@keyframes slide{from{transform:translateX(40px);opacity:0}}\
+@keyframes fade{from{opacity:0}}\
 @keyframes pop{from{opacity:0;transform:translateY(12px) scale(.97)}}\
 .head{background:var(--g);color:var(--ow);padding:16px 16px 0}\
 .head .top{display:flex;align-items:center;justify-content:space-between;gap:8px}\
@@ -231,7 +236,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
 .annot-text{position:fixed;z-index:2147483004;font:600 18px var(--sans);color:#c83a2a;background:rgba(255,255,255,.9);border:2px solid var(--l);border-radius:6px;padding:4px 6px;min-width:120px}\
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483005;background:var(--g);color:var(--ow);padding:10px 16px;border-radius:12px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:pop .25s}\
 .hidden{display:none!important}\
-@media (max-width:480px){.panel{right:8px;left:8px;width:auto;bottom:8px;height:calc(100vh - 16px)}.launcher{padding:12px 7px 13px}}\
+@media (max-width:480px){.panel{width:100vw;border-radius:0;box-shadow:none}.launcher{padding:12px 7px 13px}}\
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}';
 
   // ------------------------------------------------------------------ mount
@@ -251,21 +256,14 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     seen: store.get('seen', {}), lastId: null,
   };
 
-  // Keep the launcher clear of the site's cookie banner.
-  function lift() {
-    var b = document.querySelector('.v1-cookie-banner');
-    hostEl.style.setProperty('--yfb-lift', b ? (b.getBoundingClientRect().height + 8) + 'px' : '0px');
-  }
-  new MutationObserver(lift).observe(document.body, { childList: true });
-  window.addEventListener('resize', lift);
-  setTimeout(lift, 300);
-
   var launcher = el('button', { class: 'launcher', 'aria-label': 'Give feedback on this page', 'aria-expanded': 'false', html: ICON.chat },
     [el('span', { class: 'lbl', text: 'Feedback' })]);
   launcher.addEventListener('click', function () { toggle(true); });
   root.appendChild(launcher);
   var panel = el('section', { class: 'panel hidden', role: 'dialog', 'aria-label': 'Yondr feedback' });
   root.appendChild(panel);
+  // Dims the page behind the open panel; display follows the panel via `.panel.hidden + .scrim`.
+  root.appendChild(el('div', { class: 'scrim', 'aria-hidden': 'true' }));
 
   function toast(msg) {
     var t = el('div', { class: 'toast', role: 'status', text: msg });
