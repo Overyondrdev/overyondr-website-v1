@@ -11,7 +11,7 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
 | --- | --- |
 | `overyondrdev.com`, `www.` | Portal page with the **Yondr Website V1** / **V2** buttons (`src/pages/portal.astro`) |
 | `v1.overyondrdev.com` | The migrated V1 site |
-| `v2.overyondrdev.com` | V2 placeholder (`src/pages/portal-v2.astro`) until the redesign exists |
+| `v2.overyondrdev.com` | V2, the Loba redesign (work in progress), built from `v2/` into `dist/__v2` |
 
 - All of overyondrdev.com is behind Cloudflare Access (Zero Trust team `overyondr.cloudflareaccess.com`,
   app "overyondrdev.com (Yondr website dev)"): one-time code emailed to any `@overyondr.com` address,
