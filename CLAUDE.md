@@ -13,7 +13,9 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
 | `v1.overyondrdev.com` | The migrated V1 site |
 | `v2.overyondrdev.com` | V2 placeholder (`src/pages/portal-v2.astro`) until the redesign exists |
 
-- All of overyondrdev.com is behind Cloudflare Access: one-time code emailed to `@overyondr.com` addresses.
+- All of overyondrdev.com is behind Cloudflare Access (Zero Trust team `overyondr.cloudflareaccess.com`,
+  app "overyondrdev.com (Yondr website dev)"): one-time code emailed to any `@overyondr.com` address,
+  session lasts 7 days. `workers_dev` and `preview_urls` stay `false` in `wrangler.jsonc` so nothing bypasses it.
 - Host routing and query-string pages live in `src/worker/index.js`.
 - overyondr.com still points to Squarespace. Do NOT add overyondr.com routes to `wrangler.jsonc`;
   that happens only at cutover, after sign-off. The Worker already serves V1 for any non-dev host.

@@ -167,7 +167,16 @@ def localize(url, width=None):
         if data:
             ext = EXT.get(ctype.split(';')[0].strip(), os.path.splitext(name)[1].lower() or '.bin')
             if not is_static:
-                data, ext = optimize_image(data, ext, w)
+                optf = os.path.join(CACHE, 'opt-' + hashlib.sha1(f'{fetch_url}|{w}'.encode()).hexdigest())
+                if os.path.exists(optf) and os.path.exists(optf + '.ext'):
+                    data, ext = open(optf, 'rb').read(), open(optf + '.ext').read()
+                else:
+                    data, ext = optimize_image(data, ext, w)
+                    tmp = f'{optf}.{threading.get_ident()}.tmp'
+                    open(tmp + '.ext', 'w').write(ext)
+                    open(tmp, 'wb').write(data)
+                    os.replace(tmp + '.ext', optf + '.ext')
+                    os.replace(tmp, optf)
             local = store(data, 'images', clean_name(name), ext)
     elif host in ('static1.squarespace.com', 'file.squarespace-cdn.com', 'assets.squarespace.com', 'definitions.sqspcdn.com'):
         data, ctype = download(f'https://{host}{path}')
@@ -496,6 +505,43 @@ def process(entry):
     return entry, soup
 
 
+def build_search(manifest):
+    """Squarespace's /search used its own API. Replace it with a static index + a /search page."""
+    index = []
+    for e in manifest:
+        key = e['key']
+        if e['kind'] != 'html' or key.startswith('__q/') or key in ('404',):
+            continue
+        meta = json.load(open(os.path.join(PAGES_OUT, key + '.json')))
+        soup = BeautifulSoup(open(os.path.join(PAGES_OUT, key + '.html')).read(), 'lxml')
+        main = soup.find(id='page') or soup
+        for t in main(['script', 'style', 'noscript', 'svg']):
+            t.decompose()
+        text = re.sub(r'\s+', ' ', main.get_text(' ')).strip()
+        img = next((m.get('content') for m in meta['metas'] if m.get('property') == 'og:image'), None)
+        if not img:
+            first = main.find('img', src=re.compile(r'^/images/'))
+            img = first['src'] if first else None
+        title = re.sub(r'\s+[—–-]\s+Yondr$', '', meta['title'] or '')
+        desc = next((m.get('content') for m in meta['metas'] if m.get('name') == 'description'), '')
+        index.append({'url': e['path'], 'title': title, 'description': desc or '',
+                      'image': (img or '').replace(SITE, ''), 'text': text[:4000]})
+    json.dump(index, open(os.path.join(PUBLIC, 'search-index.json'), 'w'), ensure_ascii=False, separators=(',', ':'))
+    # /search page: the 404 page's shell (system page with site header/footer) + a search UI.
+    body = open(os.path.join(PAGES_OUT, '404.html')).read()
+    ui = ('<div class="system-page v1-search" id="v1-search">'
+          '<form class="v1-search-form" role="search" action="/search" method="get">'
+          '<label class="v1-visually-hidden" for="v1-search-input">Search</label>'
+          '<svg aria-hidden="true" viewBox="0 0 24 24" width="28" height="28"><circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 22 22" stroke="currentColor" stroke-width="2"/></svg>'
+          '<input id="v1-search-input" name="q" type="search" placeholder="Type to search…" autocomplete="off" spellcheck="false"></form>'
+          '<p class="v1-search-notice" aria-live="polite"></p><div class="v1-search-results"></div></div>')
+    body = re.sub(r'(<main[^>]*>).*?(</main>)', lambda m: m.group(1) + ui + m.group(2), body, flags=re.S)
+    open(os.path.join(PAGES_OUT, 'search.html'), 'w').write(body)
+    meta = json.load(open(os.path.join(PAGES_OUT, '404.json')))
+    meta.update({'path': '/search', 'title': 'Search — Yondr', 'canonical': SITE + '/search'})
+    json.dump(meta, open(os.path.join(PAGES_OUT, 'search.json'), 'w'), indent=1, ensure_ascii=False)
+
+
 def main():
     import shutil
     for d in ('images', 'files', 's', 'videos', '__q', 'css/squarespace'):
@@ -513,6 +559,12 @@ def main():
     routes = {e['path']: '/' + e['key'] + ('.xml' if e['kind'] == 'rss' else '')
               for e in manifest if e['key'].startswith('__q/')}
     json.dump({'css': css_files, 'queryRoutes': routes}, open(os.path.join(ROOT, 'src/v1/site.json'), 'w'), indent=1)
+    build_search(manifest)
+    # Squarespace served the social-icon sprite from the site's own domain.
+    data, _ = download(SITE + '/universal/svg/social-accounts.svg')
+    if data:
+        os.makedirs(os.path.join(PUBLIC, 'universal/svg'), exist_ok=True)
+        open(os.path.join(PUBLIC, 'universal/svg/social-accounts.svg'), 'wb').write(data)
     sm = open(os.path.join(SNAP, 'sitemap.xml')).read()
     sm = ASSET_URL.sub(lambda m: SITE + (localize(m.group(0)) or ''), sm)
     sm = re.sub(r'https://video\.squarespace-cdn\.com/content/v1/[^/]+/([0-9a-f]{8})[0-9a-f-]*/[^<\s]*',

@@ -420,7 +420,118 @@
     }
   }
 
+  /* ---- Cookie banner (replaces Squarespace's). Choice saved as v1-cookie-consent in
+     localStorage: {analytics: bool, advertising: bool}. Analytics tags added at cutover read it. ---- */
+  var CONSENT_KEY = 'v1-cookie-consent';
+  function readConsent() { try { return JSON.parse(localStorage.getItem(CONSENT_KEY)); } catch (e) { return null; } }
+  function saveConsent(c) {
+    try { localStorage.setItem(CONSENT_KEY, JSON.stringify(c)); } catch (e) { /* private mode */ }
+    document.dispatchEvent(new CustomEvent('v1:consent', { detail: c }));
+  }
+  function cookieBanner() {
+    if (readConsent()) return;
+    var bar = document.createElement('section');
+    bar.className = 'v1-cookie-banner';
+    bar.setAttribute('aria-label', 'Cookie banner');
+    bar.innerHTML = '<div class="v1-cookie-text"><p><em>We use cookies to improve your experience on our site. By continuing, you agree to our use of cookies. Learn more in our&nbsp;</em><a href="/privacypolicy"><em>Privacy Policy</em></a><em>.</em></p></div>' +
+      '<div class="v1-cookie-buttons"><button type="button" class="v1-cookie-manage">Manage cookies</button><button type="button" class="v1-cookie-accept">Accept all</button></div>';
+    body.appendChild(bar);
+    var close = function () { bar.remove(); };
+    $('.v1-cookie-accept', bar).addEventListener('click', function () { saveConsent({ analytics: true, advertising: true }); close(); });
+    $('.v1-cookie-manage', bar).addEventListener('click', function () { manageCookies(close); });
+  }
+  function manageCookies(done) {
+    var c = readConsent() || { analytics: false, advertising: false };
+    var cat = function (key, title, desc) {
+      return '<hr><div class="v1-cookie-cat"><h4 id="v1c-' + key + '">' + title + '</h4><label class="v1-toggle"><span aria-hidden="true">' + (c[key] ? 'On' : 'Off') + '</span>' +
+        '<input type="checkbox" data-key="' + key + '" aria-labelledby="v1c-' + key + '"' + (c[key] ? ' checked' : '') + '></label></div><p>' + desc + '</p>';
+    };
+    var dlg = document.createElement('div');
+    dlg.className = 'v1-cookie-dialog';
+    dlg.setAttribute('role', 'dialog');
+    dlg.setAttribute('aria-modal', 'true');
+    dlg.setAttribute('aria-labelledby', 'v1c-heading');
+    dlg.innerHTML = '<div class="v1-cookie-panel"><button type="button" class="v1-cookie-close" aria-label="Close">×</button><h3 id="v1c-heading">Manage Cookies</h3>' +
+      '<div class="v1-cookie-cat"><h4>Necessary</h4><p>Always on</p></div><p>Required to enable core site functionality and to remember user preferences and choices, such as language preferences or customized settings.</p>' +
+      cat('analytics', 'Performance and Analytics', 'These cookies provide quantitative measures of website visitors. With the usage of these cookies we are able to count visits and traffic sources to improve the performance of our site.') +
+      cat('advertising', 'Advertising', 'These cookies are used by advertising companies to serve ads that are relevant to your interests.') +
+      '<div class="v1-cookie-buttons"><button type="button" class="v1-cookie-accept">Save Preferences</button></div></div>';
+    body.appendChild(dlg);
+    $$('input[data-key]', dlg).forEach(function (i) {
+      i.addEventListener('change', function () { i.previousElementSibling.textContent = i.checked ? 'On' : 'Off'; });
+    });
+    var shut = function () { dlg.remove(); };
+    $('.v1-cookie-close', dlg).addEventListener('click', shut);
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) shut(); });
+    dlg.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); });
+    $('.v1-cookie-accept', dlg).addEventListener('click', function () {
+      var out = {};
+      $$('input[data-key]', dlg).forEach(function (i) { out[i.getAttribute('data-key')] = i.checked; });
+      saveConsent(out);
+      shut();
+      if (done) done();
+    });
+    $('input', dlg).focus();
+  }
+
+  /* ---- Site search (/search). Replaces Squarespace's search API with /search-index.json. ---- */
+  function siteSearch() {
+    var root = document.getElementById('v1-search');
+    if (!root) return;
+    var input = $('#v1-search-input', root), out = $('.v1-search-results', root), notice = $('.v1-search-notice', root);
+    var index = null, timer;
+    var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var mark = function (text, terms) {
+      var html = esc(text);
+      terms.forEach(function (t) { html = html.replace(new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi'), '<em>$1</em>'); });
+      return html;
+    };
+    var snippet = function (item, terms) {
+      var parts = [], text = item.text, lower = text.toLowerCase();
+      terms.forEach(function (t) {
+        var i = lower.indexOf(t);
+        if (i >= 0 && parts.length < 3) parts.push(text.slice(Math.max(0, i - 60), i + 90).trim());
+      });
+      return parts.length ? parts.join(' … ') + ' …' : (item.description || text.slice(0, 180));
+    };
+    var render = function () {
+      var q = input.value.trim().toLowerCase();
+      if (!q) { out.innerHTML = ''; notice.textContent = ''; return; }
+      var terms = q.split(/\s+/).filter(Boolean);
+      var hits = index.map(function (it) {
+        var title = it.title.toLowerCase(), hay = (it.description + ' ' + it.text).toLowerCase(), score = 0;
+        for (var k = 0; k < terms.length; k++) {
+          var inT = title.indexOf(terms[k]) >= 0, inB = hay.indexOf(terms[k]) >= 0;
+          if (!inT && !inB) return null;
+          score += (inT ? 10 : 0) + (inB ? 1 : 0);
+        }
+        return { it: it, score: score };
+      }).filter(Boolean).sort(function (a, b) { return b.score - a.score; });
+      notice.textContent = hits.length ? '' : 'Your search did not match any documents.';
+      out.innerHTML = hits.slice(0, 50).map(function (h) {
+        var it = h.it;
+        return '<a class="v1-search-result" href="' + esc(it.url) + '">' +
+          (it.image ? '<span class="v1-search-img"><img src="' + esc(it.image) + '" alt="" loading="lazy"></span>' : '<span class="v1-search-img v1-search-img--none"></span>') +
+          '<span class="v1-search-body"><span class="v1-search-title">' + mark(it.title, terms) + '</span>' +
+          '<span class="v1-search-snippet">' + mark(snippet(it, terms), terms) + '</span></span></a>';
+      }).join('');
+    };
+    var q = new URLSearchParams(location.search).get('q') || '';
+    input.value = q;
+    fetch('/search-index.json').then(function (r) { return r.json(); }).then(function (d) { index = d; render(); });
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        if (!index) return;
+        render();
+        history.replaceState(null, '', input.value ? '/search?q=' + encodeURIComponent(input.value) : '/search');
+      }, 150);
+    });
+    $('form', root).addEventListener('submit', function (e) { e.preventDefault(); if (index) render(); });
+    input.focus();
+  }
+
   function run(fn) { try { fn(); } catch (e) { if (window.console) console.warn('site.js', fn.name, e); } }
   [headerHeight, centredHeaderNav, desktopFolders, mobileMenu, accordions, marquees, logoStrips,
-    listItemLinks, slideshows, fullscreenSlideshows, legacyGalleries, lightbox, scrollAnimations, linkTargets, contactRouting].forEach(run);
+    listItemLinks, slideshows, fullscreenSlideshows, legacyGalleries, lightbox, scrollAnimations, linkTargets, contactRouting, siteSearch, cookieBanner].forEach(run);
 })();

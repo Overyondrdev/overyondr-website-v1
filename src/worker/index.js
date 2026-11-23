@@ -16,7 +16,7 @@ function serve(env, request, path) {
 
 // Squarespace served some pages only via query strings (blog authors, older-posts pages, RSS).
 function queryRoute(url) {
-  if (!url.search) return null;
+  if (!url.search) return site.queryRoutes[url.pathname] || null; // e.g. /blog/tag/Yondr
   const exact = site.queryRoutes[url.pathname + url.search];
   if (exact) return exact;
   const wanted = [...url.searchParams].sort().join('&');

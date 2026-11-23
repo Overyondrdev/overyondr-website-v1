@@ -6,3 +6,6 @@
 /schools /phone-free-schools 301
 # /cart was Squarespace's built-in cart page; there is no Squarespace checkout on the static site.
 /cart /home-tray 302
+/event-resources-1 /event-resources 302
+/school-resources-1 /school-resources 302
+/state-pages /arkansas 302
