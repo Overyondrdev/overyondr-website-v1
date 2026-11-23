@@ -30,6 +30,7 @@
     other: 'What’s on your mind?',
   };
   var STATUS = { new: 'New', reviewing: 'In review', agreed: 'Agreed', planned: 'Planned', done: 'Done', wont_do: 'Won’t do' };
+  var ABOUT = [['portal', 'Both or general'], ['v1', 'V1'], ['v2', 'V2']];
   var PRIORITY = [['low', 'Low'], ['normal', 'Normal'], ['high', 'High'], ['critical', 'Critical']];
 
   var store = {
@@ -311,7 +312,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     open: false, tab: 'new', type: store.get('draft:type', 'idea'), priority: 'normal',
     message: store.get('draft:' + location.pathname, ''), shots: [], pin: null, sending: false,
     me: null, items: null, detail: null, filter: 'page', hidden: store.get('hidden', false), error: '',
-    seen: store.get('seen', {}), lastId: null,
+    seen: store.get('seen', {}), lastId: null, about: store.get('draft:about', 'portal'),
   };
 
   var launcher = el('button', { class: 'launcher', 'aria-label': 'Give feedback on this page', 'aria-expanded': 'false', html: ICON.chat },
@@ -474,8 +475,8 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
         text: 'Two versions of the Yondr website live here, private to the Yondr team. This short tour shows you how to get around and how to tell us what you think.' },
       { target: function () { return document.querySelector('.cards') || document.querySelector('main'); }, eyebrow: 'Choose', title: 'Pick a version',
         text: 'V1 is today’s overyondr.com, rebuilt. V2 is the redesign. Open either one: a toolbar at the top of every page brings you back here or switches versions.' },
-      { target: function () { return launcher; }, eyebrow: 'Feedback', title: 'Feedback is always on the right',
-        text: 'Use the Give feedback tab on any page. On V1 and V2 there’s also a Give feedback button in the toolbar.' },
+      { target: function () { return document.querySelector('[data-yfb-open]') || launcher; }, eyebrow: 'Feedback', title: 'Give feedback from the top bar',
+        text: 'Thought of something already? Use Give feedback right here. It’s also in the top bar of every V1 and V2 page, so you can send feedback wherever you are.' },
       how,
     ];
     return [
@@ -483,8 +484,8 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
         text: 'You’re looking at ' + (SITE === 'v1' ? 'V1, today’s overyondr.com rebuilt' : 'V2, the redesign') + '. This short tour shows you how to get around and how to tell us what you think.' },
       { target: function () { return bar.querySelector('.b-back'); }, eyebrow: 'Navigate', title: 'Back to all versions', text: 'Return to the version page at any time.' },
       { target: function () { return bar.querySelector('.b-switch'); }, eyebrow: 'Compare', title: 'Switch between V1 and V2', text: 'Jump to the other version to compare. You’ll land on its home page.' },
-      { target: function () { return barFb; }, eyebrow: 'Feedback', title: 'Give feedback from any page',
-        text: 'Open the feedback panel here, or with the Give feedback tab on the right edge of the page.' },
+      { target: function () { return barFb; }, eyebrow: 'Feedback', title: 'Give feedback from the top bar',
+        text: 'Give feedback is in the top bar of every page. Click it whenever something catches your eye. We note the page you’re on for you.' },
       how,
     ];
   }
@@ -510,8 +511,16 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       else if (e.key === 'ArrowRight' && idx < steps.length - 1) { e.preventDefault(); go(idx + 1); }
       else if (e.key === 'ArrowLeft' && idx > 0) { e.preventDefault(); go(idx - 1); }
     }
+    // A target that is hidden or not laid out has no size; show the step as a centred card instead
+    // of spotlighting the top-left corner.
+    function visibleTarget(st) {
+      var t = st.target && st.target();
+      if (!t) return null;
+      var r = t.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 ? t : null;
+    }
     function place() {
-      var st = steps[idx], t = st.target && st.target();
+      var st = steps[idx], t = visibleTarget(st);
       var vw = window.innerWidth, vh = window.innerHeight, cw = card.offsetWidth, ch = card.offsetHeight, gap = 14, m = 12;
       if (!t) {
         spot.classList.add('hidden'); veil.classList.remove('hidden');
@@ -562,7 +571,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
           : el('button', { class: 'tskip', type: 'button', text: i === 0 ? 'Skip' : 'Back', onclick: function () { if (i === 0) end(false); else go(i - 1); } }),
         next]);
       card.appendChild(nav);
-      var t = st.target && st.target();
+      var t = visibleTarget(st);
       if (t && t.getRootNode() === document) {
         var r = t.getBoundingClientRect();
         if (r.top < 0 || r.top > window.innerHeight * 0.6) { t.scrollIntoView({ block: 'start', behavior: 'smooth' }); setTimeout(place, 450); }
@@ -578,6 +587,8 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
   document.addEventListener('click', function (e) {
     var t = e.target.closest && e.target.closest('[data-yfb-tour]');
     if (t) { e.preventDefault(); startTour(); }
+    var o = e.target.closest && e.target.closest('[data-yfb-open]');
+    if (o) { e.preventDefault(); if (tourEl) return; toggle(true); }
   });
   if (!tourDone() && window.top === window) setTimeout(function () { if (!tourDone()) startTour(); }, 700);
 
@@ -624,8 +635,18 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
   function renderNew() {
     if (state.lastId) return renderThanks();
     bodyEl.appendChild(el('h3', { text: 'Share your thoughts' }));
-    bodyEl.appendChild(el('p', { class: 'sub', text: 'Bugs, design notes, copy edits, ideas — anything about this page helps.' }));
+    bodyEl.appendChild(el('p', { class: 'sub', text: SITE === 'portal' ? 'Ideas, bugs, design notes, copy edits: anything about either version helps.' : 'Bugs, design notes, copy edits, ideas — anything about this page helps.' }));
 
+    if (SITE === 'portal') {
+      // On the version page, people may be thinking about either site.
+      bodyEl.appendChild(el('span', { class: 'label', style: 'margin-top:0', text: 'What’s it about?' }));
+      var about = el('div', { class: 'chips', role: 'group', 'aria-label': 'Which version' });
+      ABOUT.forEach(function (a) {
+        about.appendChild(el('button', { class: 'chip', type: 'button', 'aria-pressed': state.about === a[0] ? 'true' : 'false', text: a[1],
+          onclick: function () { state.about = a[0]; store.set('draft:about', a[0]); render(); } }));
+      });
+      bodyEl.appendChild(about);
+    }
     bodyEl.appendChild(el('span', { class: 'label', text: 'What kind of feedback?' }));
     var chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Feedback type' });
     TYPES.forEach(function (t) {
@@ -684,7 +705,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     bodyEl.appendChild(seg);
 
     bodyEl.appendChild(el('div', { class: 'ctx' }, [
-      'On', el('b', { text: (SITE === 'portal' ? 'Portal' : SITE.toUpperCase()) + ' ' + (location.pathname === '/' ? 'home' : location.pathname) }),
+      'On', el('b', { text: SITE === 'portal' ? 'the version page' : SITE.toUpperCase() + ' ' + (location.pathname === '/' ? 'home' : location.pathname) }),
       '· ' + window.innerWidth + '×' + window.innerHeight,
     ]));
     if (state.error) bodyEl.appendChild(el('div', { class: 'error', role: 'alert', text: state.error }));
@@ -758,7 +779,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     state.error = '';
     render();
     api('feedback', { method: 'POST', body: {
-      type: state.type, priority: state.priority, message: state.message.trim(), site: SITE,
+      type: state.type, priority: state.priority, message: state.message.trim(), site: SITE === 'portal' ? state.about : SITE,
       url: location.href, path: location.pathname + location.search, pageTitle: document.title,
       context: context(), screenshots: state.shots.map(function (s) { return { dataUrl: s.dataUrl, width: s.width, height: s.height }; }),
     } }).then(function (d) {
