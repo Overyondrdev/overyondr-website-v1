@@ -232,7 +232,7 @@ export function clientSheet(opts) {
           <label class="field" data-f="name"><span>Name on the envelope</span>
             <input name="name" autocomplete="off" required placeholder="e.g. Jane Smith" value="${esc(c.name)}" /></label>
           <div class="cols">
-            <label class="field" data-f="company"><span>Company <small>(optional)</small></span><input name="company" autocomplete="off" value="${esc(c.company)}" /></label>
+            <label class="field" data-f="company"><span>Organization</span><input name="company" autocomplete="off" required placeholder="e.g. Acme Data Co" value="${esc(c.company)}" /></label>
             <label class="field" data-f="title"><span>Job title <small>(optional)</small></span><input name="title" autocomplete="off" value="${esc(c.title)}" /></label>
           </div>
         </fieldset>
@@ -307,6 +307,7 @@ export function clientSheet(opts) {
     const need = (f, msg) => { if (!v[f]) { fieldError(f, msg); first = first || f; } };
     if (opts.departments && opts.departments.length) need('department', 'Choose your department.');
     need('name', 'Add the name that should go on the envelope.');
+    need('company', 'Add the organization they work for.');
     need('line1', 'Add the street address.');
     need('country', 'Choose the country. We send cards all over the world.');
     need('city', 'Add the city or town.');

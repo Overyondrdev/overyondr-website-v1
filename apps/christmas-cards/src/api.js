@@ -79,6 +79,7 @@ async function saveClient(req, env, user, isAdmin, id) {
   if (!b || !b.client) return err(400, 'Missing client.');
   const p = person(b.client);
   if (!p.name) return err(422, 'Add the name that should go on the envelope.', { field: 'name' });
+  if (!p.company) return err(422, 'Add the organization they work for.', { field: 'company' });
   if (!p.department) return err(422, 'Choose your department.', { field: 'department' });
   const mode = ['check', 'accept', 'keep'].includes(b.mode) ? b.mode : 'check';
   let existing = null;
@@ -153,7 +154,7 @@ async function saveBatch(req, env, user) {
       .bind(now(), user.email, clip(b.filename, 200) || 'Pasted list').first()).id;
   }
   const valid = rows.map((r) => ({ p: person(r.client || {}), a: address(r.client || {}), mode: r.choice === 'suggested' ? 'accept' : 'keep' }))
-    .filter((r) => r.p.name);
+    .filter((r) => r.p.name && r.p.company); // name and organization are required
   const checks = await verifyMany(valid.map((r) => r.a), env);
   const ts = now();
   const stmts = [];
@@ -202,7 +203,7 @@ async function listClients(url, env, user, isAdmin) {
 }
 
 const CSV_COLS = [
-  ['Name', 'name'], ['Company', 'company'], ['Title', 'title'], ['Address line 1', 'line1'], ['Address line 2', 'line2'],
+  ['Name', 'name'], ['Organization', 'company'], ['Title', 'title'], ['Address line 1', 'line1'], ['Address line 2', 'line2'],
   ['City', 'city'], ['State / region', 'region'], ['Postal code', 'postal_code'], ['Country', 'country_name'], ['Country code', 'country'], ['Email', 'email'],
   ['Notes', 'notes'], ['Department', 'department'], ['Address status', 'status'], ['Added by', 'added_by'], ['Added on', 'created_at'],
 ];

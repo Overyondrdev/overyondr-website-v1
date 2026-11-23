@@ -25,7 +25,9 @@ A separate Worker (`yondr-christmas-cards`) and database (D1 `yondr-christmas-ca
   Dark Green, dropdowns for Country (US, UK, Mexico first) and Department, a text-formatted ZIP column and a
   "How to fill this in" tab. Rebuild it with `python3 scripts/make-template.py` (needs openpyxl) whenever the
   department list changes, so its dropdown matches.
-- **Country is required** everywhere: the form has no preselected country; US, UK and Mexico are listed first.
+- **Required for every client**: name, organization, street address, city, postal code, country (state/region for
+  the US, Mexico, Canada and Australia), plus the sender's department. Country has no preselected value; US, UK
+  and Mexico are listed first.
 - **Add one client** — the person's department (dropdown, remembered for next time), then a form with an address check before saving. If the address looks wrong we show what
   we'd change (highlighted) with *Use suggested* / *Keep mine*; problems we can't fix are listed with *Save anyway*.
 - **Upload a list** — `.xlsx`, `.csv`, or cells pasted from a spreadsheet. Columns are matched automatically

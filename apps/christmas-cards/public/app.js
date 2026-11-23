@@ -20,7 +20,7 @@ async function boot() {
     el.hidden = false;
   }
   if (s.message) { const p = $('.lede'); p.textContent = s.message; }
-  if (s.closed && !me.data.isAdmin) { $('[data-closed]').hidden = false; $('[data-actions]').hidden = true; $('.hero-help').hidden = true; }
+  if (s.closed && !me.data.isAdmin) { $('[data-closed]').hidden = false; $('[data-actions]').hidden = true; $('.hero-help').hidden = true; $('[data-sheet-cta]').hidden = true; }
   setupSignout(me.data.via);
   await load();
   if (!me.data.tutorialDone && !(s.closed && !me.data.isAdmin)) tour();
@@ -57,7 +57,7 @@ function render() {
       <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true"><rect x="8" y="18" width="60" height="42" rx="8" fill="#eef2e6"/><path d="m10 22 28 20 28-20" fill="none" stroke="#1c300b" stroke-width="3" stroke-linejoin="round"/><circle cx="58" cy="18" r="12" fill="#daff6b"/><rect x="54" y="2" width="8" height="6" rx="2" fill="#c9b86a"/></svg>
       <h3>Your list is empty</h3>
       <p>Start with one client, or upload a spreadsheet if you have several. It takes about a minute.</p>
-      ${canEdit() ? `<div class="row"><button class="btn btn-primary" type="button" data-add>Add a client</button><button class="btn" type="button" data-upload>Upload a list</button></div>` : ''}
+      ${canEdit() ? `<div class="row"><button class="btn btn-primary" type="button" data-add>Add a client</button><button class="btn" type="button" data-upload>Upload a list</button><a class="btn" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download spreadsheet</a></div>` : ''}
     </div>`;
     return;
   }
@@ -180,6 +180,11 @@ function uploadFlow() {
   function stepFile(error) {
     step(1);
     body.innerHTML = `
+      <div class="sheet-cta light">
+        <span class="sheet-cta-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M4 15h16M10 3v18" stroke="currentColor" stroke-width="2"/></svg></span>
+        <div class="sheet-cta-text"><b>Don’t have a list yet?</b><span>Start with our address spreadsheet. It has every column we need.</span></div>
+        <a class="btn btn-primary" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download spreadsheet</a>
+      </div>
       <label class="drop" data-drop tabindex="0">
         <span class="doc"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         <h3>Drop your file here</h3>
@@ -190,7 +195,7 @@ function uploadFlow() {
       <div class="or">or paste</div>
       <label class="paste"><span class="sr">Paste rows from a spreadsheet</span>
         <textarea data-paste placeholder="Copy the rows in Excel or Google Sheets (including the header row) and paste them here"></textarea></label>
-      <div class="tips"><span>One row per client. We’ll match your columns in the next step.</span><a href="${TEMPLATE_URL}" download>Download the address spreadsheet</a></div>
+      <div class="tips"><span>One row per client. We’ll match your columns in the next step.</span></div>
       <details class="drop-help"><summary>What should my spreadsheet include?</summary>${SPREADSHEET_HELP}</details>`;
     foot.innerHTML = `<span class="grow"></span><button class="btn btn-text" type="button" data-cancel>Cancel</button><button class="btn btn-primary" type="button" data-next disabled>Continue</button>`;
     const drop = $('[data-drop]', d);
@@ -274,6 +279,7 @@ function uploadFlow() {
       const has = (k) => u.map[k] !== undefined && u.map[k] !== '';
       const missing = [];
       if (!has('name') && !has('first')) missing.push('Name');
+      if (!has('company')) missing.push('Organization');
       if (!has('line1')) missing.push('Street address');
       if (!has('city')) missing.push('City');
       if (!has('department') && !u.defaultDepartment) missing.push('Department');
@@ -319,6 +325,12 @@ function uploadFlow() {
     stepReview();
   }
   function applyCheck(it, res) {
+    it.check = res.verification;
+    // Name and organization are required too; flag them like a missing address detail.
+    const missing = [];
+    if (!it.client.name) missing.push({ field: 'name', message: 'Add the name for the envelope.', severity: 'error' });
+    if (!it.client.company) missing.push({ field: 'company', message: 'Add the organization they work for.', severity: 'error' });
+    if (missing.length) res = { ...res, verification: { ...res.verification, status: 'invalid', issues: [...missing, ...res.verification.issues] } };
     it.check = res.verification;
     it.dup = res.duplicate;
     it.client = { ...it.client, ...pick(res.verification.cleaned) };
@@ -468,13 +480,14 @@ const SPREADSHEET_HELP = `
       <tr><td>State / region</td><td><span class="req">Required</span></td><td>CA (needed for the US, Mexico, Canada and Australia)</td></tr>
       <tr><td>ZIP / postal code</td><td><span class="req">Required</span></td><td>94043</td></tr>
       <tr><td>Country</td><td><span class="req">Required</span></td><td>United States, United Kingdom, Mexico…</td></tr>
-      <tr><td>Company, Job title</td><td><span class="opt">Optional</span></td><td>Acme Data Co, Head of Infrastructure</td></tr>
+      <tr><td>Organization</td><td><span class="req">Required</span></td><td>Acme Data Co</td></tr>
+      <tr><td>Job title</td><td><span class="opt">Optional</span></td><td>Head of Infrastructure</td></tr>
       <tr><td>Address line 2</td><td><span class="opt">Optional</span></td><td>Suite 200, Floor 4</td></tr>
       <tr><td>Department</td><td><span class="opt">Optional</span></td><td>Or pick one for the whole list</td></tr>
       <tr><td>Email, Notes</td><td><span class="opt">Optional</span></td><td>Notes go to the card team</td></tr>
     </tbody>
   </table>
-  <p>The easiest way: <a href="${TEMPLATE_URL}" download>download our address spreadsheet</a>, fill in one row per person, and upload it.</p>`;
+  <p><a class="btn btn-primary btn-sm" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download the address spreadsheet</a></p>`;
 
 const TOUR_ICONS = {
   card: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="m4 8 8 6 8-6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
@@ -500,10 +513,11 @@ function tour(start = 0) {
     { icon: 'person', title: 'Add your clients', html: `
       <div class="tour-split">
         <div><h3>One at a time</h3>
-          <p>Choose <b>Add a client</b> and fill in your department, the name for the envelope and the full mailing address, including the country.</p></div>
+          <p>Choose <b>Add a client</b> and fill in your department, the name for the envelope, their organization and the full mailing address, including the country.</p></div>
         <div><h3>With a spreadsheet</h3>
           <p>Download our address spreadsheet, add one row per person, then choose <b>Upload a list</b>.</p>
-          <p class="need">Needed for each person: name, street address, city, state or region, postal code and country.</p></div>
+          <p class="need">Needed for each person: name, organization, street address, city, state or region, postal code and country.</p>
+          <p><a class="btn btn-primary btn-sm" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download spreadsheet</a></p></div>
       </div>
       <p>When you save, we check each address. If something looks off, you can accept our suggested fix with one click.</p>` },
     { icon: 'check', title: 'You’re ready', html: `

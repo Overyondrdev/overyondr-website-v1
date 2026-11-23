@@ -31,7 +31,7 @@ thin = Side(style='thin', color=LINE)
 
 COLUMNS = [  # header, required, width, note
     ('Name', True, 24, 'Name as it should appear on the envelope, e.g. Jane Smith.'),
-    ('Company', False, 24, 'Optional.'),
+    ('Organization', True, 26, 'The organization they work for, e.g. Acme Data Co.'),
     ('Job title', False, 22, 'Optional.'),
     ('Department', False, 18, 'Your Yondr department. Pick from the list, or choose one for the whole sheet when you upload.'),
     ('Street address', True, 30, 'Building number and street, e.g. 1600 Amphitheatre Pkwy.'),
@@ -110,7 +110,7 @@ how['B3'].font = Font(name='Georgia', size=20, color=OFFWHITE)
 how.row_dimensions[3].height = 34
 steps = [
     '1.  Go to the Clients tab and add one row per person. Don’t change the column names in row 1.',
-    '2.  Fill in every dark green column. Light green columns are optional.',
+    '2.  Fill in every dark green column (Name, Organization and the full address). Light green columns are optional.',
     '3.  Pick the Country (and your Department) from the dropdowns. Use the full mailing address, including suite or floor.',
     '4.  Save the file, then go to cards.overyondrdev.com and choose Upload a list.',
     '    We check every address and show any fixes before anything is added.',
