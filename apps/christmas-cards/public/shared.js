@@ -23,14 +23,15 @@ export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 // ------------------------------------------------------------------ countries & regions
 const CODES = 'AD AE AF AG AI AL AM AO AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GT GU GW GY HK HN HR HT HU ID IE IL IM IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW'.split(' ');
-const POPULAR = ['US', 'CA', 'GB', 'IE', 'DE', 'FR', 'NL', 'ES', 'IT', 'AU', 'SG', 'JP'];
+// Shown first in every country list; everything else follows alphabetically.
+export const POPULAR = ['US', 'GB', 'MX'];
 const names = new Intl.DisplayNames(['en'], { type: 'region' });
 export const countryName = (c) => { try { return names.of(c) || c; } catch { return c; } };
 export const COUNTRIES = CODES.map((c) => [c, countryName(c)]).sort((a, b) => a[1].localeCompare(b[1]));
 
 const ALIASES = { USA: 'US', AMERICA: 'US', 'UNITED STATES OF AMERICA': 'US', UK: 'GB', ENGLAND: 'GB', SCOTLAND: 'GB', WALES: 'GB',
   'NORTHERN IRELAND': 'GB', 'GREAT BRITAIN': 'GB', BRITAIN: 'GB', HOLLAND: 'NL', 'THE NETHERLANDS': 'NL', UAE: 'AE', 'SOUTH KOREA': 'KR', KOREA: 'KR' };
-export function toCountryCode(text, fallback = 'US') {
+export function toCountryCode(text, fallback = '') {
   const s = String(text || '').trim().toUpperCase().replace(/\./g, '');
   if (!s) return fallback;
   if (s.length === 2 && CODES.includes(s)) return s;
@@ -39,7 +40,7 @@ export function toCountryCode(text, fallback = 'US') {
   const hit = COUNTRIES.find(([, n]) => n.toUpperCase() === s);
   if (hit) return hit[0];
   const iso3 = { USA: 'US', GBR: 'GB', CAN: 'CA', DEU: 'DE', FRA: 'FR', NLD: 'NL', IRL: 'IE', AUS: 'AU', ESP: 'ES', ITA: 'IT', SGP: 'SG', JPN: 'JP' }[s];
-  return iso3 || s;
+  return iso3 || fallback; // unknown name: leave it for the person to choose
 }
 
 export const US_STATES = { AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware',
@@ -57,21 +58,22 @@ const REGION = {
   CA: { label: 'Province', list: CA_PROVINCES, postal: 'Postal code', ph: 'M5V 2T6' },
   GB: { label: 'County', optional: true, postal: 'Postcode', ph: 'SW1A 1AA', city: 'Town / city' },
   IE: { label: 'County', optional: true, postal: 'Eircode', ph: 'D02 X285', optionalPostal: true },
+  MX: { label: 'State', postal: 'Código postal', ph: '06600' },
   AU: { label: 'State / territory', postal: 'Postcode', ph: '2000' },
 };
 export const regionInfo = (c) => REGION[c] || { label: 'State / region', optional: true, postal: 'Postal code', ph: '' };
 
 // ------------------------------------------------------------------ formatting
 export function addressLines(c) {
-  const country = c.country || 'US';
-  const cityLine = country === 'US' || country === 'CA' || country === 'AU'
+  const country = c.country || ''; // never assume a country: show none until one is chosen
+  const cityLine = !country || country === 'US' || country === 'CA' || country === 'AU'
     ? [c.city, [c.region, c.postal_code].filter(Boolean).join(' ')].filter(Boolean).join(', ')
     : country === 'GB' || country === 'IE'
       ? [c.city, c.region].filter(Boolean).join(', ')
       : [[c.postal_code, c.city].filter(Boolean).join(' '), c.region].filter(Boolean).join(', ');
   const lines = [c.line1, c.line2, cityLine];
   if (country === 'GB' || country === 'IE') lines.push(c.postal_code);
-  lines.push(country === 'US' ? 'United States' : countryName(country));
+  if (country) lines.push(country === 'US' ? 'United States' : countryName(country));
   return lines.filter(Boolean);
 }
 export const addressHtml = (c) => addressLines(c).map(esc).join('<br>');
@@ -169,10 +171,12 @@ function regionField(country, value) {
   return `<label class="field" data-f="region"><span>${label}</span><input name="region" autocomplete="address-level1" value="${esc(value)}" ${info.optional ? '' : 'required'} /></label>`;
 }
 
-function countryOptions(sel) {
-  const pop = POPULAR.map((c) => `<option value="${c}" ${c === sel ? 'selected' : ''}>${esc(countryName(c))}</option>`).join('');
-  const all = COUNTRIES.filter(([c]) => !POPULAR.includes(c)).map(([c, n]) => `<option value="${c}" ${c === sel ? 'selected' : ''}>${esc(n)}</option>`).join('');
-  return `<optgroup label="Common">${pop}</optgroup><optgroup label="All countries">${all}</optgroup>`;
+// US, UK and Mexico first, then every other country A–Z. No preselected country: people must choose.
+export function countryOptions(sel) {
+  const opt = (c, n) => `<option value="${c}" ${c === sel ? 'selected' : ''}>${esc(n)}</option>`;
+  const pop = POPULAR.map((c) => opt(c, countryName(c))).join('');
+  const all = COUNTRIES.filter(([c]) => !POPULAR.includes(c)).map(([c, n]) => opt(c, n)).join('');
+  return `<option value="" ${sel ? '' : 'selected'} disabled>Choose a country…</option>${pop}<option disabled>──────────</option>${all}`;
 }
 
 function diffHtml(entered, sugg, changed) {
@@ -181,14 +185,14 @@ function diffHtml(entered, sugg, changed) {
   const view = {};
   for (const f of ADDR) view[f] = mark(f, s[f]);
   // Reuse addressLines with pre-escaped pieces.
-  const country = s.country || 'US';
+  const country = s.country || '';
   const cityLine = country === 'US' || country === 'CA' || country === 'AU'
     ? [view.city, [view.region, view.postal_code].filter(Boolean).join(' ')].filter(Boolean).join(', ')
     : country === 'GB' || country === 'IE' ? [view.city, view.region].filter(Boolean).join(', ')
       : [[view.postal_code, view.city].filter(Boolean).join(' '), view.region].filter(Boolean).join(', ');
   const lines = [view.line1, view.line2, cityLine];
   if (country === 'GB' || country === 'IE') lines.push(view.postal_code);
-  lines.push(changed.includes('country') ? `<mark>${esc(countryName(country))}</mark>` : esc(countryName(country)));
+  if (country) lines.push(changed.includes('country') ? `<mark>${esc(countryName(country))}</mark>` : esc(countryName(country)));
   return lines.filter(Boolean).join('<br>');
 }
 export { diffHtml };
@@ -213,7 +217,7 @@ function departmentField(list, value) {
 }
 
 export function clientSheet(opts) {
-  const c = { country: 'US', ...(opts.client || {}) };
+  const c = { country: '', ...(opts.client || {}) };
   if (!c.department && opts.defaultDepartment) c.department = opts.defaultDepartment;
   const d = makeDialog('sheet', `
     <div class="d-head">
@@ -234,7 +238,7 @@ export function clientSheet(opts) {
         </fieldset>
         <fieldset>
           <legend>Mailing address</legend>
-          <label class="field" data-f="country"><span>Country</span><select name="country" autocomplete="country">${countryOptions(c.country)}</select></label>
+          <label class="field" data-f="country"><span>Country</span><select name="country" autocomplete="country" required>${countryOptions(c.country)}</select></label>
           <label class="field" data-f="line1"><span>Street address</span><input name="line1" autocomplete="address-line1" required placeholder="Building number and street" value="${esc(c.line1)}" /></label>
           <label class="field" data-f="line2"><span>Suite, floor or apartment <small>(optional)</small></span><input name="line2" autocomplete="address-line2" value="${esc(c.line2)}" /></label>
           <div class="cols-3" data-cityrow></div>
@@ -280,8 +284,8 @@ export function clientSheet(opts) {
     return v;
   }
   function fill(v) {
-    form.elements.country.value = v.country || 'US';
-    renderCityRow(v.country || 'US', v);
+    form.elements.country.value = v.country || '';
+    renderCityRow(v.country || '', v);
     for (const f of FIELDS) if (form.elements[f] && f !== 'country') form.elements[f].value = v[f] || '';
   }
   function clearErrors() {
@@ -304,6 +308,7 @@ export function clientSheet(opts) {
     if (opts.departments && opts.departments.length) need('department', 'Choose your department.');
     need('name', 'Add the name that should go on the envelope.');
     need('line1', 'Add the street address.');
+    need('country', 'Choose the country. We send cards all over the world.');
     need('city', 'Add the city or town.');
     const info = regionInfo(v.country);
     if (!info.optional) need('region', `Choose the ${info.label.toLowerCase()}.`);

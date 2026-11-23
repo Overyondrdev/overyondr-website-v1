@@ -18,8 +18,14 @@ A separate Worker (`yondr-christmas-cards`) and database (D1 `yondr-christmas-ca
   wildcard). Do that only after email sending works, or nobody can sign in.
 
 ## What it does
-- **First-visit guide**: four short steps on what to do and what a spreadsheet should include. Shown once per
-  person (tracked in D1) and again from *See how it works*.
+- **First-visit guide**: three short steps (welcome, how to add clients, then a choice to download the address
+  spreadsheet, upload one, or add a client by hand). Shown once per person (tracked in D1) and again from
+  *See how it works*.
+- **Address spreadsheet** (`public/yondr-christmas-card-list.xlsx`): a styled Excel file with required columns in
+  Dark Green, dropdowns for Country (US, UK, Mexico first) and Department, a text-formatted ZIP column and a
+  "How to fill this in" tab. Rebuild it with `python3 scripts/make-template.py` (needs openpyxl) whenever the
+  department list changes, so its dropdown matches.
+- **Country is required** everywhere: the form has no preselected country; US, UK and Mexico are listed first.
 - **Add one client** — the person's department (dropdown, remembered for next time), then a form with an address check before saving. If the address looks wrong we show what
   we'd change (highlighted) with *Use suggested* / *Keep mine*; problems we can't fix are listed with *Save anyway*.
 - **Upload a list** — `.xlsx`, `.csv`, or cells pasted from a spreadsheet. Columns are matched automatically
@@ -69,3 +75,4 @@ For deploy-on-merge, connect this Worker to the repo in Cloudflare (Workers Buil
 | `public/index.html`, `app.js` | Staff page, upload flow and first-visit guide |
 | `public/admin.html`, `admin.js` | Admin |
 | `public/shared.js`, `sheet.js`, `app.css` | Shared UI, CSV/Excel reader, styles |
+| `public/yondr-christmas-card-list.xlsx`, `scripts/make-template.py` | The downloadable address spreadsheet and its generator |

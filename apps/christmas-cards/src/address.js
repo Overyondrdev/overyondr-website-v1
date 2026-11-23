@@ -61,15 +61,16 @@ const COUNTRY_ALIASES = {
   SINGAPORE: 'SG', INDIA: 'IN', MEXICO: 'MX', SWITZERLAND: 'CH', SWEDEN: 'SE', NORWAY: 'NO', DENMARK: 'DK',
   FINLAND: 'FI', BELGIUM: 'BE', AUSTRIA: 'AT', POLAND: 'PL', PORTUGAL: 'PT', MALAYSIA: 'MY', 'HONG KONG': 'HK',
   'SOUTH AFRICA': 'ZA', 'UNITED ARAB EMIRATES': 'AE', UAE: 'AE', BRAZIL: 'BR', 'SOUTH KOREA': 'KR',
+  MEXICO: 'MX', MÉXICO: 'MX', 'ESTADOS UNIDOS': 'US',
 };
 
 const tidy = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
 
 export function countryCode(v) {
   const s = tidy(v).toUpperCase();
-  if (!s) return 'US';
+  if (!s) return ''; // country is required: no silent default
   if (/^[A-Z]{2}$/.test(s)) return s === 'UK' ? 'GB' : s;
-  return COUNTRY_ALIASES[s] || COUNTRY_ALIASES[s.replace(/\./g, '')] || s.slice(0, 2);
+  return COUNTRY_ALIASES[s] || COUNTRY_ALIASES[s.replace(/\./g, '')] || ''; // unknown name: ask the person to choose
 }
 
 function stateCode(v, table) {
@@ -132,7 +133,7 @@ export function basicIssues(a) {
   } else if (a.country === 'CA') {
     if (!a.region) issues.push(issue('region', 'Add the province.', 'error'));
     else if (!CA_PROVINCES[a.region]) issues.push(issue('region', `"${a.region}" isn't a Canadian province or territory.`, 'error'));
-  } else if (a.country === 'AU' && !a.region) {
+  } else if ((a.country === 'AU' || a.country === 'MX') && !a.region) {
     issues.push(issue('region', 'Add the state or territory.', 'error'));
   }
   if (a.line1 && !/\d/.test(a.line1 + ' ' + a.line2) && !/^(p\.?\s?o\.?\s?box|post office box)/i.test(a.line1)) {

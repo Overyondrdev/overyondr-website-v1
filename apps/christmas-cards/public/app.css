@@ -375,6 +375,21 @@ html:has(.signin-body) { overflow-x: hidden; }
 .dots { display: flex; gap: 6px; flex: 1; }
 .dots i { width: 8px; height: 8px; border-radius: 999px; background: var(--line-2); transition: width .3s var(--ease), background-color .3s; }
 .dots i.on { width: 24px; background: var(--forest); }
+.tour-body h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--forest); }
+.tour-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 4px 0 14px; }
+.tour-split > div { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 14px 16px; }
+.tour-split p { margin: 0 0 8px; font-size: 14.5px; }
+.tour-split p:last-child { margin-bottom: 0; }
+.tour-split .need { font-size: 13.5px; color: var(--moss); }
+.tour-q { font-weight: 700; color: var(--forest); margin: 16px 0 10px !important; }
+.tour-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 8px; }
+.tour-action { display: grid; justify-items: start; gap: 6px; text-align: left; padding: 16px; border-radius: var(--r); border: 1.5px solid var(--line-2);
+  background: var(--card); color: var(--forest); text-decoration: none; font: inherit; transition: border-color .2s, transform .2s var(--ease), box-shadow .2s; }
+.tour-action:hover { border-color: var(--forest); transform: translateY(-2px); box-shadow: 0 0 0 4px rgb(218 255 107 / .5); }
+.tour-action svg { width: 40px; height: 40px; padding: 8px; border-radius: 12px; background: var(--lichen); color: var(--forest); }
+.tour-action b { font-size: 15px; line-height: 1.25; }
+.tour-action span { font-size: 13px; color: var(--moss); }
+.hero-help .help-link { color: var(--lichen); }
 .help-link { border: 0; background: none; padding: 0; color: var(--lichen); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .drop-help { margin-top: 12px; }
 .drop-help summary { cursor: pointer; font-weight: 700; color: var(--forest); font-size: 14px; }
@@ -415,6 +430,9 @@ html:has(.signin-body) { overflow-x: hidden; }
   .tour-body { padding: 22px 20px 6px; }
   .tour-foot { padding: 14px 20px 18px; }
   .cols-table td:nth-child(3), .cols-table th:nth-child(3) { display: none; }
+  .tour-split, .tour-actions { grid-template-columns: 1fr; }
+  .tour-action { grid-template-columns: auto 1fr; align-items: center; column-gap: 12px; }
+  .tour-action svg { grid-row: span 2; }
   .bar { grid-template-columns: minmax(0, 1fr) 80px 36px; }
 }
 @media (max-width: 420px) {

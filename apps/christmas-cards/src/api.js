@@ -41,11 +41,7 @@ export function dedupeKey(name, a) {
   return [words(name), words(a.line1), String(a.postal_code || '').replace(/\s/g, '').slice(0, 5).toLowerCase()].join('|');
 }
 
-export const DEFAULT_DEPARTMENTS = [
-  'Executive leadership', 'Commercial & sales', 'Business development', 'Marketing & communications', 'Development & land',
-  'Design & engineering', 'Construction & delivery', 'Operations', 'Energy & sustainability', 'Finance', 'Legal', 'People',
-  'Procurement', 'Technology & IT', 'Other',
-];
+export const DEFAULT_DEPARTMENTS = ['Education', 'Commercial', 'Entertainment', 'Operations'];
 async function settings(db) {
   const { results } = await db.prepare('SELECT key, value FROM settings').all();
   const s = Object.fromEntries(results.map((r) => [r.key, r.value]));
