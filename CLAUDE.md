@@ -26,6 +26,9 @@ Yondr staff leave feedback on any dev page through a widget; the team reviews it
 - Widget: `public/__feedback/widget.js` (Shadow DOM, no dependencies). The Worker injects it into HTML on
   `*.overyondrdev.com` only — never on overyondr.com. Screenshots use the browser's screen-capture API
   (one "Share this tab" prompt), then a mark-up editor; images can also be pasted, dropped or uploaded.
+- The same script adds the preview toolbar on V1/V2 (All versions, V1/V2 switch, Tour, Give feedback; the page is
+  pushed down 44px and top-pinned fixed/sticky elements are moved below it) and a first-visit tour. "Tour done" is a
+  `yfb_tour` cookie on `.overyondrdev.com`, so it shows once across all dev hosts; any `[data-yfb-tour]` element replays it.
 - API: `src/worker/feedback/api.js` at `/__feedback/api/*`. Identity = Cloudflare Access email, verified from the
   `Cf-Access-Jwt-Assertion` token (`auth.js`). Data: D1 `yondr-feedback` (`env.DB`, schema in `schema.js`, applied
   automatically), screenshots in KV (`env.SHOTS`), AI summaries via Workers AI (`env.AI`).

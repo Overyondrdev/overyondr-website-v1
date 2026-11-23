@@ -58,8 +58,8 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
       .brand span { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--yondr-moss); padding-left: 14px; border-left: 1px solid var(--yondr-stone); }
       .who { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: 14px; color: var(--yondr-moss); min-width: 0; }
       .who .email { color: var(--yondr-ink); font-weight: 600; max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-      .who a { color: var(--yondr-forest); font-weight: 600; text-decoration: none; border: 1px solid var(--yondr-stone); padding: 7px 14px; border-radius: 999px; transition: border-color .2s, background .2s; white-space: nowrap; }
-      .who a:hover { border-color: var(--yondr-forest); background: var(--yondr-mist); }
+      .who a, .who button { font: inherit; cursor: pointer; background: transparent; color: var(--yondr-forest); font-weight: 600; text-decoration: none; border: 1px solid var(--yondr-stone); padding: 7px 14px; border-radius: 999px; transition: border-color .2s, background .2s; white-space: nowrap; }
+      .who a:hover, .who button:hover { border-color: var(--yondr-forest); background: var(--yondr-mist); }
       .who[data-anon] .signed { display: none; }
       .who a[hidden] { display: none; }
 
@@ -80,7 +80,7 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
       @media (max-width: 640px) {
         .brand span { display: none; }
         .who .signed { display: none; }
-        .who a { padding: 6px 12px; font-size: 13px; }
+        .who a, .who button { padding: 6px 12px; font-size: 13px; }
       }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
     </style>
@@ -96,6 +96,7 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
         </a>
         <div class="who" data-who data-anon>
           <span class="signed"><span class="label">Signed in as </span><span class="email" data-user-email></span></span>
+          <button type="button" data-yfb-tour>Take the tour</button>
           <a href="https://overyondrdev.com/admin" data-admin-link hidden>Feedback dashboard</a>
           <a href="/cdn-cgi/access/logout">Sign out</a>
         </div>
