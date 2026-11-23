@@ -96,6 +96,8 @@
     undo: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
     trash: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg>',
     edit: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/></svg>',
+    help: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6M12 17h.01" stroke-width="2.2"/></svg>',
+    chevron: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
     ext: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg>',
   };
 
@@ -121,12 +123,12 @@ button{font:inherit;color:inherit;cursor:pointer}\
 :focus-visible{outline:2.5px solid var(--g);outline-offset:2px;border-radius:8px}\
 .launcher:focus-visible,.head :focus-visible,.annot :focus-visible,.shot .acts button:focus-visible{outline-color:var(--l)}\
 .launcher{position:fixed;right:0;top:50%;z-index:2147483000;display:flex;flex-direction:column;align-items:center;gap:10px;\
- padding:14px 9px 16px;border:0;border-radius:14px 0 0 14px;background:var(--g);color:var(--l);\
+ padding:16px 11px 18px;border:0;border-radius:14px 0 0 14px;background:var(--g);color:var(--l);\
  box-shadow:0 0 0 2px var(--ow),0 0 0 3.5px rgba(18,33,10,.35),-10px 14px 34px -8px rgba(0,0,0,.5);transform:translate(4px,-50%);\
  transition:transform .25s cubic-bezier(.2,.7,.2,1),padding .25s}\
 .launcher:hover,.launcher:focus-visible{transform:translate(0,-50%);padding-right:13px}\
 .launcher svg{width:18px;height:18px}\
-.launcher .lbl{writing-mode:vertical-rl;transform:rotate(180deg);font-weight:600;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}\
+.launcher .lbl{writing-mode:vertical-rl;transform:rotate(180deg);font-weight:700;font-size:13px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}\
 .launcher .dot{position:absolute;top:7px;left:7px;width:9px;height:9px;border-radius:50%;background:var(--l);box-shadow:0 0 0 2px var(--g)}\
 .panel{position:fixed;top:0;right:0;bottom:0;z-index:2147483001;width:420px;max-width:100vw;\
  display:flex;flex-direction:column;background:var(--paper);border-radius:var(--r) 0 0 var(--r);overflow:hidden;\
@@ -242,6 +244,55 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
 .annot-stage canvas{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5);cursor:crosshair;touch-action:none;background:#fff}\
 .annot-text{position:fixed;z-index:2147483004;font:600 18px var(--sans);color:#c83a2a;background:rgba(255,255,255,.9);border:2px solid var(--g);border-radius:6px;padding:4px 6px;min-width:120px}\
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483005;background:var(--g);color:var(--ow);padding:10px 16px;border-radius:12px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.35);animation:pop .25s}\
+.bar{position:fixed;top:0;left:0;right:0;height:44px;z-index:2147483002;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;\
+ padding:0 10px 0 16px;background:var(--g);color:var(--ow);font:500 13.5px/1 var(--sans);box-shadow:0 1px 0 rgba(0,0,0,.28)}\
+.bar a,.bar button{font:inherit;color:inherit;text-decoration:none;border:0;background:transparent;cursor:pointer}\
+.bar :focus-visible{outline-color:var(--l)}\
+.bar .left{display:flex;align-items:center;gap:12px;min-width:0}\
+.bar .wm{display:flex;align-items:center;gap:10px;color:var(--sage);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}\
+.bar .wm img{width:80px;height:auto;display:block}\
+.bar .wm span{padding-left:10px;border-left:1px solid rgba(157,174,126,.45)}\
+.b-back{display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 8px;border-radius:999px;font-weight:600;white-space:nowrap}\
+.b-back:hover{background:var(--deep)}\
+.b-switch{display:flex;padding:3px;border-radius:999px;background:var(--deep)}\
+.b-switch a{padding:6px 16px;border-radius:999px;font-weight:700;color:var(--sage)}\
+.b-switch a:hover{color:var(--ow)}\
+.b-switch a[aria-current=page]{background:var(--ow);color:var(--g)}\
+.bar .right{display:flex;justify-content:flex-end;align-items:center;gap:4px}\
+.b-tour{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-weight:600;color:var(--sage)!important}\
+.b-tour:hover{color:var(--ow)!important;background:var(--deep)!important}\
+.b-fb{position:relative;display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:7px 16px 7px 12px;background:var(--ow)!important;color:var(--g)!important;font-weight:700!important;white-space:nowrap}\
+.b-fb:hover{background:#fff!important}\
+.b-fb svg{width:18px;height:18px}\
+.b-fb .dot{position:absolute;top:1px;right:3px;width:10px;height:10px;border-radius:50%;background:var(--g);box-shadow:0 0 0 2px var(--ow)}\
+.b-fb .s,.b-back .s{display:none}\
+.with-bar .panel{top:44px;border-radius:var(--r) 0 0 0}\
+.with-bar .pick-tip{top:60px}\
+.tour{position:fixed;inset:0;z-index:2147483006}\
+.tour .veil{position:fixed;inset:0;background:rgba(28,48,11,.66);animation:fade .3s}\
+.tour .spot{position:fixed;border-radius:14px;pointer-events:none;box-shadow:0 0 0 2px var(--l),0 0 0 9999px rgba(28,48,11,.66);transition:all .45s cubic-bezier(.2,.7,.2,1)}\
+.tcard{position:fixed;width:min(360px,calc(100vw - 24px));background:var(--paper);color:var(--ob);border-radius:var(--r);padding:24px;\
+ box-shadow:0 24px 60px -12px rgba(0,0,0,.55);animation:fade .45s;transition:left .45s cubic-bezier(.2,.7,.2,1),top .45s cubic-bezier(.2,.7,.2,1)}\
+.tcard.wide{width:min(460px,calc(100vw - 24px))}\
+.tcard .wmk{width:80px;display:block;margin-bottom:18px}\
+.tcard .eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);margin:0 0 8px}\
+.tcard h2{font:500 24px/1.15 var(--serif);color:var(--g);margin:0 0 8px;letter-spacing:-.01em}\
+.tcard p{margin:0;font-size:14.5px;line-height:1.5}\
+.tcard ol{list-style:none;margin:14px 0 0;padding:0}\
+.tcard li{display:grid;grid-template-columns:30px 1fr;gap:4px 10px;padding:12px 0;border-top:2px solid var(--mist)}\
+.tcard li b{grid-row:span 2;font:500 26px/1 var(--serif);color:var(--g)}\
+.tcard li strong{font-weight:700;color:var(--g)}\
+.tcard li span{font-size:14px;color:var(--ob)}\
+.tnav{display:flex;align-items:center;gap:8px;margin-top:20px}\
+.tdots{display:flex;gap:5px;margin-right:auto}\
+.tdots i{width:6px;height:6px;border-radius:3px;background:var(--stone);transition:width .3s}\
+.tdots i.on{width:18px;background:var(--g)}\
+.tskip{border:0;background:transparent;color:var(--moss);font-weight:600;padding:8px 6px;font-size:13px}\
+.tskip:hover{color:var(--g)}\
+.tnav .primary{width:auto;padding:10px 18px;font-size:14px}\
+.tnav .ghost{padding:10px 14px}\
+@media (max-width:720px){.bar{grid-template-columns:auto 1fr auto;gap:6px;padding:0 6px}.bar .wm,.b-tour .l,.b-fb .l,.b-back .l{display:none}.b-fb .s,.b-back .s{display:inline}\
+.b-switch{justify-self:center}.b-switch a{padding:6px 12px}.b-fb{padding:7px 12px 7px 10px}}\
 .hidden{display:none!important}\
 @media (max-width:480px){.panel{width:100vw;border-radius:0;box-shadow:none}.launcher{padding:12px 7px 13px}}\
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}';
@@ -264,7 +315,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
   };
 
   var launcher = el('button', { class: 'launcher', 'aria-label': 'Give feedback on this page', 'aria-expanded': 'false', html: ICON.chat },
-    [el('span', { class: 'lbl', text: 'Feedback' })]);
+    [el('span', { class: 'lbl', text: 'Give feedback' })]);
   launcher.addEventListener('click', function () { toggle(true); });
   root.appendChild(launcher);
   var panel = el('section', { class: 'panel hidden', role: 'dialog', 'aria-label': 'Yondr feedback' });
@@ -326,10 +377,209 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     var n = unreadCount();
     if (n && !d) launcher.appendChild(el('span', { class: 'dot', 'aria-label': n + ' updates' }));
     if (!n && d) d.remove();
+    if (barFb) {
+      var bd = barFb.querySelector('.dot');
+      if (n && !bd) barFb.appendChild(el('span', { class: 'dot', 'aria-label': n + ' updates' }));
+      if (!n && bd) bd.remove();
+    }
   }
   api('me').then(function (m) { state.me = m; }).catch(function () {});
   refreshMine();
   setInterval(function () { if (!document.hidden) refreshMine(); }, 60000);
+
+  // ------------------------------------------------------------------ toolbar (V1 and V2 only)
+  // A slim bar across the top: back to the version page, a V1/V2 switch and a Give feedback button.
+  // The page is pushed down by BAR_H; fixed/sticky elements pinned to the top are moved below the bar.
+  var BAR_H = 44;
+  var bar = null, barFb = null, offsetStyle = null, shifted = [], offsetOn = false;
+  function siteUrl(sub) { return location.protocol + '//' + (sub ? sub + '.' : '') + location.host.replace(/^(v[12]|www)\./, '') + '/'; }
+  function setOffset(on) {
+    if (!bar) return;
+    offsetOn = on;
+    if (!offsetStyle) { offsetStyle = document.createElement('style'); offsetStyle.id = 'yfb-offset'; document.head.appendChild(offsetStyle); }
+    offsetStyle.textContent = on ? 'html{margin-top:' + BAR_H + 'px!important;scroll-padding-top:' + BAR_H + 'px}' : '';
+    shiftFixed();
+  }
+  function shiftFixed() {
+    if (observer) observer.disconnect();
+    shifted.forEach(function (n) { n.style.setProperty('top', n.__yfb[0], n.__yfb[1]); delete n.__yfb; });
+    shifted = [];
+    if (offsetOn) {
+      var all = document.body.getElementsByTagName('*');
+      var bodyStatic = getComputedStyle(document.body).position === 'static';
+      for (var i = 0; i < all.length; i++) {
+        var n = all[i];
+        if (n === hostEl) continue;
+        var cs = getComputedStyle(n);
+        // Fixed/sticky elements pinned near the top, and absolute ones placed against the page itself
+        // (e.g. the V1 Squarespace header), would otherwise sit under the bar.
+        var pageAbs = cs.position === 'absolute' && n.offsetParent === document.body && bodyStatic;
+        if ((cs.position !== 'fixed' && cs.position !== 'sticky' && !pageAbs) || cs.top === 'auto') continue;
+        var t = parseFloat(cs.top);
+        if (!(t < BAR_H)) continue;
+        n.__yfb = [n.style.getPropertyValue('top'), n.style.getPropertyPriority('top')];
+        n.style.setProperty('top', (t + BAR_H) + 'px', 'important');
+        shifted.push(n);
+      }
+    }
+    if (observer) observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  }
+  var observer = null, shiftTimer = null;
+  function queueShift() { clearTimeout(shiftTimer); shiftTimer = setTimeout(shiftFixed, 300); }
+  if (SITE !== 'portal') {
+    var other = SITE === 'v1' ? 'v2' : 'v1';
+    barFb = el('button', { class: 'b-fb', type: 'button', 'aria-label': 'Give feedback on this page', html: ICON.chat, onclick: function () { toggle(true); } },
+      [el('span', { class: 'l', text: 'Give feedback' }), el('span', { class: 's', text: 'Feedback' })]);
+    bar = el('nav', { class: 'bar', 'aria-label': 'Yondr website preview' }, [
+      el('div', { class: 'left' }, [
+        el('div', { class: 'wm' }, [el('img', { src: '/brand/yondr-lichen.svg', alt: 'Yondr' }), el('span', { text: 'Website preview' })]),
+        el('a', { class: 'b-back', href: siteUrl(''), html: ICON.chevron }, [el('span', { class: 'l', text: 'All versions' }), el('span', { class: 's', text: 'Versions' })]),
+      ]),
+      el('div', { class: 'b-switch', role: 'group', 'aria-label': 'Switch version' }, ['v1', 'v2'].map(function (v) {
+        return el('a', { href: v === SITE ? location.pathname : siteUrl(v), 'aria-current': v === SITE ? 'page' : false,
+          title: v === SITE ? 'You’re on ' + v.toUpperCase() : 'Open ' + v.toUpperCase() + ' (home page)', text: v.toUpperCase() });
+      })),
+      el('div', { class: 'right' }, [
+        el('button', { class: 'b-tour', type: 'button', 'aria-label': 'Take the tour', html: ICON.help, onclick: function () { startTour(); } },
+          [el('span', { class: 'l', text: 'Tour' })]),
+        barFb,
+      ]),
+    ]);
+    root.classList.add('with-bar');
+    root.insertBefore(bar, root.firstChild);
+    observer = new MutationObserver(function (list) {
+      for (var i = 0; i < list.length; i++) if (!hostEl.contains(list[i].target) && list[i].target !== hostEl) return queueShift();
+    });
+    setOffset(true);
+    window.addEventListener('resize', queueShift);
+    window.addEventListener('load', queueShift);
+  }
+
+  // ------------------------------------------------------------------ first-visit tour
+  // Shown once per person across overyondrdev.com and its subdomains (cookie on .overyondrdev.com).
+  var SHARED = /(^|\.)overyondrdev\.com$/.test(location.hostname);
+  function tourDone() { return SHARED ? /(^|;\s*)yfb_tour=done/.test(document.cookie) : store.get('tour', false); }
+  function setTourDone() {
+    if (SHARED) document.cookie = 'yfb_tour=done; domain=.overyondrdev.com; path=/; max-age=31536000; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+    store.set('tour', true);
+  }
+  function tourSteps() {
+    var how = { wide: true, eyebrow: 'Giving feedback', title: 'Three steps, about a minute', how: [
+      ['Pick a type and say what you noticed', 'Bug, Design, Copy, Idea, Question or Love it. Plain words are perfect.'],
+      ['Show us where', 'Add a screenshot and mark it up, or use Point at it to select the exact spot on the page.'],
+      ['Send it, then watch for replies', 'We record the page and your screen size for you. Replies from the web team appear under My feedback.'],
+    ], last: true };
+    if (SITE === 'portal') return [
+      { wide: true, logo: true, eyebrow: 'Welcome', title: 'Welcome to the Yondr website preview',
+        text: 'Two versions of the Yondr website live here, private to the Yondr team. This short tour shows you how to get around and how to tell us what you think.' },
+      { target: function () { return document.querySelector('.cards') || document.querySelector('main'); }, eyebrow: 'Choose', title: 'Pick a version',
+        text: 'V1 is today’s overyondr.com, rebuilt. V2 is the redesign. Open either one: a toolbar at the top of every page brings you back here or switches versions.' },
+      { target: function () { return launcher; }, eyebrow: 'Feedback', title: 'Feedback is always on the right',
+        text: 'Use the Give feedback tab on any page. On V1 and V2 there’s also a Give feedback button in the toolbar.' },
+      how,
+    ];
+    return [
+      { wide: true, logo: true, eyebrow: 'Welcome', title: 'Welcome to the Yondr website preview',
+        text: 'You’re looking at ' + (SITE === 'v1' ? 'V1, today’s overyondr.com rebuilt' : 'V2, the redesign') + '. This short tour shows you how to get around and how to tell us what you think.' },
+      { target: function () { return bar.querySelector('.b-back'); }, eyebrow: 'Navigate', title: 'Back to all versions', text: 'Return to the version page at any time.' },
+      { target: function () { return bar.querySelector('.b-switch'); }, eyebrow: 'Compare', title: 'Switch between V1 and V2', text: 'Jump to the other version to compare. You’ll land on its home page.' },
+      { target: function () { return barFb; }, eyebrow: 'Feedback', title: 'Give feedback from any page',
+        text: 'Open the feedback panel here, or with the Give feedback tab on the right edge of the page.' },
+      how,
+    ];
+  }
+  var tourEl = null;
+  function startTour() {
+    if (tourEl) return;
+    if (state.open) toggle(false);
+    var steps = tourSteps(), idx = 0;
+    var veil = el('div', { class: 'veil' });
+    var spot = el('div', { class: 'spot hidden' });
+    var card = el('div', { class: 'tcard', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'yfb-tour-title' });
+    tourEl = el('div', { class: 'tour' }, [veil, spot, card]);
+    root.appendChild(tourEl);
+    function end(openPanel) {
+      setTourDone();
+      document.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('resize', place);
+      tourEl.remove(); tourEl = null;
+      if (openPanel) toggle(true); else if (barFb) barFb.focus(); else launcher.focus();
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); end(false); }
+      else if (e.key === 'ArrowRight' && idx < steps.length - 1) { e.preventDefault(); go(idx + 1); }
+      else if (e.key === 'ArrowLeft' && idx > 0) { e.preventDefault(); go(idx - 1); }
+    }
+    function place() {
+      var st = steps[idx], t = st.target && st.target();
+      var vw = window.innerWidth, vh = window.innerHeight, cw = card.offsetWidth, ch = card.offsetHeight, gap = 14, m = 12;
+      if (!t) {
+        spot.classList.add('hidden'); veil.classList.remove('hidden');
+        card.style.left = Math.max(m, (vw - cw) / 2) + 'px'; card.style.top = Math.max(m, (vh - ch) / 2) + 'px';
+        return;
+      }
+      var r = t.getBoundingClientRect(), pad = 6;
+      var sr = { l: r.left - pad, t: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 };
+      // Keep a tall target (e.g. the version cards) from filling the screen.
+      if (sr.t < m) { sr.h -= m - sr.t; sr.t = m; }
+      if (sr.t + sr.h > vh - m) sr.h = vh - m - sr.t;
+      spot.classList.remove('hidden'); veil.classList.add('hidden');
+      spot.style.left = sr.l + 'px'; spot.style.top = sr.t + 'px'; spot.style.width = sr.w + 'px'; spot.style.height = sr.h + 'px';
+      var opts = [
+        [sr.l + sr.w / 2 - cw / 2, sr.t + sr.h + gap],
+        [sr.l + sr.w / 2 - cw / 2, sr.t - gap - ch],
+        [sr.l - gap - cw, sr.t + sr.h / 2 - ch / 2],
+        [sr.l + sr.w + gap, sr.t + sr.h / 2 - ch / 2],
+      ];
+      var pick = null;
+      for (var i = 0; i < opts.length && !pick; i++) {
+        var x = Math.min(Math.max(m, opts[i][0]), vw - cw - m), y = opts[i][1];
+        if (y >= m && y + ch <= vh - m) {
+          var ov = !(x + cw < sr.l || x > sr.l + sr.w || y + ch < sr.t || y > sr.t + sr.h);
+          if (!ov) pick = [x, y];
+        }
+      }
+      if (!pick) pick = [Math.max(m, (vw - cw) / 2), vh - ch - m];
+      card.style.left = pick[0] + 'px'; card.style.top = pick[1] + 'px';
+    }
+    function go(i) {
+      idx = i;
+      var st = steps[i];
+      card.className = 'tcard' + (st.wide ? ' wide' : '');
+      card.innerHTML = '';
+      if (st.logo) card.appendChild(el('img', { class: 'wmk', src: '/brand/yondr-dark-green.svg', alt: 'Yondr' }));
+      card.appendChild(el('p', { class: 'eyebrow', text: st.eyebrow + ' · ' + (i + 1) + ' of ' + steps.length }));
+      card.appendChild(el('h2', { id: 'yfb-tour-title', text: st.title }));
+      if (st.text) card.appendChild(el('p', { text: st.text }));
+      if (st.how) card.appendChild(el('ol', {}, st.how.map(function (h, n) {
+        return el('li', {}, [el('b', { text: String(n + 1) }), el('strong', { text: h[0] }), el('span', { text: h[1] })]);
+      })));
+      var dots = el('div', { class: 'tdots', 'aria-hidden': 'true' }, steps.map(function (_, n) { return el('i', { class: n === i ? 'on' : '' }); }));
+      var next = el('button', { class: 'primary', type: 'button', text: st.last ? 'Give feedback now' : i === 0 ? 'Start the tour' : 'Next',
+        onclick: function () { if (st.last) end(true); else go(i + 1); } });
+      var nav = el('div', { class: 'tnav' }, [dots,
+        st.last ? el('button', { class: 'ghost', type: 'button', text: 'Start exploring', onclick: function () { end(false); } })
+          : el('button', { class: 'tskip', type: 'button', text: i === 0 ? 'Skip' : 'Back', onclick: function () { if (i === 0) end(false); else go(i - 1); } }),
+        next]);
+      card.appendChild(nav);
+      var t = st.target && st.target();
+      if (t && t.getRootNode() === document) {
+        var r = t.getBoundingClientRect();
+        if (r.top < 0 || r.top > window.innerHeight * 0.6) { t.scrollIntoView({ block: 'start', behavior: 'smooth' }); setTimeout(place, 450); }
+      }
+      place();
+      next.focus();
+    }
+    document.addEventListener('keydown', onKey, true);
+    window.addEventListener('resize', place);
+    go(0);
+  }
+  // Pages can offer the tour too (e.g. the version page): any element with data-yfb-tour starts it.
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('[data-yfb-tour]');
+    if (t) { e.preventDefault(); startTour(); }
+  });
+  if (!tourDone() && window.top === window) setTimeout(function () { if (!tourDone()) startTour(); }, 700);
 
   // ------------------------------------------------------------------ render
   var headEl, bodyEl, footEl;
@@ -353,7 +603,9 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       onclick: function () { state.hidden = true; store.set('hidden', true); toggle(false); launcher.classList.add('hidden'); toast('Feedback hidden · press Alt+Shift+F to bring it back'); } });
     headEl.appendChild(el('div', { class: 'top' }, [
       el('div', { class: 'brand' }, [el('img', { src: '/brand/yondr-lichen.svg', alt: 'Yondr' }), el('span', { text: 'Feedback' })]),
-      el('div', { style: 'display:flex;gap:2px' }, [minBtn, hideBtn]),
+      el('div', { style: 'display:flex;gap:2px' }, [
+        el('button', { class: 'icon-btn', 'aria-label': 'Take the tour', title: 'Take the tour', html: ICON.help, onclick: function () { toggle(false); startTour(); } }),
+        minBtn, hideBtn]),
     ]));
     var tabs = el('div', { class: 'tabs', role: 'tablist' });
     [['new', 'New feedback'], ['mine', 'My feedback']].forEach(function (t) {
@@ -590,6 +842,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     }
     var pinRect = state.pin ? state.pin.rect : null;
     hostEl.style.visibility = 'hidden';
+    setOffset(false);
     navigator.mediaDevices.getDisplayMedia({
       video: { displaySurface: 'browser', frameRate: 5 }, audio: false,
       preferCurrentTab: true, selfBrowserSurface: 'include', surfaceSwitching: 'exclude', monitorTypeSurfaces: 'exclude',
@@ -610,15 +863,17 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       });
     }).then(function (png) {
       hostEl.style.visibility = '';
+      setOffset(true);
       var preset = null;
       if (pinRect) {
         // Pre-draw a box around the pinned element (capture is the visible tab at device scale).
         preset = { kind: 'box', color: '#c83a2a', vp: { w: window.innerWidth, h: window.innerHeight },
-          x: pinRect.x - window.scrollX, y: pinRect.y - window.scrollY, w: pinRect.w, h: pinRect.h };
+          x: pinRect.x - window.scrollX, y: pinRect.y - window.scrollY - (bar ? BAR_H : 0), w: pinRect.w, h: pinRect.h };
       }
       annotate(png, preset, function (r) { if (r) { state.shots.push(r); } render(); });
     }).catch(function (e) {
       hostEl.style.visibility = '';
+      setOffset(true);
       if (e && e.name !== 'NotAllowedError') toast('Couldn’t capture the screen — you can upload or paste an image instead.');
       render();
     });
