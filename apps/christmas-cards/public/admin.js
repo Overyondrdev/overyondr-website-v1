@@ -2,7 +2,7 @@
 import { api, esc, $, $$, addressHtml, addressLines, statusPill, STATUS, ICONS, toast, confirmBox, clientSheet, relTime, longDate, shortDate, countryName, diffHtml } from './shared.js';
 
 const root = $('[data-root]');
-const state = { me: null, tab: 'overview', ov: null, items: [], filters: { q: '', added_by: '', status: '', country: '', upload: '' } };
+const state = { me: null, tab: 'overview', ov: null, items: [], filters: { q: '', added_by: '', status: '', country: '', upload: '', department: '' } };
 
 async function boot() {
   const me = await api('me');
@@ -13,6 +13,10 @@ async function boot() {
     root.innerHTML = `<div class="gate"><div><h1>Card team only</h1><p>This page is for the people sending the cards. Ask an admin to add you if you need access.</p>
       <a class="btn btn-primary" href="/">Go to my list</a></div></div>`;
     return;
+  }
+  if (me.data.via !== 'dev') {
+    const b = $('[data-signout]'); b.hidden = false;
+    b.onclick = async () => { await fetch('/api/signin/logout', { method: 'POST' }).catch(() => {}); location.href = me.data.via === 'access' ? '/cdn-cgi/access/logout' : '/signin'; };
   }
   const fromHash = location.hash.slice(1);
   if (['overview', 'clients', 'people', 'access', 'settings'].includes(fromHash)) state.tab = fromHash;
@@ -65,14 +69,19 @@ function overview(v) {
       <div class="kpi"><small>Need a look</small><b>${t.needs_review || 0}</b><span>${t.needs_review ? '<button class="btn btn-text btn-sm" type="button" data-goto-review style="padding:0">Review them →</button>' : 'All clear'}</span></div>
       <div class="kpi"><small>Colleagues</small><b>${t.contributors || 0}</b><span>have added clients</span></div>
     </div>
-    <div class="split">
+    <div class="split split-3">
       <div class="panel"><h3>Who has added clients</h3>
         ${state.ov.contributors.length ? `<div class="bars">${state.ov.contributors.map((c) => `
           <div class="bar"><button type="button" data-person="${esc(c.added_by)}" title="${esc(c.added_by)}">${esc(c.added_by)}</button>
             <span class="track"><i style="width:${(c.total / max) * 100}%"></i></span><b>${c.total}</b></div>`).join('')}</div>` : '<p class="sub">No one yet.</p>'}
       </div>
+      <div class="panel"><h3>By department</h3>
+        ${(state.ov.departments || []).length ? `<div class="bars">${state.ov.departments.map((x) => `
+          <div class="bar"><button type="button" data-dept="${esc(x.department)}">${esc(x.department)}</button>
+            <span class="track"><i style="width:${(x.total / Math.max(1, ...state.ov.departments.map((y) => y.total))) * 100}%"></i></span><b>${x.total}</b></div>`).join('')}</div>` : '<p class="sub">No clients yet.</p>'}
+      </div>
       <div class="panel"><h3>Recent activity</h3>
-        ${state.ov.activity.length ? `<ul class="feed">${state.ov.activity.slice(0, 15).map((a) => `
+        ${state.ov.activity.length ? `<ul class="feed">${state.ov.activity.slice(0, 8).map((a) => `
           <li><span><b>${esc(a.actor.split('@')[0])}</b> ${verb[a.action] || esc(a.action)} ${a.action === 'imported'
             ? `${a.detail.count} client${a.detail.count === 1 ? '' : 's'}${a.detail.filename ? ` from ${esc(a.detail.filename)}` : ''}`
             : esc(a.detail.name || '')}</span><time datetime="${esc(a.created_at)}" title="${esc(longDate(a.created_at))}">${esc(relTime(a.created_at))}</time></li>`).join('')}</ul>` : '<p class="sub">Nothing yet.</p>'}
@@ -86,7 +95,8 @@ function filtered() {
   const q = f.q.toLowerCase();
   return state.items.filter((c) => (!f.added_by || c.added_by === f.added_by) && (!f.status || c.status === f.status)
     && (!f.country || c.country === f.country) && (!f.upload || String(c.upload_id) === f.upload)
-    && (!q || [c.name, c.company, c.title, c.line1, c.city, c.region, c.postal_code, c.added_by, c.email].join(' ').toLowerCase().includes(q)));
+    && (!f.department || (f.department === 'Not set' ? !c.department : c.department === f.department))
+    && (!q || [c.name, c.company, c.title, c.line1, c.city, c.region, c.postal_code, c.added_by, c.email, c.department].join(' ').toLowerCase().includes(q)));
 }
 function exportHref() {
   const p = new URLSearchParams();
@@ -97,6 +107,7 @@ function clients(v) {
   const f = state.filters;
   const people = [...new Set(state.items.map((c) => c.added_by))].sort();
   const countries = [...new Set(state.items.map((c) => c.country))].sort();
+  const depts = [...new Set(state.items.map((c) => c.department || 'Not set'))].sort();
   const uploads = state.ov.uploads || [];
   v.innerHTML = `
     <div class="filters">
@@ -104,6 +115,7 @@ function clients(v) {
         <span class="sr">Search</span><input type="search" placeholder="Search everything" value="${esc(f.q)}" data-f="q" /></label>
       <select data-f="added_by" aria-label="Added by"><option value="">Everyone</option>${people.map((p) => `<option ${p === f.added_by ? 'selected' : ''}>${esc(p)}</option>`).join('')}</select>
       <select data-f="status" aria-label="Address status"><option value="">Any status</option>${Object.entries(STATUS).map(([k, s]) => `<option value="${k}" ${k === f.status ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}</select>
+      <select data-f="department" aria-label="Department"><option value="">All departments</option>${depts.map((x) => `<option ${x === f.department ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
       <select data-f="country" aria-label="Country"><option value="">All countries</option>${countries.map((c) => `<option value="${c}" ${c === f.country ? 'selected' : ''}>${esc(countryName(c))}</option>`).join('')}</select>
       ${uploads.length ? `<select data-f="upload" aria-label="Upload"><option value="">Any upload</option>${uploads.map((u) => `<option value="${u.id}" ${String(u.id) === f.upload ? 'selected' : ''}>${esc(u.filename || 'Upload')} · ${esc(u.added_by.split('@')[0])} · ${esc(shortDate(u.created_at))}</option>`).join('')}</select>` : ''}
       <span class="grow" style="flex:1"></span>
@@ -123,11 +135,12 @@ function table() {
   if (!list.length) { box.innerHTML = `<div class="empty"><h3>${state.items.length ? 'No matches' : 'No clients yet'}</h3><p>${state.items.length ? 'Try clearing a filter.' : 'Once colleagues add clients, they’ll appear here.'}</p></div>`; return; }
   box.innerHTML = `<p class="sub" style="margin:0 0 10px">${list.length} client${list.length === 1 ? '' : 's'}</p>
     <div class="table-wrap"><table>
-      <thead><tr><th>Recipient</th><th>Address</th><th>Status</th><th>Added by</th><th>Added</th></tr></thead>
+      <thead><tr><th>Recipient</th><th>Address</th><th>Status</th><th>Department</th><th>Added by</th><th>Added</th></tr></thead>
       <tbody>${list.map((c) => `<tr data-id="${c.id}" tabindex="0">
         <td><b>${esc(c.name)}</b>${c.company || c.title ? `<div class="muted">${esc([c.title, c.company].filter(Boolean).join(', '))}</div>` : ''}${c.notes ? `<div class="muted" title="${esc(c.notes)}">📝 ${esc(c.notes.slice(0, 60))}${c.notes.length > 60 ? '…' : ''}</div>` : ''}</td>
         <td class="addr">${esc(addressLines(c).join(', '))}</td>
         <td>${statusPill(c.status)}${c.kept_as_entered ? '<div class="muted" style="margin-top:4px">Kept as entered</div>' : ''}</td>
+        <td>${c.department ? esc(c.department) : '<span class="muted">Not set</span>'}</td>
         <td>${esc(c.added_by)}${c.source === 'bulk' ? '<div class="muted">From an upload</div>' : ''}</td>
         <td><span title="${esc(longDate(c.created_at))}">${esc(shortDate(c.created_at))}</span></td>
       </tr>`).join('')}</tbody></table></div>`;
@@ -139,7 +152,7 @@ function openClient(id) {
   const v = c.verification || {};
   const s = clientSheet({
     title: c.name, subtitle: `Added by ${c.added_by} · ${longDate(c.created_at)}${c.updated_by && c.updated_at !== c.created_at ? ` · edited by ${c.updated_by}` : ''}`,
-    client: c, saveLabel: 'Save changes', focusIssue: c.status === 'needs_review',
+    client: c, saveLabel: 'Save changes', focusIssue: c.status === 'needs_review', departments: state.me.settings.departments,
     submit: (body) => api('clients/' + id, { method: 'PUT', body }),
     async onDone(data) { Object.assign(c, data.client); toast('Saved'); await refresh(); },
   });
@@ -223,11 +236,14 @@ function settings(v) {
     <label class="field"><span>Deadline for adding clients <small>(shown on the staff page)</small></span><input type="date" data-s="deadline" value="${esc(s.deadline)}" /></label>
     <label class="field"><span>Message under the headline <small>(optional, replaces the default)</small></span>
       <textarea data-s="message" rows="3" placeholder="Add the clients and partners you’d like us to send a card to…">${esc(s.message)}</textarea></label>
+ <label class="field"><span>Departments <small>(one per line, shown in the dropdown)</small></span>
+      <textarea data-s="departments" rows="8">${esc(s.departments.join('\n'))}</textarea></label>
     <label class="switch"><input type="checkbox" data-s="closed" ${s.closed ? 'checked' : ''} /> Close the list (staff can see their clients but can’t add or change them)</label>
     <div><button class="btn btn-primary" type="button" data-save-settings>Save settings</button></div>
   </div>`;
   $('[data-save-settings]', v).onclick = async () => {
-    const body = { deadline: $('[data-s="deadline"]', v).value, message: $('[data-s="message"]', v).value.trim(), closed: $('[data-s="closed"]', v).checked };
+    const body = { deadline: $('[data-s="deadline"]', v).value, message: $('[data-s="message"]', v).value.trim(), closed: $('[data-s="closed"]', v).checked,
+      departments: $('[data-s="departments"]', v).value.split('\n').map((x) => x.trim()).filter(Boolean) };
     const r = await api('admin/settings', { method: 'PUT', body });
     if (!r.ok) return toast(r.data.error || 'Couldn’t save.', { bad: true });
     state.me.settings = r.data.settings;
@@ -242,8 +258,9 @@ document.addEventListener('click', async (e) => {
   if (t.dataset.tab) { state.tab = t.dataset.tab; view(); }
   else if (t.dataset.id) openClient(+t.dataset.id);
   else if (t.dataset.person || t.dataset.personRow) { state.filters = { ...state.filters, added_by: t.dataset.person || t.dataset.personRow, status: '', upload: '' }; state.tab = 'clients'; view(); }
-  else if (t.dataset.uploadView) { state.filters = { q: '', added_by: '', status: '', country: '', upload: t.dataset.uploadView }; state.tab = 'clients'; view(); }
-  else if (t.matches('[data-goto-review]')) { state.filters = { q: '', added_by: '', status: 'needs_review', country: '', upload: '' }; state.tab = 'clients'; view(); }
+  else if (t.dataset.dept) { state.filters = { q: '', added_by: '', status: '', country: '', upload: '', department: t.dataset.dept }; state.tab = 'clients'; view(); }
+  else if (t.dataset.uploadView) { state.filters = { q: '', added_by: '', status: '', country: '', department: '', upload: t.dataset.uploadView }; state.tab = 'clients'; view(); }
+  else if (t.matches('[data-goto-review]')) { state.filters = { q: '', added_by: '', status: 'needs_review', country: '', department: '', upload: '' }; state.tab = 'clients'; view(); }
   else if (t.dataset.rmAdmin) {
     const ok = await confirmBox({ title: 'Remove admin?', body: `${esc(t.dataset.rmAdmin)} will no longer see the admin page.`, ok: 'Remove' });
     if (!ok) return;

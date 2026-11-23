@@ -1,20 +1,34 @@
 # Yondr Christmas Cards
 
 **https://cards.overyondrdev.com** — Yondr staff add the clients who should receive a Christmas card.
-The card team sees everything at **/admin**. Behind Cloudflare Access like the rest of overyondrdev.com
-(one-time code to any `@overyondr.com` email), so we always know who added each client.
+The card team sees everything at **/admin**. Everyone signs in with an `@overyondr.com` email and a one-time
+code, so we always know who added each client.
 
 A separate Worker (`yondr-christmas-cards`) and database (D1 `yondr-christmas-cards`) from the website.
 
+## Sign-in (`src/signin.js`, `public/signin.html`)
+- `/signin`: enter an `@overyondr.com` email → we email a 6-digit code → a 30-day session cookie. Codes expire
+  after 10 minutes and allow 5 tries; requests are throttled per email and per IP. Codes and session tokens are
+  stored only as hashes.
+- Emails are sent with **Cloudflare Email Sending** (`send_email` binding `EMAIL`, from `EMAIL_FROM`). It needs the
+  Workers Paid plan and `overyondrdev.com` onboarded under Compute → Email Service → Email Sending.
+- Cloudflare Access (the `*.overyondrdev.com` app) still sits in front today. While it does, its verified
+  email is used and `/signin` never shows. To make `/signin` the only gate, add an Access application for
+  `cards.overyondrdev.com` with a single **Bypass / Everyone** policy (a more specific hostname wins over the
+  wildcard). Do that only after email sending works, or nobody can sign in.
+
 ## What it does
-- **Add one client** — form with an address check before saving. If the address looks wrong we show what
+- **First-visit guide**: four short steps on what to do and what a spreadsheet should include. Shown once per
+  person (tracked in D1) and again from *See how it works*.
+- **Add one client** — the person's department (dropdown, remembered for next time), then a form with an address check before saving. If the address looks wrong we show what
   we'd change (highlighted) with *Use suggested* / *Keep mine*; problems we can't fix are listed with *Save anyway*.
 - **Upload a list** — `.xlsx`, `.csv`, or cells pasted from a spreadsheet. Columns are matched automatically
   (first + last name columns are combined), every address is checked, duplicates are flagged, then
   people review suggestions before adding.
 - **Your clients** — everyone sees and edits only what they added.
 - **Admin** (`/admin`) — totals, who added what, every client with filters, uploads, CSV export for the mail
-  house, mark flagged addresses as checked, admins, and settings (deadline, intro message, close the list).
+  house, mark flagged addresses as checked, admins, and settings (deadline, intro message, department list,
+  close the list). Department is a column, a filter and an overview chart.
 
 ## Address checking (`src/address.js`)
 1. Built-in rules always run: required fields, postal-code formats (US, CA, UK and ~25 more), US state/ZIP
@@ -48,8 +62,10 @@ For deploy-on-merge, connect this Worker to the repo in Cloudflare (Workers Buil
 | `src/index.js` | Worker entry: `/api/*` → API, everything else → static files in `public/` |
 | `src/api.js` | JSON API (clients, bulk check/save, admin) |
 | `src/address.js` | Address rules + Google Address Validation |
-| `src/auth.js` | Cloudflare Access identity (same as the website's feedback tool) |
+| `src/auth.js` | Who is signed in: Cloudflare Access token, else the email-code session |
+| `src/signin.js` | Email-code sign-in, sessions and the code email |
 | `src/schema.js` / `schema.sql` | D1 tables |
-| `public/index.html`, `app.js` | Staff page and upload flow |
+| `public/signin.html`, `signin.js` | Sign-in page |
+| `public/index.html`, `app.js` | Staff page, upload flow and first-visit guide |
 | `public/admin.html`, `admin.js` | Admin |
 | `public/shared.js`, `sheet.js`, `app.css` | Shared UI, CSV/Excel reader, styles |

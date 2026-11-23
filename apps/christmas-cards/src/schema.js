@@ -24,7 +24,8 @@ export const SCHEMA = [
     verification TEXT NOT NULL DEFAULT '{}',
     source TEXT NOT NULL DEFAULT 'single', -- single | bulk
     upload_id INTEGER,
-    dedupe_key TEXT NOT NULL
+    dedupe_key TEXT NOT NULL,
+    department TEXT                     -- Yondr department the client is sent on behalf of
   )`,
   `CREATE INDEX IF NOT EXISTS clients_added_by ON clients(added_by, created_at)`,
   `CREATE INDEX IF NOT EXISTS clients_dedupe ON clients(dedupe_key)`,
@@ -51,6 +52,30 @@ export const SCHEMA = [
     added_at TEXT NOT NULL
   )`,
   `CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS users (
+    email TEXT PRIMARY KEY,
+    first_seen TEXT NOT NULL,
+    last_seen TEXT NOT NULL,
+    tutorial_done_at TEXT,              -- set when the person finishes or skips the first-visit tour
+    department TEXT                     -- last department they picked (pre-fills the form)
+  )`,
+  `CREATE TABLE IF NOT EXISTS login_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    code_hash TEXT NOT NULL,            -- sha256(email:code), never the code itself
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    ip TEXT
+  )`,
+  `CREATE INDEX IF NOT EXISTS login_codes_email ON login_codes(email, created_at)`,
+  `CREATE TABLE IF NOT EXISTS sessions (
+    token_hash TEXT PRIMARY KEY,        -- sha256 of the cookie value
+    email TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    last_seen TEXT NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS verify_cache (
     key TEXT PRIMARY KEY,
     result TEXT NOT NULL,
@@ -58,8 +83,19 @@ export const SCHEMA = [
   )`,
 ];
 
+// Columns added after the first release (CREATE TABLE IF NOT EXISTS doesn't add them to existing tables).
+const ADDED_COLUMNS = [['clients', 'department', 'TEXT']];
+
+async function apply(db) {
+  await db.batch(SCHEMA.map((s) => db.prepare(s)));
+  for (const [table, col, type] of ADDED_COLUMNS) {
+    const { results } = await db.prepare(`PRAGMA table_info(${table})`).all();
+    if (!results.some((r) => r.name === col)) await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${col} ${type}`).run();
+  }
+}
+
 let ready = null;
 export function ensureSchema(db) {
-  if (!ready) ready = db.batch(SCHEMA.map((s) => db.prepare(s))).catch((e) => { ready = null; throw e; });
+  if (!ready) ready = apply(db).catch((e) => { ready = null; throw e; });
   return ready;
 }

@@ -155,7 +155,7 @@ export function confirmBox({ title, body, ok = 'Delete', danger = true }) {
 }
 
 // ------------------------------------------------------------------ client sheet (add / edit + address check)
-const FIELDS = ['name', 'company', 'title', 'line1', 'line2', 'city', 'region', 'postal_code', 'country', 'email', 'notes'];
+const FIELDS = ['department', 'name', 'company', 'title', 'line1', 'line2', 'city', 'region', 'postal_code', 'country', 'email', 'notes'];
 const ADDR = ['line1', 'line2', 'city', 'region', 'postal_code', 'country'];
 
 function regionField(country, value) {
@@ -201,8 +201,20 @@ export { diffHtml };
  * opts.onDone   (data) => void, called when saved
  * opts.saveLabel
  */
+function departmentField(list, value) {
+  if (!list || !list.length) return '';
+  const opts = [...list, ...(value && !list.includes(value) ? [value] : [])]
+    .map((d) => `<option ${d === value ? 'selected' : ''}>${esc(d)}</option>`).join('');
+  return `<fieldset>
+    <legend>Sending on behalf of</legend>
+    <label class="field" data-f="department"><span>Your department</span>
+      <select name="department" required><option value="">Choose your department…</option>${opts}</select></label>
+  </fieldset>`;
+}
+
 export function clientSheet(opts) {
   const c = { country: 'US', ...(opts.client || {}) };
+  if (!c.department && opts.defaultDepartment) c.department = opts.defaultDepartment;
   const d = makeDialog('sheet', `
     <div class="d-head">
       <div><h2>${esc(opts.title || 'Add a client')}</h2><p>${esc(opts.subtitle || 'We’ll check the address before it’s saved.')}</p></div>
@@ -210,6 +222,7 @@ export function clientSheet(opts) {
     </div>
     <form class="d-body" novalidate data-form>
       <div class="form">
+        ${departmentField(opts.departments, c.department)}
         <fieldset>
           <legend>Who is it for?</legend>
           <label class="field" data-f="name"><span>Name on the envelope</span>
@@ -263,7 +276,7 @@ export function clientSheet(opts) {
 
   function read() {
     const v = {};
-    for (const f of FIELDS) v[f] = (form.elements[f]?.value || '').trim();
+    for (const f of FIELDS) v[f] = (form.elements[f] ? form.elements[f].value : c[f] || '').trim();
     return v;
   }
   function fill(v) {
@@ -288,6 +301,7 @@ export function clientSheet(opts) {
     clearErrors();
     let first = null;
     const need = (f, msg) => { if (!v[f]) { fieldError(f, msg); first = first || f; } };
+    if (opts.departments && opts.departments.length) need('department', 'Choose your department.');
     need('name', 'Add the name that should go on the envelope.');
     need('line1', 'Add the street address.');
     need('city', 'Add the city or town.');
@@ -402,6 +416,6 @@ export function clientSheet(opts) {
   if (opts.focusIssue && opts.client?.verification?.issues?.length) {
     for (const i of opts.client.verification.issues) fieldError(i.field, i.message, true);
   }
-  setTimeout(() => form.elements.name.focus(), 30);
+  setTimeout(() => (form.elements.department && !form.elements.department.value ? form.elements.department : form.elements.name).focus(), 30);
   return { dialog: d, fill };
 }

@@ -1,2 +1,2 @@
-Name,Company,Title,Address line 1,Address line 2,City,State / region,Postal code,Country,Email,Notes
-Jane Smith,Acme Data Co,Head of Infrastructure,1600 Amphitheatre Pkwy,Suite 200,Mountain View,CA,94043,United States,jane@example.com,Met at the London summit
+Name,Company,Title,Address line 1,Address line 2,City,State / region,Postal code,Country,Email,Notes,Department
+Jane Smith,Acme Data Co,Head of Infrastructure,1600 Amphitheatre Pkwy,Suite 200,Mountain View,CA,94043,United States,jane@example.com,Met at the London summit,Commercial & sales

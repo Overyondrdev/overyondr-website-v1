@@ -141,6 +141,7 @@ export const TARGETS = [
   { key: 'country', label: 'Country' },
   { key: 'email', label: 'Email' },
   { key: 'notes', label: 'Notes' },
+  { key: 'department', label: 'Department', hint: 'Yondr department sending the card' },
 ];
 const SYN = {
   name: ['name', 'full name', 'fullname', 'recipient', 'recipient name', 'contact', 'contact name', 'client', 'client name', 'addressee', 'display name'],
@@ -156,6 +157,7 @@ const SYN = {
   country: ['country', 'country code', 'nation', 'mailing country', 'country region'],
   email: ['email', 'e mail', 'email address', 'work email'],
   notes: ['notes', 'note', 'message', 'comments', 'comment', 'card message'],
+  department: ['department', 'dept', 'team', 'yondr department', 'business unit', 'sending department'],
 };
 const normH = (h) => String(h || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -189,6 +191,7 @@ export function applyMapping(rows, map) {
     return {
       name, company: get('company'), title: get('title'), line1: get('line1'), line2: get('line2'), city: get('city'),
       region: get('region'), postal_code: get('postal_code'), country: get('country'), email: get('email'), notes: get('notes'),
+      department: get('department'),
     };
   }).filter((r) => Object.values(r).some(Boolean));
 }

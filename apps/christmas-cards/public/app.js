@@ -21,7 +21,9 @@ async function boot() {
   }
   if (s.message) { const p = $('.lede'); p.textContent = s.message; }
   if (s.closed && !me.data.isAdmin) { $('[data-closed]').hidden = false; $('[data-actions]').hidden = true; $('.hero-help').hidden = true; }
+  setupSignout(me.data.via);
   await load();
+  if (!me.data.tutorialDone && !(s.closed && !me.data.isAdmin)) tour();
 }
 
 async function load() {
@@ -93,11 +95,13 @@ function flash(id) {
 }
 
 // ------------------------------------------------------------------ add / edit / delete
+const deptOpts = (c) => ({ departments: state.me.settings.departments, defaultDepartment: (c && c.department) || state.me.department });
 function addClient() {
   clientSheet({
-    title: 'Add a client',
+    title: 'Add a client', ...deptOpts(),
     submit: (body) => api('clients', { method: 'POST', body }),
     onDone(data) {
+      state.me.department = data.client.department || state.me.department;
       state.items.unshift(data.client);
       state.filter = 'all'; syncChips(); render(); flash(data.client.id);
       const s = STATUS[data.client.status];
@@ -111,7 +115,7 @@ function editClient(id) {
   if (!c) return;
   clientSheet({
     title: 'Edit client', subtitle: `Added ${new Date(c.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`,
-    client: c, focusIssue: needsLook(c), saveLabel: 'Save changes',
+    client: c, focusIssue: needsLook(c), saveLabel: 'Save changes', ...deptOpts(c),
     submit: (body) => api('clients/' + id, { method: 'PUT', body }),
     onDone(data) {
       Object.assign(c, data.client);
@@ -152,7 +156,7 @@ function uploadFlow() {
     <div class="d-foot" data-foot></div>`);
   const body = $('[data-body]', d);
   const foot = $('[data-foot]', d);
-  const u = { filename: '', rows: [], headers: [], hasHeader: true, map: {}, defaultCountry: 'US', items: [] };
+  const u = { filename: '', rows: [], headers: [], hasHeader: true, map: {}, defaultCountry: 'US', defaultDepartment: state.me.department || '', items: [] };
 
   function step(n) {
     $$('[data-s]', d).forEach((li) => {
@@ -186,7 +190,8 @@ function uploadFlow() {
       <div class="or">or paste</div>
       <label class="paste"><span class="sr">Paste rows from a spreadsheet</span>
         <textarea data-paste placeholder="Copy the rows in Excel or Google Sheets (including the header row) and paste them here"></textarea></label>
-      <div class="tips"><span>One row per client. We’ll match your columns in the next step.</span><a href="/template.csv" download>Download a template</a></div>`;
+      <div class="tips"><span>One row per client. We’ll match your columns in the next step.</span><a href="/template.csv" download>Download a template</a></div>
+      <details class="drop-help"><summary>What should my spreadsheet include?</summary>${SPREADSHEET_HELP}</details>`;
     foot.innerHTML = `<span class="grow"></span><button class="btn btn-text" type="button" data-cancel>Cancel</button><button class="btn btn-primary" type="button" data-next disabled>Continue</button>`;
     const drop = $('[data-drop]', d);
     const input = $('[data-file]', d);
@@ -240,6 +245,10 @@ function uploadFlow() {
           <select id="m-${t.key}" data-map="${t.key}">${opts(u.map[t.key])}</select>
           <span class="sample" data-sample="${t.key}">${sample(t.key)}</span>
         </div>`).join('')}
+        <div class="map-row" data-defdept ${u.map.department !== undefined && u.map.department !== '' ? 'hidden' : ''}>
+          <label for="m-defd">Department for every row *<small>The Yondr department sending these cards</small></label>
+          <select id="m-defd" data-defd><option value="">Choose your department…</option>${state.me.settings.departments.map((x) => `<option ${x === u.defaultDepartment ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select><span></span>
+        </div>
         <div class="map-row" data-defcountry ${u.map.country !== undefined && u.map.country !== '' ? 'hidden' : ''}>
           <label for="m-defc">Country for every row<small>Your list has no country column</small></label>
           <select id="m-defc" data-defc>${COUNTRY_OPTS(u.defaultCountry)}</select><span></span>
@@ -251,8 +260,10 @@ function uploadFlow() {
       s.closest('.map-row').classList.toggle('auto', s.value !== '');
       $(`[data-sample="${s.dataset.map}"]`, d).innerHTML = sample(s.dataset.map);
       if (s.dataset.map === 'country') $('[data-defcountry]', d).hidden = s.value !== '';
+      if (s.dataset.map === 'department') $('[data-defdept]', d).hidden = s.value !== '';
     }));
     $('[data-defc]', d).addEventListener('change', (e) => { u.defaultCountry = e.target.value; });
+    $('[data-defd]', d).addEventListener('change', (e) => { u.defaultDepartment = e.target.value; });
     $('[data-toggle-name]', d).onclick = () => {
       u.splitName = !useFirstLast;
       if (u.splitName) delete u.map.name; else { delete u.map.first; delete u.map.last; }
@@ -265,9 +276,11 @@ function uploadFlow() {
       if (!has('name') && !has('first')) missing.push('Name');
       if (!has('line1')) missing.push('Street address');
       if (!has('city')) missing.push('City');
+      if (!has('department') && !u.defaultDepartment) missing.push('Department');
       if (missing.length) { $('[data-msg]', d).innerHTML = `<span style="color:#a3311f;font-weight:600">Choose a column for: ${esc(missing.join(', '))}</span>`; return; }
       u.items = applyMapping(u.rows, u.map).map((c, i) => ({
-        i, client: { ...c, country: has('country') ? toCountryCode(c.country, u.defaultCountry) : u.defaultCountry },
+        i, client: { ...c, country: has('country') ? toCountryCode(c.country, u.defaultCountry) : u.defaultCountry,
+          department: (has('department') && c.department) || u.defaultDepartment },
         include: true, choice: 'suggested', check: null, dup: null,
       }));
       stepCheck();
@@ -419,7 +432,7 @@ function uploadFlow() {
     delete d.dataset.busy;
     u.finished = true;
     step(4);
-    body.innerHTML = `<div class="done"><span class="big">${ICONS.checkBig.replace('width="24" height="24"', 'width="40" height="40"')}</span>
+    body.innerHTML = `<div class="finish"><span class="big">${ICONS.checkBig.replace('width="24" height="24"', 'width="40" height="40"')}</span>
       <h3>${added} client${added === 1 ? '' : 's'} added</h3>
       <p>Thank you! They’re on your list now. You can edit any of them at any time before the deadline.</p></div>`;
     foot.innerHTML = `<span class="grow"></span><button class="btn btn-primary" type="button" data-fin>See my list</button>`;
@@ -434,12 +447,121 @@ function uploadFlow() {
 const COUNTRY_OPTS = (sel) => ['US', 'CA', 'GB', 'IE', 'DE', 'FR', 'NL', 'ES', 'IT', 'AU', 'SG', 'JP']
   .map((c) => `<option value="${c}" ${c === sel ? 'selected' : ''}>${esc(countryName(c))}</option>`).join('');
 
+// ------------------------------------------------------------------ sign out
+function setupSignout(via) {
+  const b = $('[data-signout]');
+  if (via === 'dev') return;
+  b.hidden = false;
+  b.onclick = async () => {
+    await fetch('/api/signin/logout', { method: 'POST' }).catch(() => {});
+    location.href = via === 'access' ? '/cdn-cgi/access/logout' : '/signin';
+  };
+}
+
+// ------------------------------------------------------------------ first-visit tutorial
+const SPREADSHEET_HELP = `
+  <table class="cols-table">
+    <thead><tr><th>Column</th><th></th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>Name</td><td><span class="req">Required</span></td><td>Jane Smith (or First name + Last name columns)</td></tr>
+      <tr><td>Street address</td><td><span class="req">Required</span></td><td>1600 Amphitheatre Pkwy</td></tr>
+      <tr><td>City</td><td><span class="req">Required</span></td><td>Mountain View</td></tr>
+      <tr><td>State / region</td><td><span class="req">Required</span></td><td>CA (US, Canada and Australia)</td></tr>
+      <tr><td>ZIP / postal code</td><td><span class="req">Required</span></td><td>94043</td></tr>
+      <tr><td>Country</td><td><span class="opt">If mixed</span></td><td>United States, UK, Germany…</td></tr>
+      <tr><td>Company, Job title</td><td><span class="opt">Optional</span></td><td>Acme Data Co, Head of Infrastructure</td></tr>
+      <tr><td>Address line 2</td><td><span class="opt">Optional</span></td><td>Suite 200, Floor 4</td></tr>
+      <tr><td>Department</td><td><span class="opt">Optional</span></td><td>Or pick one for the whole list</td></tr>
+      <tr><td>Email, Notes</td><td><span class="opt">Optional</span></td><td>Notes go to the card team</td></tr>
+    </tbody>
+  </table>
+  <ul class="ticks">
+    <li>One row per person, with a header row at the top. Column names don’t need to match exactly.</li>
+    <li>Excel (.xlsx), CSV, or copy the cells and paste them in.</li>
+    <li>If every client is in one country, you can leave the Country column out and choose it while uploading.</li>
+  </ul>
+  <p><a href="/template.csv" download>Download the template</a> to start from a blank sheet.</p>`;
+
+const TOUR_ICONS = {
+  card: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="m4 8 8 6 8-6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
+  person: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  sheet: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M4 15h16M10 3v18" stroke="currentColor" stroke-width="2"/></svg>',
+  check: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+function tour(start = 0) {
+  const s = state.me.settings;
+  const deadline = s.deadline ? new Date(s.deadline + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : '';
+  const slides = [
+    { icon: 'card', title: 'Welcome to the Christmas card list', html: `
+      <p>Each December, Yondr sends Christmas cards to the clients and partners we work with. Use this page to tell the card team who should get one from you.</p>
+      <ul class="ticks">
+        <li>Add clients one at a time, or upload a spreadsheet if you have several.</li>
+        <li>We check every address and suggest fixes, so cards arrive.</li>
+        <li>Only you and the card team can see the clients you add.</li>
+      </ul>
+      ${deadline ? `<p><b>Please add your clients by ${esc(deadline)}.</b></p>` : ''}` },
+    { icon: 'person', title: 'Adding one client', html: `
+      <p>Choose <b>Add a client</b> and fill in:</p>
+      <ul class="ticks">
+        <li><b>Your department</b>, so we know who the card is from.</li>
+        <li>The <b>name as it should appear on the envelope</b>, plus company and job title if you know them.</li>
+        <li>The <b>full mailing address</b>, including suite or floor number, postal code and country.</li>
+        <li>Anything the card team should know, such as a personal note, goes in <b>Note for the card team</b>.</li>
+      </ul>
+      <p>When you save, we check the address. If something looks off, we show a suggested fix you can accept with one click.</p>` },
+    { icon: 'sheet', title: 'Uploading a spreadsheet', html: `<p>Got a list? Choose <b>Upload a list</b>. Include these columns:</p>${SPREADSHEET_HELP}` },
+    { icon: 'check', title: 'Review, and you’re done', html: `
+      <ul class="ticks">
+        <li>Your clients appear under <b>Your clients</b>. Anything marked <b>Needs a look</b> has an address we couldn’t fully confirm. Open it to fix it.</li>
+        <li>If someone is already on the list from a colleague, we’ll tell you so they don’t get two cards.</li>
+        <li>You can edit or remove clients any time before the deadline.</li>
+      </ul>
+      <p>You can see this guide again any time with <b>See how it works</b> at the top of the page.</p>` },
+  ];
+  let i = Math.min(start, slides.length - 1);
+  const d = makeDialog('modal tour', `
+    <div class="tour-art"><div class="snow" aria-hidden="true"></div><span class="art" data-art></span>
+      <button class="icon-btn x" type="button" data-skip aria-label="Close guide">${ICONS.close}</button></div>
+    <div class="tour-body" data-body></div>
+    <div class="tour-foot"><div class="dots" aria-hidden="true">${slides.map(() => '<i></i>').join('')}</div>
+      <button class="btn btn-text" type="button" data-prev>Back</button><button class="btn btn-primary" type="button" data-next>Next</button></div>`);
+  d.setAttribute('aria-labelledby', 'tour-title');
+  const finish = () => { api('tutorial', { method: 'POST', body: {} }); state.me.tutorialDone = true; };
+  d.addEventListener('close', finish);
+  function show() {
+    const sl = slides[i];
+    $('[data-art]', d).innerHTML = TOUR_ICONS[sl.icon];
+    $('[data-body]', d).innerHTML = `<p class="count">Step ${i + 1} of ${slides.length}</p><h2 id="tour-title">${esc(sl.title)}</h2>${sl.html}`;
+    $('[data-body]', d).scrollTop = 0;
+    $$('.dots i', d).forEach((dot, k) => dot.classList.toggle('on', k === i));
+    $('[data-prev]', d).hidden = i === 0;
+    $('[data-next]', d).textContent = i === slides.length - 1 ? (state.items.length ? 'Got it' : 'Add my first client') : 'Next';
+    $('[data-next]', d).focus();
+  }
+  $('[data-prev]', d).onclick = () => { i--; show(); };
+  $('[data-next]', d).onclick = () => {
+    if (i < slides.length - 1) { i++; show(); return; }
+    d.close();
+    if (!state.items.length && canEdit()) addClient();
+  };
+  $('[data-skip]', d).onclick = () => d.close();
+  d.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' && i < slides.length - 1) { i++; show(); }
+    if (e.key === 'ArrowLeft' && i > 0) { i--; show(); }
+  });
+  d.showModal();
+  show();
+}
+
 // ------------------------------------------------------------------ events
 function syncChips() { $$('[data-filter]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === state.filter))); }
 document.addEventListener('click', (e) => {
   const t = e.target.closest('button');
   if (!t) return;
-  if (t.matches('[data-add]')) addClient();
+  if (t.matches('[data-tour]')) tour();
+  else if (t.matches('[data-tour-sheet]')) tour(2);
+  else if (t.matches('[data-add]')) addClient();
   else if (t.matches('[data-upload]')) uploadFlow();
   else if (t.dataset.edit) editClient(+t.dataset.edit);
   else if (t.dataset.del) deleteClient(+t.dataset.del);

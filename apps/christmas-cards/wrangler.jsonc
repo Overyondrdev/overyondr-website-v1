@@ -14,10 +14,14 @@
   "vars": {
     // Cloudflare Access: the overyondrdev.com application covers *.overyondrdev.com, so this host shares its AUD.
     "ACCESS_TEAM_DOMAIN": "overyondr.cloudflareaccess.com",
-    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8"
+    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8",
+    // Sign-in code emails come from this address (domain must be onboarded in Cloudflare Email Sending).
+    "EMAIL_FROM": "cards@overyondrdev.com"
     // Secret (set in the dashboard or with `npx wrangler secret put GOOGLE_MAPS_API_KEY`):
     //   GOOGLE_MAPS_API_KEY  Google Address Validation API key. Without it, only the built-in checks run.
   },
+  // Cloudflare Email Sending: delivers the sign-in codes (src/signin.js).
+  "send_email": [{ "name": "EMAIL" }],
   // No *.workers.dev or preview URLs: they would bypass the Cloudflare Access login.
   "workers_dev": false,
   "preview_urls": false,

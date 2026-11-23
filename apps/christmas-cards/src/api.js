@@ -27,6 +27,7 @@ function person(b) {
   return {
     name: clip(b.name, 200), company: clip(b.company, 200), title: clip(b.title, 200),
     email: clip(b.email, 254).toLowerCase(), notes: String(b.notes ?? '').trim().slice(0, 1000),
+    department: clip(b.department, 100),
   };
 }
 function address(b) {
@@ -40,10 +41,17 @@ export function dedupeKey(name, a) {
   return [words(name), words(a.line1), String(a.postal_code || '').replace(/\s/g, '').slice(0, 5).toLowerCase()].join('|');
 }
 
+export const DEFAULT_DEPARTMENTS = [
+  'Executive leadership', 'Commercial & sales', 'Business development', 'Marketing & communications', 'Development & land',
+  'Design & engineering', 'Construction & delivery', 'Operations', 'Energy & sustainability', 'Finance', 'Legal', 'People',
+  'Procurement', 'Technology & IT', 'Other',
+];
 async function settings(db) {
   const { results } = await db.prepare('SELECT key, value FROM settings').all();
   const s = Object.fromEntries(results.map((r) => [r.key, r.value]));
-  return { deadline: s.deadline || '', closed: s.closed === '1', message: s.message || '' };
+  let departments = DEFAULT_DEPARTMENTS;
+  try { if (s.departments) departments = JSON.parse(s.departments); } catch { /* keep defaults */ }
+  return { deadline: s.deadline || '', closed: s.closed === '1', message: s.message || '', departments };
 }
 
 async function findDuplicates(db, keys, exceptId = 0) {
@@ -75,6 +83,7 @@ async function saveClient(req, env, user, isAdmin, id) {
   if (!b || !b.client) return err(400, 'Missing client.');
   const p = person(b.client);
   if (!p.name) return err(422, 'Add the name that should go on the envelope.', { field: 'name' });
+  if (!p.department) return err(422, 'Choose your department.', { field: 'department' });
   const mode = ['check', 'accept', 'keep'].includes(b.mode) ? b.mode : 'check';
   let existing = null;
   if (id) {
@@ -106,20 +115,21 @@ async function saveClient(req, env, user, isAdmin, id) {
   const ts = now();
   let saved;
   if (id) {
-    saved = await env.DB.prepare(`UPDATE clients SET updated_at = ?, updated_by = ?, name = ?, company = ?, title = ?, email = ?, notes = ?,
+    saved = await env.DB.prepare(`UPDATE clients SET updated_at = ?, updated_by = ?, name = ?, company = ?, title = ?, email = ?, notes = ?, department = ?,
         line1 = ?, line2 = ?, city = ?, region = ?, postal_code = ?, country = ?, status = ?, kept_as_entered = ?, verification = ?,
         reviewed_by = ?, dedupe_key = ? WHERE id = ? RETURNING *`)
-      .bind(ts, user.email, p.name, p.company, p.title, p.email, p.notes, clean.line1, clean.line2, clean.city, clean.region,
+      .bind(ts, user.email, p.name, p.company, p.title, p.email, p.notes, p.department, clean.line1, clean.line2, clean.city, clean.region,
         clean.postal_code, clean.country, status, kept, verification, stored ? existing.reviewed_by : null, key, id).first();
     await log(env.DB, user.email, 'edited', id, { name: p.name, status });
   } else {
-    saved = await env.DB.prepare(`INSERT INTO clients (created_at, updated_at, added_by, name, company, title, email, notes,
+    saved = await env.DB.prepare(`INSERT INTO clients (created_at, updated_at, added_by, name, company, title, email, notes, department,
         line1, line2, city, region, postal_code, country, status, kept_as_entered, verification, source, dedupe_key)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'single', ?) RETURNING *`)
-      .bind(ts, ts, user.email, p.name, p.company, p.title, p.email, p.notes, clean.line1, clean.line2, clean.city, clean.region,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'single', ?) RETURNING *`)
+      .bind(ts, ts, user.email, p.name, p.company, p.title, p.email, p.notes, p.department, clean.line1, clean.line2, clean.city, clean.region,
         clean.postal_code, clean.country, status, kept, verification, key).first();
     await log(env.DB, user.email, 'added', saved.id, { name: p.name, status });
   }
+  if (saved.added_by === user.email) await env.DB.prepare('UPDATE users SET department = ? WHERE email = ?').bind(p.department, user.email).run();
   return json({ saved: true, client: row(saved), verification: v }, id ? 200 : 201);
 }
 
@@ -157,10 +167,10 @@ async function saveBatch(req, env, user) {
     if (v.status === 'invalid') { skipped.push(r.p.name); return; }
     const a = cleanAddress(r.mode === 'accept' && v.suggestion ? v.suggestion : v.cleaned);
     const status = storedStatus(v, r.mode);
-    stmts.push(env.DB.prepare(`INSERT INTO clients (created_at, updated_at, added_by, name, company, title, email, notes,
+    stmts.push(env.DB.prepare(`INSERT INTO clients (created_at, updated_at, added_by, name, company, title, email, notes, department,
         line1, line2, city, region, postal_code, country, status, kept_as_entered, verification, source, upload_id, dedupe_key)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'bulk', ?, ?)`)
-      .bind(ts, ts, user.email, r.p.name, r.p.company, r.p.title, r.p.email, r.p.notes, a.line1, a.line2, a.city, a.region,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'bulk', ?, ?)`)
+      .bind(ts, ts, user.email, r.p.name, r.p.company, r.p.title, r.p.email, r.p.notes, r.p.department || null, a.line1, a.line2, a.city, a.region,
         a.postal_code, a.country, status, status === 'needs_review' ? 1 : 0, storedVerification(v), uploadId, dedupeKey(r.p.name, a)));
   });
   if (stmts.length) await env.DB.batch(stmts);
@@ -178,11 +188,13 @@ function listQuery(q, user, isAdmin) {
   const st = (q.get('status') || '').split(',').filter((s) => STATUSES.includes(s));
   if (st.length) { where.push(`status IN (${st.map(() => '?').join(',')})`); args.push(...st); }
   if (q.get('country')) { where.push('country = ?'); args.push(q.get('country').toUpperCase()); }
+  if (q.get('department') === 'Not set') where.push("(department IS NULL OR department = '')");
+  else if (q.get('department')) { where.push('department = ?'); args.push(q.get('department')); }
   if (q.get('upload')) { where.push('upload_id = ?'); args.push(parseInt(q.get('upload'), 10) || 0); }
   if (q.get('q')) {
     const like = `%${q.get('q')}%`;
-    where.push('(name LIKE ? OR company LIKE ? OR line1 LIKE ? OR city LIKE ? OR postal_code LIKE ? OR added_by LIKE ?)');
-    args.push(like, like, like, like, like, like);
+    where.push('(name LIKE ? OR company LIKE ? OR line1 LIKE ? OR city LIKE ? OR postal_code LIKE ? OR added_by LIKE ? OR department LIKE ?)');
+    args.push(like, like, like, like, like, like, like);
   }
   return { sql: where.length ? 'WHERE ' + where.join(' AND ') : '', args };
 }
@@ -196,7 +208,7 @@ async function listClients(url, env, user, isAdmin) {
 const CSV_COLS = [
   ['Name', 'name'], ['Company', 'company'], ['Title', 'title'], ['Address line 1', 'line1'], ['Address line 2', 'line2'],
   ['City', 'city'], ['State / region', 'region'], ['Postal code', 'postal_code'], ['Country', 'country_name'], ['Country code', 'country'], ['Email', 'email'],
-  ['Notes', 'notes'], ['Address status', 'status'], ['Added by', 'added_by'], ['Added on', 'created_at'],
+  ['Notes', 'notes'], ['Department', 'department'], ['Address status', 'status'], ['Added by', 'added_by'], ['Added on', 'created_at'],
 ];
 const csvCell = (v) => {
   let s = String(v ?? '');
@@ -220,7 +232,7 @@ async function exportCsv(url, env, user) {
 }
 
 async function overview(env) {
-  const [tot, people, recent, uploads] = await env.DB.batch([
+  const [tot, people, recent, uploads, depts] = await env.DB.batch([
     env.DB.prepare(`SELECT COUNT(*) AS total, SUM(status = 'verified') AS verified, SUM(status = 'reviewed') AS reviewed,
       SUM(status = 'needs_review') AS needs_review, SUM(status = 'unverified') AS unverified, COUNT(DISTINCT added_by) AS contributors,
       COUNT(DISTINCT country) AS countries FROM clients`),
@@ -228,9 +240,10 @@ async function overview(env) {
       MIN(created_at) AS first_at, MAX(created_at) AS last_at FROM clients GROUP BY added_by ORDER BY total DESC`),
     env.DB.prepare('SELECT * FROM activity ORDER BY created_at DESC, id DESC LIMIT 40'),
     env.DB.prepare('SELECT * FROM uploads ORDER BY created_at DESC LIMIT 50'),
+    env.DB.prepare(`SELECT COALESCE(NULLIF(department, ''), 'Not set') AS department, COUNT(*) AS total FROM clients GROUP BY 1 ORDER BY total DESC`),
   ]);
   return json({
-    totals: tot.results[0], contributors: people.results, uploads: uploads.results,
+    totals: tot.results[0], contributors: people.results, uploads: uploads.results, departments: depts.results,
     activity: recent.results.map((a) => ({ ...a, detail: JSON.parse(a.detail || '{}') })),
   });
 }
@@ -252,13 +265,26 @@ export async function handleApi(request, env, path) {
     const origin = request.headers.get('origin');
     if (origin && new URL(origin).host !== url.host) return err(403, 'Cross-origin request blocked');
     const s = await settings(env.DB);
-    if (s.closed && !isAdmin && parts[0] !== 'check') return err(403, 'The card list is closed for this year. Contact the card team to make changes.');
+    if (s.closed && !isAdmin && parts[0] !== 'check' && parts[0] !== 'tutorial') return err(403, 'The card list is closed for this year. Contact the card team to make changes.');
   }
 
   try {
     if (parts[0] === 'me' && m === 'GET') {
-      const mine = await env.DB.prepare('SELECT COUNT(*) AS n FROM clients WHERE added_by = ?').bind(user.email).first();
-      return json({ email: user.email, role, isAdmin, settings: await settings(env.DB), verifier: env.GOOGLE_MAPS_API_KEY ? 'google' : 'basic', count: mine.n });
+      const ts = now();
+      await env.DB.prepare('INSERT INTO users (email, first_seen, last_seen) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET last_seen = excluded.last_seen')
+        .bind(user.email, ts, ts).run();
+      const [mine, u] = await env.DB.batch([
+        env.DB.prepare('SELECT COUNT(*) AS n FROM clients WHERE added_by = ?').bind(user.email),
+        env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(user.email),
+      ]);
+      const me = u.results[0] || {};
+      return json({ email: user.email, via: user.via, role, isAdmin, settings: await settings(env.DB),
+        verifier: env.GOOGLE_MAPS_API_KEY ? 'google' : 'basic', count: mine.results[0].n,
+        tutorialDone: !!me.tutorial_done_at, department: me.department || '' });
+    }
+    if (parts[0] === 'tutorial' && m === 'POST') {
+      await env.DB.prepare('UPDATE users SET tutorial_done_at = ? WHERE email = ?').bind(now(), user.email).run();
+      return json({ ok: true });
     }
     if (parts[0] === 'check' && m === 'POST') {
       if (parts[1] === 'batch') return checkBatch(request, env);
@@ -297,6 +323,10 @@ export async function handleApi(request, env, path) {
         if ('deadline' in b) stmts.push(['deadline', /^\d{4}-\d{2}-\d{2}$/.test(b.deadline) ? b.deadline : '']);
         if ('closed' in b) stmts.push(['closed', b.closed ? '1' : '0']);
         if ('message' in b) stmts.push(['message', String(b.message || '').slice(0, 500)]);
+        if ('departments' in b) {
+          const list = [...new Set((Array.isArray(b.departments) ? b.departments : []).map((d) => clip(d, 100)).filter(Boolean))].slice(0, 60);
+          stmts.push(['departments', JSON.stringify(list.length ? list : DEFAULT_DEPARTMENTS)]);
+        }
         await env.DB.batch(stmts.map(([k, v]) => env.DB.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').bind(k, v)));
         return json({ settings: await settings(env.DB) });
       }

@@ -1,3 +1,5 @@
+import { sessionUser } from './signin.js';
+
 // Identity comes from Cloudflare Access (every overyondrdev.com host is behind it).
 // The Cf-Access-Jwt-Assertion header is verified against the team's signing keys and the app's AUD,
 // so the email can't be spoofed. Local development (`wrangler dev`) may set DEV_EMAIL in .dev.vars.
@@ -36,17 +38,18 @@ async function verify(token, env) {
   return payload;
 }
 
+// Signed-in person: Cloudflare Access (when it is in front of this host), else our own email-code session.
 export async function currentUser(request, env) {
   // DEV_EMAIL is only ever set in a local .dev.vars file (never in wrangler.jsonc / production).
-  if (env.DEV_EMAIL) return { email: env.DEV_EMAIL.toLowerCase() };
+  if (env.DEV_EMAIL) return { email: env.DEV_EMAIL.toLowerCase(), via: 'dev' };
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
-  if (!token) return null;
-  try {
-    const payload = await verify(token, env);
-    return payload && payload.email ? { email: String(payload.email).toLowerCase() } : null;
-  } catch {
-    return null;
+  if (token) {
+    try {
+      const payload = await verify(token, env);
+      if (payload && payload.email) return { email: String(payload.email).toLowerCase(), via: 'access' };
+    } catch { /* fall through to the session cookie */ }
   }
+  return sessionUser(request, env);
 }
 
 export async function roleOf(db, email) {

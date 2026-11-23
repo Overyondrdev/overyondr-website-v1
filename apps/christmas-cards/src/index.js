@@ -1,11 +1,15 @@
 // Yondr Christmas cards (cards.overyondrdev.com). Behind Cloudflare Access like all of overyondrdev.com.
 //   /        the staff page: add clients one by one or upload a list, see and edit your own
 //   /admin   the card team's view: everyone's clients, who added them, export, settings
+//   /signin  email + one-time code sign-in (src/signin.js), used when Cloudflare Access isn't in front
 //   /api/*   JSON API (src/api.js)
 import { handleApi } from './api.js';
+import { handleSignin } from './signin.js';
+import { currentUser } from './auth.js';
 import FILES from './static.generated.js';
 
-const PAGES = { '/': '/index.html', '/admin': '/admin.html', '/admin/': '/admin.html' };
+const PAGES = { '/': '/index.html', '/admin': '/admin.html', '/admin/': '/admin.html', '/signin': '/signin.html' };
+const PROTECTED = new Set(['/', '/admin', '/admin/', '/index.html', '/admin.html']);
 const bytes = new Map();
 function serveStatic(request, path) {
   const f = FILES[PAGES[path] || path];
@@ -26,7 +30,7 @@ const SECURITY = {
 };
 
 function withHeaders(res) {
-  const out = new Response(res.body, res);
+  const out = new Response(res.body, res); // copy: redirect responses have immutable headers
   for (const [k, v] of Object.entries(SECURITY)) out.headers.set(k, v);
   return out;
 }
@@ -35,8 +39,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     let res;
-    if (url.pathname.startsWith('/api/')) res = await handleApi(request, env, url.pathname.slice(5));
-    else {
+    if (url.pathname.startsWith('/api/signin/')) res = await handleSignin(request, env, url.pathname.slice(12));
+    else if (url.pathname.startsWith('/api/')) res = await handleApi(request, env, url.pathname.slice(5));
+    else if (PROTECTED.has(url.pathname) && !(await currentUser(request, env))) {
+      // Not signed in: show the sign-in page, then come back here.
+      const next = url.pathname === '/' ? '' : '?next=' + encodeURIComponent(url.pathname);
+      return withHeaders(Response.redirect(new URL('/signin' + next, url), 302));
+    } else if (url.pathname === '/signin' && (await currentUser(request, env))) {
+      const next = url.searchParams.get('next');
+      return Response.redirect(new URL(next && /^\/[a-z]*$/.test(next) ? next : '/', url), 302);
+    } else {
       res = serveStatic(request, url.pathname);
       if (!res) return Response.redirect(new URL('/', url), 302);
     }
