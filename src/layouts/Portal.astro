@@ -1,0 +1,60 @@
+---
+// Shell for the overyondrdev.com portal pages (not part of the V1 site).
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title}</title>
+    <link rel="stylesheet" href="/css/squarespace/fonts.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    <style>
+      :root {
+        --bg: #0f1412; --fg: #f4f6f4; --muted: #a9b3ad; --accent: #3ccf7a; --accent-ink: #06210f;
+        --card: #17201c; --line: #2a3530; --ring: #8ff0b6;
+      }
+      @media (prefers-color-scheme: light) {
+        :root { --bg: #f4f6f4; --fg: #0f1412; --muted: #4c5a52; --accent: #138a45; --accent-ink: #ffffff;
+                --card: #ffffff; --line: #d6ddd8; --ring: #138a45; }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; }
+      body {
+        background: var(--bg); color: var(--fg);
+        font-family: 'nunito-sans', system-ui, sans-serif; line-height: 1.5;
+        display: grid; place-items: center; min-height: 100vh; padding: 32px 16px;
+      }
+      main { width: 100%; max-width: 760px; text-align: center; }
+      .kicker { font-family: 'Oswald', sans-serif; letter-spacing: .18em; text-transform: uppercase;
+                color: var(--muted); font-size: .85rem; margin: 0 0 12px; }
+      h1 { font-family: 'Oswald', sans-serif; font-weight: 700; text-transform: uppercase;
+           font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; margin: 0 0 16px; letter-spacing: .02em; }
+      .lede { color: var(--muted); margin: 0 auto 40px; max-width: 46ch; }
+      .choices { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+      .choice {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left;
+        padding: 28px 24px; border-radius: 16px; text-decoration: none; color: inherit;
+        background: var(--card); border: 1px solid var(--line);
+        transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+      }
+      .choice:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 10px 30px rgb(0 0 0 / .18); }
+      .choice:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+      .choice .label { font-family: 'Oswald', sans-serif; font-weight: 700; text-transform: uppercase;
+                       font-size: 1.6rem; letter-spacing: .03em; }
+      .choice .desc { color: var(--muted); font-size: .95rem; }
+      .choice .go { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; font-weight: 700;
+                    background: var(--accent); color: var(--accent-ink); padding: 10px 18px; border-radius: 999px; }
+      .badge { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+               border: 1px solid var(--line); color: var(--muted); padding: 2px 8px; border-radius: 999px; }
+      footer { margin-top: 40px; color: var(--muted); font-size: .85rem; }
+      a.back { color: var(--accent); }
+    </style>
+  </head>
+  <body>
+    <main><slot /></main>
+  </body>
+</html>

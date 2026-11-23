@@ -1,0 +1,18 @@
+---
+// Every V1 page, generated from src/v1/pages/*.json + *.html.
+import V1Page from '../layouts/V1Page.astro';
+
+export function getStaticPaths() {
+  const metas = import.meta.glob('../v1/pages/**/*.json', { eager: true, import: 'default' });
+  const bodies = import.meta.glob('../v1/pages/**/*.html', { eager: true, query: '?raw', import: 'default' });
+  return Object.entries(metas)
+    .map(([file, meta]) => [file.replace('../v1/pages/', '').replace(/\.json$/, ''), file, meta] as const)
+    .filter(([key]) => key !== '404')
+    .map(([key, file, meta]) => ({
+      params: { slug: key === 'index' ? undefined : key },
+      props: { meta, body: bodies[file.replace(/\.json$/, '.html')] as string },
+    }));
+}
+const { meta, body } = Astro.props;
+---
+<V1Page meta={meta} body={body} />

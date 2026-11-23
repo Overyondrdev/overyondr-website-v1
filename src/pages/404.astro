@@ -1,7 +1,6 @@
 ---
-import Base from '../layouts/Base.astro';
+import V1Page from '../layouts/V1Page.astro';
+import meta from '../v1/pages/404.json';
+import body from '../v1/pages/404.html?raw';
 ---
-<Base title="Page not found — Yondr">
-  <h1>Page not found</h1>
-  <p><a href="/">Go to the homepage</a></p>
-</Base>
+<V1Page meta={meta} body={body} />

@@ -1,0 +1,26 @@
+---
+// Renders one page migrated from Squarespace (see scripts/migrate/).
+// meta: head data from src/v1/pages/<page>.json; body: that page's <body> HTML.
+import site from '../v1/site.json';
+interface Props { meta: any; body: string }
+const { meta, body } = Astro.props;
+---
+<!doctype html>
+<html lang={meta.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{meta.title}</title>
+    {meta.canonical && <link rel="canonical" href={meta.canonical} />}
+    {meta.icon && <link rel="icon" href={meta.icon} />}
+    {meta.metas.map((m: Record<string, string>) => <meta {...m} />)}
+    <link rel="stylesheet" href="/css/squarespace/fonts.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    {site.css.map((href: string) => <link rel="stylesheet" href={href} />)}
+    <link rel="stylesheet" href="/css/v1.css" />
+    {meta.headStyles.map((css: string) => <style is:inline set:html={css} />)}
+    {meta.jsonld.map((json: string) => <script is:inline type="application/ld+json" set:html={json} />)}
+    <script is:inline src="/js/site.js" defer></script>
+  </head>
+  <body id={meta.bodyId} class={meta.bodyClass} set:html={body} />
+</html>

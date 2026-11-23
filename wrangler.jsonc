@@ -2,19 +2,26 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "overyondr-website-v1",
   "compatibility_date": "2026-11-20",
-  // Static assets only: no Worker script needed for V1.
+  // Tiny Worker that routes by hostname (portal / V1 / V2) and serves query-string pages.
+  "main": "src/worker/index.js",
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
     "not_found_handling": "404-page",
     "html_handling": "drop-trailing-slash"
   },
   "observability": { "enabled": true },
-  // Pull requests get a workers.dev preview URL from Cloudflare's preview builds.
-  "preview_urls": true,
-  // Dev domain: every deploy of main is served here.
+  // No public *.workers.dev or preview URLs: they would bypass the Cloudflare Access login.
+  "workers_dev": false,
+  "preview_urls": false,
+  // Dev domains. overyondrdev.com = portal, v1. = migrated site, v2. = redesign placeholder.
+  // All are behind Cloudflare Access (one-time code to @overyondr.com email addresses).
   // The production domains (overyondr.com, www) are added only at cutover, after sign-off.
   "routes": [
     { "pattern": "overyondrdev.com", "custom_domain": true },
-    { "pattern": "www.overyondrdev.com", "custom_domain": true }
+    { "pattern": "www.overyondrdev.com", "custom_domain": true },
+    { "pattern": "v1.overyondrdev.com", "custom_domain": true },
+    { "pattern": "v2.overyondrdev.com", "custom_domain": true }
   ]
 }

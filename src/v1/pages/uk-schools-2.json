@@ -1,0 +1,71 @@
+{
+ "path": "/uk-schools-2",
+ "title": "Phone-Free Schools UK — Yondr",
+ "metas": [
+  {
+   "property": "og:site_name",
+   "content": "Yondr"
+  },
+  {
+   "property": "og:title",
+   "content": "Phone-Free Schools UK — Yondr"
+  },
+  {
+   "property": "og:url",
+   "content": "https://www.overyondr.com/uk-schools-2"
+  },
+  {
+   "property": "og:type",
+   "content": "website"
+  },
+  {
+   "property": "og:description",
+   "content": "Yondr has developed a unique product and program to allow schools to become phone-free, from arrival to dismissal :: Cell Phone Lockers For Classroom | Cell Phone Lock Bags For Schools | Locking Cell Phone Pouches For Schools | Cell Phone Pouch Lock For Schools"
+  },
+  {
+   "itemprop": "name",
+   "content": "Phone-Free Schools UK — Yondr"
+  },
+  {
+   "itemprop": "url",
+   "content": "https://www.overyondr.com/uk-schools-2"
+  },
+  {
+   "itemprop": "description",
+   "content": "Yondr has developed a unique product and program to allow schools to become phone-free, from arrival to dismissal :: Cell Phone Lockers For Classroom | Cell Phone Lock Bags For Schools | Locking Cell Phone Pouches For Schools | Cell Phone Pouch Lock For Schools"
+  },
+  {
+   "name": "twitter:title",
+   "content": "Phone-Free Schools UK — Yondr"
+  },
+  {
+   "name": "twitter:url",
+   "content": "https://www.overyondr.com/uk-schools-2"
+  },
+  {
+   "name": "twitter:card",
+   "content": "summary"
+  },
+  {
+   "name": "twitter:description",
+   "content": "Yondr has developed a unique product and program to allow schools to become phone-free, from arrival to dismissal :: Cell Phone Lockers For Classroom | Cell Phone Lock Bags For Schools | Locking Cell Phone Pouches For Schools | Cell Phone Pouch Lock For Schools"
+  },
+  {
+   "name": "description",
+   "content": "Yondr has developed a unique product and program to allow schools to become phone-free, from arrival to dismissal :: Cell Phone Lockers For Classroom | Cell Phone Lock Bags For Schools | Locking Cell Phone Pouches For Schools | Cell Phone Pouch Lock For Schools"
+  }
+ ],
+ "canonical": "https://www.overyondr.com/uk-schools-2",
+ "icon": "/images/favicon-1161d863.webp",
+ "jsonld": [
+  "{\"url\":\"https://www.overyondr.com\",\"name\":\"Yondr\",\"description\":\"\",\"image\":\"/images/green-lockup-spaces-32c41591.webp\",\"@context\":\"http://schema.org\",\"@type\":\"WebSite\"}",
+  "{\"legalName\":\"Yondr. Inc\",\"address\":\"2332 South Centinela Avenue\\nLos Angeles, CA, 90064\\nUnited States\",\"email\":\"team@overyondr.com\",\"telephone\":\"\",\"sameAs\":[\"https://www.linkedin.com/company/overyondr/\"],\"@context\":\"http://schema.org\",\"@type\":\"Organization\"}",
+  "{\"address\":\"2332 South Centinela Avenue\\nLos Angeles, CA, 90064\\nUnited States\",\"image\":\"/files/file-09a99c15.webp\",\"name\":\"Yondr. Inc\",\"openingHours\":\"Mo 09:00-17:00, Tu 09:00-17:00, We 09:00-17:00, Th 09:00-17:00, Fr 09:00-17:00, , \",\"@context\":\"http://schema.org\",\"@type\":\"LocalBusiness\"}"
+ ],
+ "headStyles": [
+  "\n  #header,\n  #footer-sections,\n  footer.sections,\n  .footer-sections,\n  #footer { display: none !important; }\n\n  .fe-block:has(.sqs-block-code) { height: auto !important; align-self: start; }\n  .page-section:has(.sqs-block-code) { min-height: 0 !important; }\n  .page-section:has(.sqs-block-code) .fluid-engine { grid-template-rows: auto !important; }\n\n  #uk-legal-bar {\n    display: none;\n    background: #2A2F3D;\n    color: #ffffff;\n    padding: 28px 20px;\n    text-align: center;\n    font-family: inherit;\n    font-size: 13px;\n    line-height: 1.8;\n  }\n  #uk-legal-bar .inner { max-width: 640px; margin: 0 auto; }\n  #uk-legal-bar .muted { opacity: 0.7; }\n"
+ ],
+ "htmlLang": "en-US",
+ "bodyId": null,
+ "bodyClass": ""
+}

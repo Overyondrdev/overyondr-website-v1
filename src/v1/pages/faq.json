@@ -1,0 +1,57 @@
+{
+ "path": "/faq",
+ "title": "Frequently Asked Questions — Yondr",
+ "metas": [
+  {
+   "property": "og:site_name",
+   "content": "Yondr"
+  },
+  {
+   "property": "og:title",
+   "content": "Frequently Asked Questions — Yondr"
+  },
+  {
+   "property": "og:url",
+   "content": "https://www.overyondr.com/faq"
+  },
+  {
+   "property": "og:type",
+   "content": "website"
+  },
+  {
+   "itemprop": "name",
+   "content": "Frequently Asked Questions — Yondr"
+  },
+  {
+   "itemprop": "url",
+   "content": "https://www.overyondr.com/faq"
+  },
+  {
+   "name": "twitter:title",
+   "content": "Frequently Asked Questions — Yondr"
+  },
+  {
+   "name": "twitter:url",
+   "content": "https://www.overyondr.com/faq"
+  },
+  {
+   "name": "twitter:card",
+   "content": "summary"
+  },
+  {
+   "name": "description",
+   "content": ""
+  }
+ ],
+ "canonical": "https://www.overyondr.com/faq",
+ "icon": "/images/favicon-1161d863.webp",
+ "jsonld": [
+  "{\"url\":\"https://www.overyondr.com\",\"name\":\"Yondr\",\"description\":\"\",\"image\":\"/images/green-lockup-spaces-32c41591.webp\",\"@context\":\"http://schema.org\",\"@type\":\"WebSite\"}",
+  "{\"legalName\":\"Yondr. Inc\",\"address\":\"2332 South Centinela Avenue\\nLos Angeles, CA, 90064\\nUnited States\",\"email\":\"team@overyondr.com\",\"telephone\":\"\",\"sameAs\":[\"https://www.linkedin.com/company/overyondr/\"],\"@context\":\"http://schema.org\",\"@type\":\"Organization\"}",
+  "{\"address\":\"2332 South Centinela Avenue\\nLos Angeles, CA, 90064\\nUnited States\",\"image\":\"/files/file-09a99c15.webp\",\"name\":\"Yondr. Inc\",\"openingHours\":\"Mo 09:00-17:00, Tu 09:00-17:00, We 09:00-17:00, Th 09:00-17:00, Fr 09:00-17:00, , \",\"@context\":\"http://schema.org\",\"@type\":\"LocalBusiness\"}"
+ ],
+ "headStyles": [],
+ "htmlLang": "en-US",
+ "bodyId": "collection-65008259305188755d07df0e",
+ "bodyClass": "primary-button-style-solid primary-button-shape-rounded secondary-button-style-outline secondary-button-shape-rounded tertiary-button-style-outline tertiary-button-shape-underline form-field-style-outline form-field-shape-square form-field-border-all form-field-hover-focus-opacity form-field-checkbox-type-icon form-field-checkbox-fill-outline form-field-checkbox-color-normal form-field-checkbox-shape-square form-field-checkbox-layout-stack form-field-radio-type-icon form-field-radio-fill-outline form-field-radio-color-normal form-field-radio-shape-square form-field-radio-layout-stack form-field-survey-fill-outline form-field-survey-color-normal form-field-survey-shape-square form-submit-button-style-bar tweak-global-animations-enabled tweak-global-animations-animation-type-scale tweak-global-animations-animation-curve-ease image-block-poster-text-alignment-center image-block-card-content-position-center image-block-card-text-alignment-left image-block-overlap-content-position-center image-block-overlap-text-alignment-left image-block-collage-content-position-center image-block-collage-text-alignment-left image-block-stack-text-alignment-left tweak-blog-alternating-side-by-side-width-full tweak-blog-alternating-side-by-side-image-aspect-ratio-11-square tweak-blog-alternating-side-by-side-text-alignment-left tweak-blog-alternating-side-by-side-read-more-style-show tweak-blog-alternating-side-by-side-image-text-alignment-middle tweak-blog-alternating-side-by-side-delimiter-bullet tweak-blog-alternating-side-by-side-meta-position-top tweak-blog-alternating-side-by-side-primary-meta-categories tweak-blog-alternating-side-by-side-secondary-meta-date tweak-blog-alternating-side-by-side-excerpt-show form-use-theme-colors tweak-global-animations-complexity-level-detailed tweak-global-animations-animation-style-fade tweak-blog-masonry-width-full tweak-blog-masonry-text-alignment-left tweak-blog-masonry-primary-meta-categories tweak-blog-masonry-secondary-meta-date tweak-blog-masonry-meta-position-top tweak-blog-masonry-read-more-style-show tweak-blog-masonry-delimiter-space tweak-blog-masonry-image-placement-above tweak-blog-masonry-excerpt-show tweak-portfolio-grid-overlay-width-full tweak-portfolio-grid-overlay-height-large tweak-portfolio-grid-overlay-image-aspect-ratio-11-square tweak-portfolio-grid-overlay-text-placement-center tweak-portfolio-grid-overlay-show-text-after-hover tweak-blog-single-column-width-full tweak-blog-single-column-text-alignment-center tweak-blog-single-column-image-placement-above tweak-blog-single-column-delimiter-bullet tweak-blog-single-column-read-more-style-show tweak-blog-single-column-primary-meta-date tweak-blog-single-column-secondary-meta-categories tweak-blog-single-column-meta-position-top tweak-blog-single-column-content-title-only header-width-full tweak-transparent-header tweak-fixed-header-style-basic tweak-blog-item-width-medium tweak-blog-item-text-alignment-left tweak-blog-item-meta-position-above-title tweak-blog-item-show-categories tweak-blog-item-delimiter-bullet tweak-blog-side-by-side-width-full tweak-blog-side-by-side-image-placement-left tweak-blog-side-by-side-image-aspect-ratio-11-square tweak-blog-side-by-side-primary-meta-categories tweak-blog-side-by-side-secondary-meta-date tweak-blog-side-by-side-meta-position-top tweak-blog-side-by-side-text-alignment-left tweak-blog-side-by-side-image-text-alignment-middle tweak-blog-side-by-side-read-more-style-show tweak-blog-side-by-side-delimiter-bullet tweak-blog-side-by-side-excerpt-show tweak-events-stacked-width-full tweak-events-stacked-height-large tweak-events-stacked-show-thumbnails tweak-events-stacked-thumbnail-size-32-standard tweak-events-stacked-date-style-with-text tweak-events-stacked-show-time tweak-events-stacked-show-location tweak-events-stacked-show-excerpt tweak-blog-basic-grid-width-inset tweak-blog-basic-grid-image-aspect-ratio-169-widescreen tweak-blog-basic-grid-text-alignment-left tweak-blog-basic-grid-delimiter-bullet tweak-blog-basic-grid-image-placement-above tweak-blog-basic-grid-read-more-style-show tweak-blog-basic-grid-primary-meta-date tweak-blog-basic-grid-secondary-meta-categories tweak-blog-basic-grid-excerpt-show tweak-portfolio-grid-basic-width-full tweak-portfolio-grid-basic-height-large tweak-portfolio-grid-basic-image-aspect-ratio-11-square tweak-portfolio-grid-basic-text-alignment-left tweak-portfolio-grid-basic-hover-effect-fade header-overlay-alignment-center tweak-portfolio-index-background-link-format-stacked tweak-portfolio-index-background-width-full tweak-portfolio-index-background-height-large tweak-portfolio-index-background-vertical-alignment-middle tweak-portfolio-index-background-horizontal-alignment-center tweak-portfolio-index-background-delimiter-none tweak-portfolio-index-background-animation-type-fade tweak-portfolio-index-background-animation-duration-medium tweak-portfolio-hover-follow-layout-inline tweak-portfolio-hover-follow-delimiter-bullet tweak-portfolio-hover-follow-animation-type-fade tweak-portfolio-hover-follow-animation-duration-fast tweak-portfolio-hover-static-layout-inline tweak-portfolio-hover-static-front tweak-portfolio-hover-static-delimiter-hyphen tweak-portfolio-hover-static-animation-type-fade tweak-portfolio-hover-static-animation-duration-fast hide-opentable-icons opentable-style-dark tweak-product-quick-view-button-style-floating tweak-product-quick-view-button-position-bottom tweak-product-quick-view-lightbox-excerpt-display-truncate tweak-product-quick-view-lightbox-show-arrows tweak-product-quick-view-lightbox-show-close-button tweak-product-quick-view-lightbox-controls-weight-light native-currency-code-usd collection-type-page collection-layout-default collection-65008259305188755d07df0e mobile-style-available sqs-seven-one"
+}
