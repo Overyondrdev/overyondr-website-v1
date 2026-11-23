@@ -1,4 +1,8 @@
 # Assets referenced by overyondr.com that Squarespace itself returns 404 for (broken on the live site too).
+http://static1.squarespace.com/static/64e4ceeeb7f5fd21cba8b71c/679d0b26b67eb3548586fbfd/679d0c5914269707249277ab/1748966033952/Screenshot+2025-01-31+at+12.16.18.png
+http://static1.squarespace.com/static/64e4ceeeb7f5fd21cba8b71c/679d0b26b67eb3548586fbfd/679d0ca5a3d1a10b71c5c6ae/1748966033952/Screenshot+2025-01-31+at+12.16.18.png
+http://static1.squarespace.com/static/64e4ceeeb7f5fd21cba8b71c/679d0b26b67eb3548586fbfd/679d0d06cff90b2c18ace322/1748966033952/Screenshot+2025-01-31+at+12.16.18.png
+http://static1.squarespace.com/static/64e4ceeeb7f5fd21cba8b71c/679d0b26b67eb3548586fbfd/679d0d1aefa7bb02171249a9/1748966033952/Screenshot+2025-01-31+at+12.16.18.png
 https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1694535154272-ZQRD34VU71K9D5WEMA52/Gabriela+Lazaro+.jpeg
 https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1694535155452-7IIFUFPL1DQLXK6KPKL0/Hector+Castillo+.jpeg
 https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1694535156992-NV1IS9S5Z0HS9NG3BNGM/Isabela+Santafe+Velandia+.jpeg
@@ -43,7 +47,12 @@ https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/170570185
 https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1705701970860-38U01CNQP8NEIRTT090B/Dxx76w_ldc5_vskuCu0lX8_LqdvKTbE1KQil6u7s0FM.jpeg
 https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1705701982774-VGSSW0ZU2SADSFSALCVU/sfooksM-53_x6kUlXKVl3lSONN3ryADpWYUcfp6XAnc.png
 https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1705702181984-ZIE3S03EXIB4AGKB9IUV/F5WndWwRJKkU-y-D8ynPgh93Ho1sPbxYE01LwGKCrbE.png
+https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1738354608324-6IT8XJULAV0N545CJGF3/Screenshot+2025-01-31+at+12.16.18.png
+https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1738354677157-M5ZKZCK80UPWCBW77K6G/Screenshot+2025-01-31+at+12.16.18.png
+https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1738354750727-KIENZKRQBCNAUY2Y8D1V/Screenshot+2025-01-31+at+12.16.18.png
+https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/1738354817125-U1QDE75OED3XM3SAPLGU/Screenshot+2025-01-31+at+12.16.18.png
 https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/f41abe64-311b-4bb3-acb1-148c9b47b5fe/New_York_Times_logo_variation.jpeg
 https://images.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/f41abe64-311b-4bb3-acb1-148c9b47b5fe/New_York_Times_logo_variation.jpeg"
 https://static1.squarespace.com/static/59ced25bedaed82d1188c8be/t/5f6a8027c1c17b6dc548a48c/1604090047198/Yondr+-+Feel+the+Now.m4a
 https://static1.squarespace.com/static/59ced25bedaed82d1188c8be/t/5f776f36aa31f82fe737b068/1604090047203/Easy+On+Me_+Bradley+Arthur+Mawell.mp3
+https://video.squarespace-cdn.com/content/v1/64e4ceeeb7f5fd21cba8b71c/389385a3-efa6-4e93-8632-9e680a9fe2ff

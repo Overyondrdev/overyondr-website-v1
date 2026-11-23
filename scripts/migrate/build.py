@@ -227,6 +227,7 @@ def rewrite_text(text):
         loc = localize(m.group(0))
         return loc or m.group(0)
     text = ASSET_URL.sub(asset, text)
+    text = VIDEO_BASE.sub(lambda m: safe_video(m.group(0))[0].replace('.mp4', ''), text)
     return text
 
 
@@ -342,6 +343,8 @@ def body_html(soup):
             del el[attr]
     for el in body.find_all(attrs={'data-config-video': True}):
         native_video(soup, el)
+    for el in body.find_all(attrs={'data-config-native-video': True}):
+        background_video(soup, el)
     for el in body.find_all(True):
         for attr in ('href',):
             if el.has_attr(attr):
@@ -423,9 +426,9 @@ def localize_video(base):
             if apl:
                 inputs += ['-allowed_extensions', 'ALL', '-i', apl]
             maps = ['-map', '0:v:0'] + (['-map', '1:a:0'] if apl else ['-map', '0:a?'])
-            for crf in (24, 28, 32):
+            for height, crf in ((720, 24), (720, 28), (720, 32), (540, 30), (480, 32)):
                 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', *inputs, *maps,
-                                '-vf', 'scale=-2:min(720\\,ih)', '-c:v', 'libx264', '-preset', 'slow', '-crf', str(crf),
+                                '-vf', f'scale=-2:min({height}\\,ih)', '-c:v', 'libx264', '-preset', 'slow', '-crf', str(crf),
                                 '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', cached + '.tmp.mp4'], check=True)
                 if os.path.getsize(cached + '.tmp.mp4') <= VIDEO_MAX_BYTES:
                     break
@@ -441,6 +444,35 @@ def localize_video(base):
     return rel, poster
 
 
+VIDEO_BASE = re.compile(r'https://video\.squarespace-cdn\.com/content/v1/[^/"\s]+/[0-9a-f-]{36}')
+
+
+def safe_video(base):
+    """localize_video, but a video Squarespace no longer has (404) is recorded as missing instead of failing."""
+    try:
+        return localize_video(base)
+    except urllib.error.HTTPError:
+        with _lock:
+            _missing.add(base)
+        return '/files/_missing/video.mp4', None
+
+
+def background_video(soup, el):
+    """Section background video (Squarespace renders it with JS): autoplaying, muted, looping, cover."""
+    m = VIDEO_BASE.search(el['data-config-native-video'])
+    del el['data-config-native-video']
+    if not m:
+        return
+    src, poster = safe_video(m.group(0))
+    video = soup.new_tag('video', src=src, autoplay='', muted='', loop='', playsinline='', preload='auto')
+    video['aria-hidden'] = 'true'
+    video['style'] = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;'
+    if poster:
+        video['poster'] = poster
+    el.clear()
+    el.append(video)
+
+
 def native_video(soup, el):
     """Replace a Squarespace native-video player (rendered by their JS) with a plain <video>."""
     try:
@@ -451,7 +483,7 @@ def native_video(soup, el):
     base = (cfg.get('alexandriaUrl') or '').replace('/{variant}', '')
     if 'video.squarespace-cdn.com' not in base:
         return
-    src, poster = localize_video(base)
+    src, poster = safe_video(base)
     video = soup.new_tag('video', src=src, preload='metadata', playsinline='')
     video['style'] = 'width:100%;height:100%;display:block;object-fit:cover;'
     if poster:

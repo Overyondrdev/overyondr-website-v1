@@ -96,3 +96,9 @@ body[class*="tweak-global-animations-animation-type"] section > .content-wrapper
   .v1-search-img { flex-basis: auto; width: 100%; height: 200px; }
   .v1-search-form input { font-size: 22px; }
 }
+
+/* Gallery sections, "strips" layout */
+.v1-strips { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--v1-gap); }
+.v1-strips .gallery-strips-item { position: relative; margin: 0; overflow: hidden; }
+.v1-strips .gallery-strips-item-wrapper { position: absolute; inset: 0; }
+.v1-strips img { width: 100%; height: 100%; display: block; }

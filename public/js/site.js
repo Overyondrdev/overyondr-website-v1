@@ -308,6 +308,70 @@
     });
   }
 
+  /* ---- Gallery sections, "strips" layout (justified rows; Squarespace computed sizes in JS) ---- */
+  function galleryStrips() {
+    $$('.gallery-strips').forEach(function (g) {
+      var props = {};
+      try { props = JSON.parse(g.getAttribute('data-props') || '{}'); } catch (e) { /* defaults */ }
+      var h = 100 + (props.rowHeight || 50) * 5;
+      var wrap = $('.gallery-strips-wrapper', g) || g;
+      wrap.classList.add('v1-strips');
+      wrap.style.setProperty('--v1-gap', Math.round((props.gutter || 20) / 2) + 'px');
+      $$('.gallery-strips-item', g).forEach(function (fig) {
+        var img = $('img', fig);
+        if (!img) return;
+        var d = (img.getAttribute('data-image-dimensions') || '1x1').split('x');
+        var ar = (parseFloat(d[0]) / parseFloat(d[1])) || 1;
+        fig.style.width = 'min(100%, ' + Math.round(ar * h) + 'px)';
+        fig.style.aspectRatio = String(ar);
+        loadImg(img, true);
+      });
+    });
+  }
+
+  /* ---- Text highlights (marker / underline), styled from each text block's TextAttributes JSON ---- */
+  function textHighlights() {
+    var attrs = {};
+    $$('script.TextAttributes-props').forEach(function (s) {
+      try { JSON.parse(s.textContent).forEach(function (a) { attrs[a.id] = a; }); } catch (e) { /* ignore */ }
+    });
+    var color = function (c) {
+      if (!c) return 'hsla(var(--accent-hsl), 1)';
+      if (c.type === 'SITE_PALETTE_COLOR' && c.sitePaletteColor) {
+        return 'hsla(var(--' + c.sitePaletteColor.colorName + '-hsl), ' + (c.sitePaletteColor.alphaModifier != null ? c.sitePaletteColor.alphaModifier : 1) + ')';
+      }
+      if (c.customColor && c.customColor.hslaValue) {
+        var v = c.customColor.hslaValue;
+        return 'hsla(' + v.hue + ',' + (v.saturation * 100) + '%,' + (v.lightness * 100) + '%,' + v.alpha + ')';
+      }
+      return 'currentColor';
+    };
+    $$('[data-text-attribute-id]').forEach(function (span) {
+      var a = attrs[span.getAttribute('data-text-attribute-id')];
+      if (!a || a.type !== 'highlight') return;
+      var col = color(a.color);
+      var t = a.thickness ? a.thickness.value + (a.thickness.unit || 'em') : '0.1em';
+      var size = a.shape === 'marker' ? t : (a.thickness && a.thickness.unit === 'em' ? Math.min(a.thickness.value, 0.25) + 'em' : t);
+      var pos = a.shape === 'marker' ? '50%' : '100%';
+      span.style.backgroundImage = 'linear-gradient(' + col + ',' + col + ')';
+      span.style.backgroundRepeat = 'no-repeat';
+      span.style.backgroundSize = '100% ' + size;
+      span.style.backgroundPosition = '0 ' + pos;
+      span.style.boxDecorationBreak = span.style.webkitBoxDecorationBreak = 'clone';
+      if (a.shape === 'underlineCurve') span.style.backgroundPosition = '0 96%';
+    });
+  }
+
+  /* ---- Any remaining image Squarespace would have lazy-loaded from data-src ---- */
+  function lazyImages() {
+    $$('img[data-src]:not([src])').forEach(function (img) {
+      var fill = img.closest('.content-fill, [class*="__media"]');
+      loadImg(img, true);
+      if (fill) { img.style.width = '100%'; img.style.height = '100%'; }
+      else { img.style.objectFit = ''; }
+    });
+  }
+
   /* ---- Lightbox for galleries that enable it ---- */
   function lightbox() {
     var links = $$('[data-lightbox] .gallery-grid-lightbox-link, .gallery-grid--layout-grid[data-lightbox="true"] img, a[data-lightbox-theme]');
@@ -533,5 +597,5 @@
 
   function run(fn) { try { fn(); } catch (e) { if (window.console) console.warn('site.js', fn.name, e); } }
   [headerHeight, centredHeaderNav, desktopFolders, mobileMenu, accordions, marquees, logoStrips,
-    listItemLinks, slideshows, fullscreenSlideshows, legacyGalleries, lightbox, scrollAnimations, linkTargets, contactRouting, siteSearch, cookieBanner].forEach(run);
+    listItemLinks, slideshows, fullscreenSlideshows, legacyGalleries, galleryStrips, lazyImages, textHighlights, lightbox, scrollAnimations, linkTargets, contactRouting, siteSearch, cookieBanner].forEach(run);
 })();
