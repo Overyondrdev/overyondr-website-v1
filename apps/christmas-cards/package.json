@@ -1,0 +1,19 @@
+{
+  "name": "yondr-christmas-cards",
+  "version": "1.0.0",
+  "description": "Yondr Christmas card list: staff add the clients who should get a card (cards.overyondrdev.com)",
+  "private": true,
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "wrangler dev",
+    "check": "node --check src/index.js && node --check src/api.js && node --check src/address.js && node --check public/shared.js && node --check public/app.js && node --check public/admin.js && node --check public/sheet.js",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.166.0"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  // Yondr Christmas cards: staff add the clients who should receive a card; admins review and export.
+  // A separate Worker from the website (overyondr-website-v1) with its own database.
+  "name": "yondr-christmas-cards",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-20",
+  // Files in public/ are bundled into the Worker (src/static.generated.js) by this step before dev and deploy.
+  "build": { "command": "node scripts/bundle.mjs", "watch_dir": "public" },
+  "observability": { "enabled": true },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "yondr-christmas-cards", "database_id": "85da3dd4-e124-4087-a369-d48647053be3" }
+  ],
+  "vars": {
+    // Cloudflare Access: the overyondrdev.com application covers *.overyondrdev.com, so this host shares its AUD.
+    "ACCESS_TEAM_DOMAIN": "overyondr.cloudflareaccess.com",
+    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8"
+    // Secret (set in the dashboard or with `npx wrangler secret put GOOGLE_MAPS_API_KEY`):
+    //   GOOGLE_MAPS_API_KEY  Google Address Validation API key. Without it, only the built-in checks run.
+  },
+  // No *.workers.dev or preview URLs: they would bypass the Cloudflare Access login.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "cards.overyondrdev.com", "custom_domain": true }]
+}
