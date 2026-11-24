@@ -1,5 +1,5 @@
 // Staff page: add clients one by one or upload a list; see, search, edit and remove your own.
-import { api, esc, $, $$, addressHtml, addressLines, initials, statusPill, STATUS, ICONS, toast, confirmBox, clientSheet, makeDialog, diffHtml, toCountryCode, countryOptions } from './shared.js';
+import { deadlineBadge, api, esc, $, $$, addressHtml, addressLines, initials, statusPill, STATUS, ICONS, toast, confirmBox, clientSheet, makeDialog, diffHtml, toCountryCode, countryOptions } from './shared.js';
 import { readFile, parseDelimited, looksLikeHeader, guessMapping, applyMapping, TARGETS } from './sheet.js';
 
 const state = { me: null, items: [], filter: 'all', q: '' };
@@ -14,10 +14,9 @@ async function boot() {
   if (me.data.isAdmin) $('[data-admin]').hidden = false;
   const s = me.data.settings;
   if (s.deadline) {
-    const d = new Date(s.deadline + 'T12:00:00');
     const el = $('[data-deadline]');
-    el.innerHTML = `<span>Please add your clients by <b>${esc(d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}</b></span>`;
-    el.hidden = false;
+    el.innerHTML = deadlineBadge(s.deadline);
+    el.hidden = !el.innerHTML;
   }
   if (s.message) { const p = $('.lede'); p.textContent = s.message; }
   if (s.closed && !me.data.isAdmin) { $('[data-closed]').hidden = false; $('[data-actions]').hidden = true; $('.hero-help').hidden = true; $('[data-sheet-cta]').hidden = true; }
@@ -501,7 +500,7 @@ const TOUR_ICONS = {
 
 function tour(start = 0) {
   const s = state.me.settings;
-  const deadline = s.deadline ? new Date(s.deadline + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) : '';
+  const deadline = s.deadline ? new Date(s.deadline + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : '';
   const slides = [
     { icon: 'card', title: 'Welcome to the Christmas card list', html: `
       <p>This year Yondr is sending Christmas cards to our valued clients and partners. Use this page to tell the card team who should get one from you.</p>
@@ -509,7 +508,7 @@ function tour(start = 0) {
         <li>We check every address and suggest fixes, so cards arrive.</li>
         <li>Only you and the card team can see the clients you add.</li>
       </ul>
-      ${deadline ? `<p><b>Please add your clients by ${esc(deadline)}.</b></p>` : ''}` },
+      ${deadline ? `<p class="deadline deadline-light">${deadlineBadge(s.deadline)}</p>` : ''}` },
     { icon: 'person', title: 'Add your clients', html: `
       <div class="tour-split">
         <div><h3>One at a time</h3>

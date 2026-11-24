@@ -1,5 +1,12 @@
 // Sign-in: email -> 6-digit code -> session cookie, then back to the page they came from.
+import { deadlineBadge } from './shared.js';
+
 const $ = (s) => document.querySelector(s);
+fetch('/api/public/info').then((r) => r.json()).then((d) => {
+  const el = $('[data-deadline]');
+  el.innerHTML = deadlineBadge(d.deadline);
+  el.hidden = !el.innerHTML;
+}).catch(() => {});
 const emailForm = $('[data-step="email"]');
 const codeForm = $('[data-step="code"]');
 const params = new URLSearchParams(location.search);

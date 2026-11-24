@@ -7,6 +7,16 @@ import { handleApi } from './api.js';
 import { handleSignin } from './signin.js';
 import { currentUser } from './auth.js';
 import FILES from './static.generated.js';
+import { ensureSchema } from './schema.js';
+
+// The only data shown before sign-in: the deadline, for the sign-in page badge.
+async function publicInfo(env) {
+  await ensureSchema(env.DB);
+  const row = await env.DB.prepare("SELECT value FROM settings WHERE key = 'deadline'").first();
+  return new Response(JSON.stringify({ deadline: row ? row.value : '' }), {
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'public, max-age=300' },
+  });
+}
 
 const PAGES = { '/': '/index.html', '/admin': '/admin.html', '/admin/': '/admin.html', '/signin': '/signin.html' };
 const PROTECTED = new Set(['/', '/admin', '/admin/', '/index.html', '/admin.html']);
@@ -39,7 +49,8 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     let res;
-    if (url.pathname.startsWith('/api/signin/')) res = await handleSignin(request, env, url.pathname.slice(12));
+    if (url.pathname === '/api/public/info' && request.method === 'GET') res = await publicInfo(env);
+    else if (url.pathname.startsWith('/api/signin/')) res = await handleSignin(request, env, url.pathname.slice(12));
     else if (url.pathname.startsWith('/api/')) res = await handleApi(request, env, url.pathname.slice(5));
     else if (PROTECTED.has(url.pathname) && !(await currentUser(request, env))) {
       // Not signed in: show the sign-in page, then come back here.

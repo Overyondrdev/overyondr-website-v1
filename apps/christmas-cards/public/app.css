@@ -70,10 +70,16 @@ img, svg { display: block; }
 .hero h1 { font: 500 clamp(2.4rem, 5.4vw, 4.4rem)/1.03 var(--serif); letter-spacing: -.02em; margin: 0 0 18px; max-width: 15ch; }
 .hero h1 em { font-style: normal; color: var(--lichen); }
 .lede { margin: 0 0 22px; max-width: 54ch; font-size: clamp(16px, 1.6vw, 19px); color: rgb(244 249 209 / .86); }
-.deadline { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 26px; padding: 8px 14px 8px 10px; border-radius: 999px;
-  background: rgb(244 249 209 / .08); border: 1px solid rgb(244 249 209 / .16); font-size: 14px; color: var(--ow); }
-.deadline b { color: var(--lichen); }
-.deadline::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--lichen); box-shadow: 0 0 0 4px rgb(218 255 107 / .2); animation: twinkle 2.4s ease-in-out infinite; }
+.deadline { display: inline-flex; align-items: center; gap: 12px; margin: 0 0 26px; padding: 8px 8px 8px 8px; border-radius: 16px;
+  background: var(--lichen); color: var(--forest); box-shadow: 0 0 0 6px rgb(218 255 107 / .14), 0 14px 30px -14px rgb(0 0 0 / .5); max-width: 100%; }
+.dl-icon { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: var(--forest); color: var(--lichen); }
+.dl-text { display: grid; line-height: 1.2; min-width: 0; }
+.dl-text small { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+.dl-text b { font-size: 16px; font-weight: 700; }
+.dl-count { flex: none; margin-left: 4px; padding: 6px 11px; border-radius: 999px; background: var(--forest); color: var(--ow); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.dl-count.soon { background: var(--berry); color: #fff; animation: twinkle 2.4s ease-in-out infinite; }
+.dl-count.past { background: #6b6b6b; color: #fff; }
+.deadline-light { margin: 6px 0 0 !important; box-shadow: none; }
 .closed-note { margin: 0 0 24px; padding: 12px 16px; border-radius: var(--r-sm); background: var(--berry-soft); color: #7a1f16; font-weight: 600; max-width: 54ch; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .hero-help { margin: 14px 0 0; font-size: 14px; color: rgb(244 249 209 / .6); }
@@ -415,7 +421,8 @@ html:has(.signin-body) { overflow-x: hidden; }
 @media (max-width: 760px) {
   .steps { grid-template-columns: 1fr; gap: 12px; }
   .ornaments { width: 130px; right: -34px; opacity: .3; }
-  .deadline { border-radius: 16px; }
+  .deadline { flex-wrap: wrap; }
+  .dl-count { margin-left: 50px; }
   .client { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px 14px; padding: 14px; }
   .client .avatar { width: 40px; height: 40px; font-size: 14px; }
   .client address { grid-column: 2 / -1; grid-row: 2; }

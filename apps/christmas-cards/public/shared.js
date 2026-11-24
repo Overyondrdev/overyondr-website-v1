@@ -63,6 +63,21 @@ const REGION = {
 };
 export const regionInfo = (c) => REGION[c] || { label: 'State / region', optional: true, postal: 'Postal code', ph: '' };
 
+// ------------------------------------------------------------------ deadline badge
+// "Deadline Wednesday, December 2" plus a countdown. iso = YYYY-MM-DD (the last day entries are accepted).
+export function deadlineBadge(iso) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso || '')) return '';
+  const day = new Date(iso + 'T12:00:00');
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const left = Math.round((day - today) / 864e5);
+  const when = day.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const count = left > 1 ? `${left} days left` : left === 1 ? 'Last day tomorrow' : left === 0 ? 'Last day today' : 'Deadline passed';
+  const tone = left < 0 ? 'past' : left <= 3 ? 'soon' : '';
+  return `<span class="dl-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+    <span class="dl-text"><small>Deadline for new entries</small><b>${esc(when)}</b></span>
+    <span class="dl-count ${tone}">${esc(count)}</span>`;
+}
+
 // ------------------------------------------------------------------ formatting
 export function addressLines(c) {
   const country = c.country || ''; // never assume a country: show none until one is chosen
