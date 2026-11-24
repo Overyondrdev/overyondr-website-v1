@@ -1,5 +1,5 @@
 // Card team admin: everyone's clients and who added them, contributors, uploads, export, access and settings.
-import { api, esc, $, $$, addressHtml, addressLines, statusPill, STATUS, ICONS, toast, confirmBox, clientSheet, relTime, longDate, shortDate, countryName, diffHtml } from './shared.js';
+import { providerText, api, esc, $, $$, addressHtml, addressLines, statusPill, STATUS, ICONS, toast, confirmBox, clientSheet, relTime, longDate, shortDate, countryName, diffHtml } from './shared.js';
 
 const root = $('[data-root]');
 const state = { me: null, tab: 'overview', ov: null, items: [], filters: { q: '', added_by: '', status: '', country: '', upload: '', department: '' } };
@@ -161,7 +161,7 @@ function openClient(id) {
   extras.className = 'note-box';
   extras.style.cssText = 'display:grid;gap:10px;margin-bottom:18px;background:#fff;border:1px solid var(--line)';
   extras.innerHTML = `
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${statusPill(c.status)}<span class="provider">${v.provider === 'google' ? 'Checked with Google' : 'Built-in checks'}${v.checkedAt ? ' · ' + esc(shortDate(v.checkedAt)) : ''}${c.reviewed_by ? ' · checked by ' + esc(c.reviewed_by) : ''}</span></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${statusPill(c.status)}<span class="provider">${esc(providerText(v.provider, c.country))}${v.checkedAt ? ' · ' + esc(shortDate(v.checkedAt)) : ''}${c.reviewed_by ? ' · checked by ' + esc(c.reviewed_by) : ''}</span></div>
     ${(v.issues || []).length ? `<ul class="issues">${v.issues.map((i) => `<li>${ICONS.info}<span>${esc(i.message)}</span></li>`).join('')}</ul>` : ''}
     ${v.suggestion && c.status === 'needs_review' ? `<div class="addr-card"><h4>Suggested address</h4><address>${diffHtml(c, v.suggestion, v.changed || [])}</address>
       <button class="btn btn-sm btn-primary" type="button" data-apply style="margin-top:10px">Use this address</button></div>` : ''}

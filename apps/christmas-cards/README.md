@@ -45,15 +45,20 @@ A separate Worker (`yondr-christmas-cards`) and database (D1 `yondr-christmas-ca
   close the list). Department is a column, a filter and an overview chart.
 
 ## Address checking (`src/address.js`)
-1. Built-in rules always run: required fields, postal-code formats (US, CA, UK and ~25 more), US state/ZIP
+1. Built-in rules always run: required fields, postal-code formats (US, CA, UK, MX and ~25 more), US state/ZIP
    agreement, Canadian provinces, plus safe clean-ups (state names → codes, lost ZIP leading zeros, postcode spacing).
-2. **Google Address Validation** (with USPS CASS data for US addresses) runs when the Worker secret
-   `GOOGLE_MAPS_API_KEY` is set. It confirms the building exists, catches missing suite numbers and suggests
-   corrections. Results are cached in D1 for 60 days. Without the key, only step 1 runs ("Basic check passed").
-
-   To turn it on: Google Cloud console → enable *Address Validation API* → create an API key restricted to that
-   API → `npx wrangler secret put GOOGLE_MAPS_API_KEY` in this folder (or Cloudflare dashboard → Workers →
-   yondr-christmas-cards → Settings → Variables and secrets).
+2. Free lookups, no account or key:
+   - **US**: the US Census Bureau geocoder (`geocoding.geo.census.gov`) matches the building number against official
+     street address ranges and suggests the corrected street, city, state and ZIP. It retries with just the ZIP, and
+     with the state the ZIP belongs to, so a wrong city or state still finds the address.
+   - **Everywhere else**: OpenStreetMap Nominatim (`nominatim.openstreetmap.org`) finds the street or building and
+     suggests the right postal code. If the street isn't mapped, it still checks the postal code belongs to the city.
+     Nominatim's rules: at most 1 request a second (calls are queued ~1.1 s apart), an identifying User-Agent, and
+     attribution ("© OpenStreetMap contributors" in the page footer and on check results).
+   - These confirm an address exists. They can't confirm mail delivery or suite numbers the way USPS can.
+   Results are cached in D1 for 60 days, so re-checking the same address costs nothing.
+3. Optional: if the Worker secret `GOOGLE_MAPS_API_KEY` is ever set (Google Address Validation API, with USPS data
+   for US addresses), Google is used instead of the free lookups.
 
 ## Run locally
 ```sh

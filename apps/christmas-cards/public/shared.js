@@ -121,6 +121,12 @@ export const STATUS = {
   needs_review: { label: 'Needs a look', short: 'Needs a look', icon: ICONS.warn, ok: false },
   unverified: { label: 'Basic check passed', short: 'Basic check', icon: ICONS.dot, ok: true },
 };
+export function providerText(provider, country) {
+  if (provider === 'google') return 'Checked with Google address validation' + (country === 'US' ? ' and USPS data.' : '.');
+  if (provider === 'census') return 'Checked against official US Census Bureau address records.';
+  if (provider === 'osm') return 'Checked with OpenStreetMap. Map data © OpenStreetMap contributors.';
+  return 'Checked with our built-in address rules.';
+}
 export function statusPill(status, extraClass = '') {
   const s = STATUS[status] || STATUS.unverified;
   return `<span class="status s-${esc(status)} ${extraClass}" title="${esc(s.label)}">${s.icon}${esc(s.label)}</span>`;
@@ -400,7 +406,7 @@ export function clientSheet(opts) {
           <div class="addr-card ${hasSugg ? '' : 'pick'}"><h4>You entered</h4><address>${addressHtml(entered)}</address></div>
           ${hasSugg ? `<div class="addr-card pick"><h4>Suggested</h4><address>${diffHtml(entered, v.suggestion, v.changed || [])}</address></div>` : ''}
         </div>
-        <p class="provider">${v.provider === 'google' ? 'Checked with Google address validation' + (entered.country === 'US' ? ' and USPS data.' : '.') : 'Checked with our built-in address rules.'}</p>
+        <p class="provider">${providerText(v.provider, entered.country)}</p>
       </div>`,
     hasSugg
       ? `<button class="btn" type="button" data-keep>Keep mine</button><button class="btn btn-primary" type="button" data-accept>Use suggested</button>`

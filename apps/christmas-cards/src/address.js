@@ -1,8 +1,10 @@
 // Address checking.
 //   1. Built-in checks always run: required fields, postal-code formats, US state / ZIP agreement,
 //      Canadian provinces, UK postcodes, and safe clean-ups (ZIP leading zeros, state names to codes).
-//   2. When the GOOGLE_MAPS_API_KEY secret is set, the Google Address Validation API confirms the
-//      address exists and suggests corrections (USPS CASS data for US addresses).
+//   2. A free lookup confirms the address exists and suggests corrections (no account or key needed):
+//        US addresses      -> US Census Bureau geocoder (geocoding.geo.census.gov)
+//        everywhere else   -> OpenStreetMap Nominatim (max 1 request/second, attribution required)
+//      If the GOOGLE_MAPS_API_KEY secret is ever set, Google Address Validation is used instead.
 // Result: { status, provider, issues[], suggestion, cleaned, checkedAt }
 //   status: verified | suggested | needs_review | unverified | invalid
 //   cleaned: the input after safe clean-ups (what gets stored when no suggestion is accepted)
@@ -64,6 +66,12 @@ const COUNTRY_ALIASES = {
   MEXICO: 'MX', MÉXICO: 'MX', 'ESTADOS UNIDOS': 'US',
 };
 
+function zip3State(zip) {
+  if (!/^\d{5}/.test(zip || '')) return '';
+  const n = parseInt(zip.slice(0, 3), 10);
+  const hit = ZIP3.find(([lo, hi]) => n >= lo && n <= hi);
+  return hit ? hit[2] : '';
+}
 const tidy = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
 
 export function countryCode(v) {
@@ -252,6 +260,109 @@ function fromGoogle(a, r) {
   return { status, issues, suggestion: changed.length ? suggestion : null, changed, formatted: addr.formattedAddress || '' };
 }
 
+// --------------------------------------------------------------------------- free providers
+const UA = 'YondrChristmasCards/1.0 (+https://cards.overyondrdev.com)';
+const SMALL = new Set(['of', 'de', 'la', 'del', 'van', 'der', 'and']);
+const KEEP_UPPER = new Set(['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW', 'PO', 'US', 'FM', 'CR']);
+// "1600 AMPHITHEATRE PKWY" -> "1600 Amphitheatre Pkwy", "5TH AVE NW" -> "5th Ave NW"
+function titleCase(s) {
+  return String(s || '').toLowerCase().split(/\s+/).filter(Boolean).map((w, i) => {
+    if (KEEP_UPPER.has(w.toUpperCase())) return w.toUpperCase();
+    if (/^\d/.test(w)) return w;
+    if (i > 0 && SMALL.has(w)) return w;
+    return w.replace(/(^|[-'])([a-z])/g, (_, p, c) => p + c.toUpperCase());
+  }).join(' ');
+}
+
+async function getJson(url, headers = {}) {
+  const res = await fetch(url, { headers: { 'user-agent': UA, accept: 'application/json', ...headers }, signal: AbortSignal.timeout(10000) });
+  if (!res.ok) throw new Error(`${new URL(url).host} ${res.status}`);
+  return res.json();
+}
+
+// US: Census Bureau geocoder. Matches the building number against official street address ranges.
+async function census(a) {
+  const q = new URLSearchParams({ street: a.line1, city: a.city, state: a.region, zip: a.postal_code.slice(0, 5), benchmark: 'Public_AR_Current', format: 'json' });
+  let data = await getJson('https://geocoding.geo.census.gov/geocoder/locations/address?' + q);
+  let m = data?.result?.addressMatches?.[0];
+  if (!m && a.postal_code) {
+    // A wrong city or state can hide a real address: try again with just the street and ZIP.
+    const q2 = new URLSearchParams({ street: a.line1, zip: a.postal_code.slice(0, 5), benchmark: 'Public_AR_Current', format: 'json' });
+    data = await getJson('https://geocoding.geo.census.gov/geocoder/locations/address?' + q2);
+    m = data?.result?.addressMatches?.[0];
+  }
+  const zipState = zip3State(a.postal_code);
+  if (!m && zipState && zipState !== a.region && a.city) {
+    // The ZIP says another state (e.g. Newark, "NY" 07102 is in New Jersey): try that state.
+    const q3 = new URLSearchParams({ street: a.line1, city: a.city, state: zipState, benchmark: 'Public_AR_Current', format: 'json' });
+    data = await getJson('https://geocoding.geo.census.gov/geocoder/locations/address?' + q3);
+    m = data?.result?.addressMatches?.[0];
+  }
+  if (!m) {
+    return { status: 'needs_review', suggestion: null, changed: [],
+      issues: [issue('line1', 'We couldn’t find this street address in the official US address records. Check the building number, street name and ZIP code.')] };
+  }
+  const c = m.addressComponents || {};
+  const street = String(m.matchedAddress || '').split(',')[0];
+  const zip5 = String(c.zip || '');
+  const suggestion = {
+    line1: titleCase(street), line2: a.line2, city: titleCase(c.city), region: String(c.state || a.region).toUpperCase(),
+    postal_code: zip5 && a.postal_code.startsWith(zip5) ? a.postal_code : zip5 || a.postal_code, country: 'US',
+  };
+  const changed = changedFields(a, suggestion);
+  return changed.length ? { status: 'suggested', issues: [], suggestion, changed } : { status: 'verified', issues: [], suggestion: null, changed: [] };
+}
+
+// Nominatim allows at most 1 request per second: queue calls (per Worker instance) about 1.1s apart.
+let osmQueue = Promise.resolve();
+function osmFetch(params) {
+  const run = osmQueue.then(async () => {
+    try { return await getJson('https://nominatim.openstreetmap.org/search?' + new URLSearchParams({ format: 'jsonv2', addressdetails: '1', limit: '1', ...params })); }
+    finally { await new Promise((r) => setTimeout(r, 1100)); }
+  });
+  osmQueue = run.catch(() => {});
+  return run;
+}
+const flat = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+// Everywhere else: OpenStreetMap. Finds the building/street; if it can't, checks the city and postal code agree.
+async function osm(a) {
+  const cc = a.country.toLowerCase();
+  const base = { countrycodes: cc };
+  if (a.city) base.city = a.city;
+  if (a.postal_code) base.postalcode = a.postal_code;
+  const hit = (await osmFetch({ ...base, street: a.line1 }))[0];
+  if (hit) {
+    const ad = hit.address || {};
+    const pc = ad.postcode || '';
+    // Suggest the postal code OpenStreetMap has for this street, when it clearly differs.
+    if (pc && a.postal_code && flat(pc) !== flat(a.postal_code) && !flat(pc).startsWith(flat(a.postal_code)) && !flat(a.postal_code).startsWith(flat(pc))) {
+      const suggestion = { ...a, postal_code: pc };
+      return { status: 'suggested', issues: [], suggestion, changed: ['postal_code'] };
+    }
+    return { status: 'verified', issues: [], suggestion: null, changed: [] };
+  }
+  // Street not found (map coverage varies by country). Check the city and postal code at least belong together.
+  if (a.postal_code) {
+    const area = (await osmFetch({ countrycodes: cc, postalcode: a.postal_code }))[0];
+    if (!area) {
+      return { status: 'needs_review', suggestion: null, changed: [],
+        issues: [issue('postal_code', `We couldn’t find the postal code ${a.postal_code} in ${a.country}. Check it.`)] };
+    }
+    const ad = area.address || {};
+    const places = ['city', 'town', 'village', 'municipality', 'suburb', 'city_district', 'borough', 'county', 'state_district', 'state']
+      .map((k) => ad[k]).filter(Boolean);
+    const near = (x, y) => { const p = flat(x), q = flat(y); return p && q && (p.includes(q) || q.includes(p)); };
+    if (a.city && places.length && !places.some((p) => near(p, a.city))) {
+      const where = ad.city || ad.town || ad.village || ad.municipality || places[0];
+      return { status: 'needs_review', suggestion: null, changed: [],
+        issues: [issue('city', `Postal code ${a.postal_code} is in ${where}, not ${a.city}. Check the city or the postal code.`)] };
+    }
+  }
+  return { status: 'unverified', suggestion: null, changed: [],
+    issues: [issue('line1', 'We confirmed the city and postal code, but couldn’t find this exact street on the map. Double-check the street address.')] };
+}
+
 // --------------------------------------------------------------------------- entry point
 async function cacheKey(a) {
   const bytes = new TextEncoder().encode(JSON.stringify(FIELDS.map((f) => a[f].toLowerCase())));
@@ -284,7 +395,7 @@ export async function verifyMany(list, env) {
     }
   };
   await Promise.all(Array.from({ length: Math.min(6, todo.length) }, worker));
-  const writes = [...fresh.entries()].filter(([, r]) => r && r.provider === 'google' && !r.error)
+  const writes = [...fresh.entries()].filter(([, r]) => r && ['google', 'census', 'osm'].includes(r.provider) && !r.error)
     .map(([k, r]) => env.DB.prepare('INSERT OR REPLACE INTO verify_cache (key, result, created_at) VALUES (?, ?, ?)').bind(k, JSON.stringify(r), r.checkedAt));
   if (writes.length) await env.DB.batch(writes);
   return cleaned.map((a, i) => ({ ...(cached.get(keys[i]) || fresh.get(keys[i])), cleaned: a }));
@@ -313,5 +424,13 @@ async function verifyOne(a, env) {
       return { status: issues.length ? 'needs_review' : 'unverified', provider: 'basic', issues, suggestion: null, checkedAt, error: String(e.message || e).slice(0, 200) };
     }
   }
-  return { status: issues.length ? 'needs_review' : 'unverified', provider: 'basic', issues, suggestion: null, checkedAt };
+  // Free lookups. Built-in warnings (e.g. ZIP/state mismatch) are replaced by the lookup's answer when it finds the address.
+  try {
+    const r = a.country === 'US' ? await census(a) : await osm(a);
+    const provider = a.country === 'US' ? 'census' : 'osm';
+    if (r.status === 'needs_review') r.issues = [...r.issues, ...issues.filter((i) => !r.issues.some((x) => x.field === i.field))];
+    return { ...r, provider, checkedAt };
+  } catch (e) {
+    return { status: issues.length ? 'needs_review' : 'unverified', provider: 'basic', issues, suggestion: null, checkedAt, error: String(e.message || e).slice(0, 200) };
+  }
 }

@@ -137,7 +137,7 @@ async function deleteClient(id) {
 }
 
 // ------------------------------------------------------------------ bulk upload
-const CHECK_CHUNK = 25;
+const CHECK_CHUNK = 10; // smaller batches keep the progress bar moving (OpenStreetMap allows 1 lookup a second)
 // Same rules as the server's duplicate check: ignore case, punctuation and "Street" vs "St".
 const ABBR = { street: 'st', avenue: 'ave', road: 'rd', drive: 'dr', boulevard: 'blvd', lane: 'ln', court: 'ct', place: 'pl', suite: 'ste',
   north: 'n', south: 's', east: 'e', west: 'w', parkway: 'pkwy', highway: 'hwy', floor: 'fl', apartment: 'apt', building: 'bldg' };
@@ -300,7 +300,7 @@ function uploadFlow() {
     step(3);
     const total = u.items.length;
     body.innerHTML = `<div class="checking"><h3>Checking addresses…</h3><p data-count>0 of ${total}</p><div class="progress"><i data-bar></i></div>
-      <p style="font-size:14px">${state.me.verifier === 'google' ? 'Each address is checked against Google and USPS data.' : 'Each address is checked against our address rules.'}</p></div>`;
+      <p style="font-size:14px">${state.me.verifier === 'google' ? 'Each address is checked against Google and USPS data.' : 'US addresses are checked against official Census Bureau records, others with OpenStreetMap. Addresses outside the US take about a second each.'}</p></div>`;
     foot.innerHTML = `<span class="grow"></span><button class="btn btn-text" type="button" data-cancel>Cancel</button>`;
     let cancelled = false;
     $('[data-cancel]', foot).onclick = () => { cancelled = true; close(); };

@@ -276,7 +276,7 @@ export async function handleApi(request, env, path) {
       ]);
       const me = u.results[0] || {};
       return json({ email: user.email, via: user.via, role, isAdmin, settings: await settings(env.DB),
-        verifier: env.GOOGLE_MAPS_API_KEY ? 'google' : 'basic', count: mine.results[0].n,
+        verifier: env.GOOGLE_MAPS_API_KEY ? 'google' : 'free', count: mine.results[0].n,
         tutorialDone: !!me.tutorial_done_at, department: me.department || '' });
     }
     if (parts[0] === 'tutorial' && m === 'POST') {
