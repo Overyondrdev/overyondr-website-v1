@@ -25,6 +25,12 @@ A separate Worker (`yondr-christmas-cards`) and database (D1 `yondr-christmas-ca
   Dark Green, dropdowns for Country (US, UK, Mexico first) and Department, a text-formatted ZIP column and a
   "How to fill this in" tab. Rebuild it with `python3 scripts/make-template.py` (needs openpyxl) whenever the
   department list changes, so its dropdown matches.
+- **Google Sheets option**: every *Download Excel* button has an *Open in Google Sheets* button next to it. It opens
+  `docs.google.com/spreadsheets/d/<id>/copy` for a view-only, locked master in Chad's Google Drive ("Yondr Christmas
+  card list (template – make a copy)"), so each person gets their own private copy and lists never mix. They then
+  download it as Excel and upload it, or paste the cells. If the spreadsheet changes, upload the new .xlsx to Drive
+  as a Google Sheet, share it view-only by link, lock it, and update `SHEETS_COPY_URL` in `public/app.js` and the
+  link in `public/index.html`.
 - **Required for every client**: name, organization, street address, city, postal code, country (state/region for
   the US, Mexico, Canada and Australia), plus the sender's department. Country has no preselected value; US, UK
   and Mexico are listed first.

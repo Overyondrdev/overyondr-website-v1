@@ -56,7 +56,7 @@ function render() {
       <svg width="76" height="76" viewBox="0 0 76 76" aria-hidden="true"><rect x="8" y="18" width="60" height="42" rx="8" fill="#eef2e6"/><path d="m10 22 28 20 28-20" fill="none" stroke="#1c300b" stroke-width="3" stroke-linejoin="round"/><circle cx="58" cy="18" r="12" fill="#daff6b"/><rect x="54" y="2" width="8" height="6" rx="2" fill="#c9b86a"/></svg>
       <h3>Your list is empty</h3>
       <p>Start with one client, or upload a spreadsheet if you have several. It takes about a minute.</p>
-      ${canEdit() ? `<div class="row"><button class="btn btn-primary" type="button" data-add>Add a client</button><button class="btn" type="button" data-upload>Upload a list</button><a class="btn" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download spreadsheet</a></div>` : ''}
+      ${canEdit() ? `<div class="row"><button class="btn btn-primary" type="button" data-add>Add a client</button><button class="btn" type="button" data-upload>Upload a list</button><a class="btn" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download spreadsheet</a>${sheetsLink()}</div>` : ''}
     </div>`;
     return;
   }
@@ -181,9 +181,11 @@ function uploadFlow() {
     body.innerHTML = `
       <div class="sheet-cta light">
         <span class="sheet-cta-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M4 9h16M4 15h16M10 3v18" stroke="currentColor" stroke-width="2"/></svg></span>
-        <div class="sheet-cta-text"><b>Don’t have a list yet?</b><span>Start with our address spreadsheet. It has every column we need.</span></div>
-        <a class="btn btn-primary" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download spreadsheet</a>
+        <div class="sheet-cta-text"><b>Don’t have a list yet?</b><span>Start with our address spreadsheet in Excel or Google Sheets (your own private copy).</span></div>
+        <div class="sheet-cta-btns"><a class="btn btn-primary" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download Excel</a>
+        ${sheetsLink()}</div>
       </div>
+      <p class="sheets-tip">${FROM_SHEETS}</p>
       <label class="drop" data-drop tabindex="0">
         <span class="doc"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
         <h3>Drop your file here</h3>
@@ -469,6 +471,11 @@ function setupSignout(via) {
 
 // ------------------------------------------------------------------ first-visit tutorial
 const TEMPLATE_URL = '/yondr-christmas-card-list.xlsx';
+// View-only master in Google Drive; /copy makes each person their own private copy, so lists never mix.
+const SHEETS_COPY_URL = 'https://docs.google.com/spreadsheets/d/1cydEXvreqtH0lVfcvwZd36nZOUMGdzix4yILzYikt9o/copy';
+const GS_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h7M12 10v7" stroke="currentColor" stroke-width="1.8"/></svg>';
+const sheetsLink = (cls = 'btn') => `<a class="${cls}" href="${SHEETS_COPY_URL}" target="_blank" rel="noopener">${GS_ICON}Open in Google Sheets</a>`;
+const FROM_SHEETS = `<b>Used Google Sheets?</b> Choose File › Download › Microsoft Excel (.xlsx) and upload that file, or select all the cells and paste them below.`;
 const SPREADSHEET_HELP = `
   <table class="cols-table">
     <thead><tr><th>Column</th><th></th><th>Example</th></tr></thead>
@@ -486,7 +493,7 @@ const SPREADSHEET_HELP = `
       <tr><td>Email, Notes</td><td><span class="opt">Optional</span></td><td>Notes go to the card team</td></tr>
     </tbody>
   </table>
-  <p><a class="btn btn-primary btn-sm" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download the address spreadsheet</a></p>`;
+  <p class="btn-row"><a class="btn btn-primary btn-sm" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download the address spreadsheet</a>${sheetsLink('btn btn-sm')}</p>`;
 
 const TOUR_ICONS = {
   card: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="m4 8 8 6 8-6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
@@ -495,6 +502,7 @@ const TOUR_ICONS = {
   check: '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   download: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   upload: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  sheets: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h7M12 10v7" stroke="currentColor" stroke-width="1.8"/></svg>',
   plus: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
 };
 
@@ -516,14 +524,15 @@ function tour(start = 0) {
         <div><h3>With a spreadsheet</h3>
           <p>Download our address spreadsheet, add one row per person, then choose <b>Upload a list</b>.</p>
           <p class="need">Needed for each person: name, organization, street address, city, state or region, postal code and country.</p>
-          <p><a class="btn btn-primary btn-sm" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Download spreadsheet</a></p></div>
+          <p class="btn-row"><a class="btn btn-primary btn-sm" href="${TEMPLATE_URL}" download><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M4 19h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel</a>${sheetsLink('btn btn-sm').replace('Open in Google Sheets', 'Google Sheets')}</p></div>
       </div>
       <p>When you save, we check each address. If something looks off, you can accept our suggested fix with one click.</p>` },
     { icon: 'check', title: 'You’re ready', html: `
       <p>Anything marked <b>Needs a look</b> has an address we couldn’t confirm. You can edit or remove clients until the deadline. If a colleague already added someone, we’ll tell you.</p>
       <p class="tour-q">How would you like to start?</p>
       <div class="tour-actions">
-        <a class="tour-action" href="${TEMPLATE_URL}" download data-act="download">${TOUR_ICONS.download}<b>Download the address spreadsheet</b><span>Fill it in, then upload it</span></a>
+        <a class="tour-action" href="${TEMPLATE_URL}" download data-act="download">${TOUR_ICONS.download}<b>Download the spreadsheet</b><span>Excel file, fill it in, then upload it</span></a>
+        <a class="tour-action" href="${SHEETS_COPY_URL}" target="_blank" rel="noopener" data-act="sheets">${TOUR_ICONS.sheets}<b>Open in Google Sheets</b><span>Your own private copy</span></a>
         <button class="tour-action" type="button" data-act="upload">${TOUR_ICONS.upload}<b>Upload a spreadsheet</b><span>Excel or CSV, ready to go</span></button>
         <button class="tour-action" type="button" data-act="add">${TOUR_ICONS.plus}<b>Add a client manually</b><span>One person at a time</span></button>
       </div>` },
@@ -558,6 +567,7 @@ function tour(start = 0) {
     const a = e.target.closest('[data-act]');
     if (!a) return;
     if (a.dataset.act === 'download') { toast('Spreadsheet downloaded. Fill it in, then choose Upload a list.'); return; }
+    if (a.dataset.act === 'sheets') { toast('Your copy opens in Google Sheets. When it’s ready, download it as Excel and upload it here.', { ms: 8000 }); return; }
     d.close();
     if (a.dataset.act === 'upload') uploadFlow(); else addClient();
   });

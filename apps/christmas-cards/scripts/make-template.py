@@ -2,7 +2,8 @@
 """Builds public/yondr-christmas-card-list.xlsx, the styled address spreadsheet staff download, fill in and upload.
 
 Run from apps/christmas-cards:  python3 scripts/make-template.py   (needs openpyxl and node)
-Re-run it if the department list changes (Admin > Settings), so the spreadsheet's dropdown matches.
+Re-run it if the department list changes (Admin > Settings), so the spreadsheet's dropdown matches,
+and replace the Google Sheets master too (see README) so both versions stay the same.
 The first sheet must stay "Clients" with the header in row 1: the upload reads the first sheet.
 """
 import json, subprocess, sys
@@ -113,12 +114,13 @@ steps = [
     '2.  Fill in every dark green column (Name, Organization and the full address). Light green columns are optional.',
     '3.  Pick the Country (and your Department) from the dropdowns. Use the full mailing address, including suite or floor.',
     '4.  Save the file, then go to cards.overyondrdev.com and choose Upload a list.',
+    '    In Google Sheets: choose File › Download › Microsoft Excel (.xlsx), then upload that file.',
     '    We check every address and show any fixes before anything is added.',
 ]
 for k, t in enumerate(steps):
     cell = how.cell(row=5 + k, column=2, value=t)
     cell.font = Font(name=FONT, size=11, color='1E1E1E')
-r0 = 11
+r0 = 12
 for c, t in zip('BCD', ['Column', '', 'What to enter']):
     cell = how[f'{c}{r0}']
     cell.value = t
