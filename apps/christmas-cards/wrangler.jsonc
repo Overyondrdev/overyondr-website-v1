@@ -14,7 +14,9 @@
   "vars": {
     // Cloudflare Access: the overyondrdev.com application covers *.overyondrdev.com, so this host shares its AUD.
     "ACCESS_TEAM_DOMAIN": "overyondr.cloudflareaccess.com",
-    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8",
+    // AUD tags of the Access applications whose tokens we accept (comma-separated): the overyondrdev.com app,
+    // and "Yondr Christmas Cards" which guards only cards.overyondrdev.com/auth (Cloudflare emails the code).
+    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8,c99197f9fb449f627897900bfa03703c4d54ed0d650e20bb20dd3d6d87262c4c",
     // Sign-in code emails come from this address (domain must be onboarded in Cloudflare Email Sending).
     "EMAIL_FROM": "cards@overyondrdev.com"
     // Secret (set in the dashboard or with `npx wrangler secret put GOOGLE_MAPS_API_KEY`):

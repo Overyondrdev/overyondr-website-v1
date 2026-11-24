@@ -6,16 +6,17 @@ code, so we always know who added each client.
 
 A separate Worker (`yondr-christmas-cards`) and database (D1 `yondr-christmas-cards`) from the website.
 
-## Sign-in (`src/signin.js`, `public/signin.html`)
-- `/signin`: enter an `@overyondr.com` email → we email a 6-digit code → a 30-day session cookie. Codes expire
-  after 10 minutes and allow 5 tries; requests are throttled per email and per IP. Codes and session tokens are
-  stored only as hashes.
-- Emails are sent with **Cloudflare Email Sending** (`send_email` binding `EMAIL`, from `EMAIL_FROM`). It needs the
-  Workers Paid plan and `overyondrdev.com` onboarded under Compute → Email Service → Email Sending.
-- Cloudflare Access (the `*.overyondrdev.com` app) still sits in front today. While it does, its verified
-  email is used and `/signin` never shows. To make `/signin` the only gate, add an Access application for
-  `cards.overyondrdev.com` with a single **Bypass / Everyone** policy (a more specific hostname wins over the
-  wildcard). Do that only after email sending works, or nobody can sign in.
+## Sign-in (`public/signin.html`, `/auth` in `src/index.js`)
+- `/signin` is the Christmas-styled page everyone lands on. **Sign in with your Yondr email** goes to `/auth`.
+- Cloudflare Access guards **only** `cards.overyondrdev.com/auth` (application "Yondr Christmas Cards", allow
+  `@overyondr.com`). Cloudflare shows its code screen (Yondr colours, set in Zero Trust → Settings → Custom pages)
+  and emails the one-time code from `noreply@notify.cloudflare.com`, which Yondr mail already trusts.
+- `/auth` verifies the Access token (`ACCESS_AUD` lists both Access apps), then starts the app's own 30-day session
+  cookie and returns the person to where they were going. Everything else on the host is behind a **Bypass**
+  Access application, so the app's own session is the gate.
+- Why not send codes ourselves: `src/signin.js` can still email codes through Cloudflare Email Sending
+  (`/api/signin/start`), and Cloudflare reported them delivered, but Yondr's mail system silently held them. The page
+  no longer uses that path. If IT approves `cards@overyondrdev.com`, it can be switched back.
 
 ## What it does
 - **First-visit guide**: three short steps (welcome, how to add clients, then a choice to download the address

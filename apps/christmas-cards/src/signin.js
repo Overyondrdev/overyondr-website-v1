@@ -121,17 +121,21 @@ async function verify(request, env) {
     const left = MAX_ATTEMPTS - row.attempts - 1;
     return json({ error: left > 0 ? `That code isn’t right. ${left} ${left === 1 ? 'try' : 'tries'} left.` : 'Too many tries. Ask for a new code.', expired: left <= 0 }, 422);
   }
+  await env.DB.prepare('DELETE FROM login_codes WHERE email = ? OR expires_at < ?').bind(email, now()).run();
+  return json({ ok: true, email }, 200, { 'set-cookie': await createSession(request, env, email) });
+}
+
+// Starts a 30-day session for a verified email; returns the Set-Cookie header value.
+export async function createSession(request, env, email) {
+  await ensureSchema(env.DB);
   const token = randomToken();
   await env.DB.batch([
-    env.DB.prepare('DELETE FROM login_codes WHERE email = ? OR expires_at < ?').bind(email, now()),
     env.DB.prepare('INSERT INTO sessions (token_hash, email, created_at, expires_at, last_seen) VALUES (?, ?, ?, ?, ?)')
       .bind(await sha256(token), email, now(), later(SESSION_DAYS * 864e5), now()),
     env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(now()),
   ]);
   const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
-  return json({ ok: true, email }, 200, {
-    'set-cookie': `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}${secure}`,
-  });
+  return `${COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}${secure}`;
 }
 
 async function logout(request, env) {

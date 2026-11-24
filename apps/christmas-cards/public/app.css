@@ -353,6 +353,12 @@ html:has(.signin-body) { overflow-x: hidden; }
 .signin-card .sub { margin: -8px 0 4px; }
 .signin-card .sub b { color: var(--forest); overflow-wrap: anywhere; }
 .code-input { font: 700 30px/1 ui-monospace, SFMono-Regular, Menlo, monospace !important; letter-spacing: .45em; text-align: center; padding: 14px 8px !important; }
+.signin-steps { display: grid; gap: 16px; }
+.mini-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.mini-steps li { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; color: #3b4433; }
+.mini-steps b { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--lichen); color: var(--forest); font-size: 13px; }
+.mini-steps strong { color: var(--forest); }
+.signin-error { margin: 0; padding: 10px 14px; border-radius: var(--r-sm); background: var(--berry-soft); color: #7a1f16; font-weight: 600; font-size: 14px; }
 .code-links { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .fine { margin: 0; font-size: 13.5px; color: var(--moss); }
 .signout { border: 1px solid rgb(244 249 209 / .3); background: transparent; color: var(--ow); font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 999px; }

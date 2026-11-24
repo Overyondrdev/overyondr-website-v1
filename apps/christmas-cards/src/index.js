@@ -4,7 +4,7 @@
 //   /signin  email + one-time code sign-in (src/signin.js), used when Cloudflare Access isn't in front
 //   /api/*   JSON API (src/api.js)
 import { handleApi } from './api.js';
-import { handleSignin } from './signin.js';
+import { handleSignin, createSession, validEmail } from './signin.js';
 import { currentUser } from './auth.js';
 import FILES from './static.generated.js';
 import { ensureSchema } from './schema.js';
@@ -49,6 +49,18 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     let res;
+    if (url.pathname === '/auth') {
+      // Cloudflare Access guards /auth only: it emails the code (from Cloudflare, reliably delivered) and
+      // forwards a signed token. We turn that verified email into the app's own 30-day session.
+      const user = await currentUser(request, env);
+      const next = url.searchParams.get('next');
+      const dest = new URL(next && /^\/[a-z]*$/.test(next) ? next : '/', url);
+      if (!user || !validEmail(user.email)) return withHeaders(Response.redirect(new URL('/signin?error=1', url), 302));
+      const cookie = user.via === 'session' ? null : await createSession(request, env, user.email);
+      const out = new Response(null, { status: 302, headers: { location: dest.toString(), 'cache-control': 'no-store' } });
+      if (cookie) out.headers.append('set-cookie', cookie);
+      return withHeaders(out);
+    }
     if (url.pathname === '/api/public/info' && request.method === 'GET') res = await publicInfo(env);
     else if (url.pathname.startsWith('/api/signin/')) res = await handleSignin(request, env, url.pathname.slice(12));
     else if (url.pathname.startsWith('/api/')) res = await handleApi(request, env, url.pathname.slice(5));

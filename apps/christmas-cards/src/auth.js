@@ -33,7 +33,9 @@ async function verify(token, env) {
   const ok = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64urlToBytes(sig), new TextEncoder().encode(`${h}.${p}`));
   if (!ok) return null;
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-  if (!aud.includes(env.ACCESS_AUD)) return null;
+  // ACCESS_AUD may list several Access applications (comma-separated).
+  const allowed = String(env.ACCESS_AUD || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (!aud.some((x) => allowed.includes(x))) return null;
   if (payload.exp && payload.exp * 1000 < Date.now()) return null;
   return payload;
 }
