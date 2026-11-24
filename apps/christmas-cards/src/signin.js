@@ -110,10 +110,13 @@ async function verify(request, env) {
   const email = cleanEmail(b.email);
   const code = String(b.code || '').replace(/\D/g, '');
   if (!validEmail(email) || code.length !== 6) return json({ error: 'Enter the 6-digit code from the email.' }, 422);
-  const row = await env.DB.prepare('SELECT * FROM login_codes WHERE email = ? AND expires_at > ? ORDER BY created_at DESC LIMIT 1').bind(email, now()).first();
+  // Any unexpired code works, so a slow email that arrives after "Send a new code" still signs people in.
+  const { results: codes } = await env.DB.prepare('SELECT * FROM login_codes WHERE email = ? AND expires_at > ? ORDER BY created_at DESC LIMIT 10').bind(email, now()).all();
+  const row = codes[0];
   if (!row) return json({ error: 'That code has expired. Ask for a new one.', expired: true }, 422);
   if (row.attempts >= MAX_ATTEMPTS) return json({ error: 'Too many tries. Ask for a new code.', expired: true }, 422);
-  if (row.code_hash !== await sha256(email + ':' + code)) {
+  const hash = await sha256(email + ':' + code);
+  if (!codes.some((c) => c.code_hash === hash)) {
     await env.DB.prepare('UPDATE login_codes SET attempts = attempts + 1 WHERE id = ?').bind(row.id).run();
     const left = MAX_ATTEMPTS - row.attempts - 1;
     return json({ error: left > 0 ? `That code isn’t right. ${left} ${left === 1 ? 'try' : 'tries'} left.` : 'Too many tries. Ask for a new code.', expired: left <= 0 }, 422);
