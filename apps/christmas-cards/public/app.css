@@ -52,6 +52,8 @@ img, svg { display: block; }
 .btn-primary:hover { background: var(--forest-2); box-shadow: 0 10px 20px -12px rgb(28 48 11 / .7); }
 .btn-lichen { background: var(--lichen); border-color: var(--lichen); color: var(--forest); }
 .btn-lichen:hover { border-color: var(--lichen); box-shadow: 0 0 0 6px rgb(218 255 107 / .18); transform: translateY(-1px); }
+.btn-ow { background: var(--ow); border-color: var(--ow); color: var(--forest); }
+.btn-ow:hover { border-color: var(--ow); box-shadow: 0 0 0 6px rgb(244 249 209 / .16); transform: translateY(-1px); }
 .btn-ghost { background: transparent; border-color: rgb(244 249 209 / .45); color: var(--ow); }
 .btn-ghost:hover { border-color: var(--ow); background: rgb(244 249 209 / .06); }
 .btn-text { border-color: transparent; background: transparent; padding-left: 10px; padding-right: 10px; }
