@@ -1,10 +1,11 @@
 // Renders the campaign's display ads: a JPEG still per concept and an animated GIF per headline and size.
 //
 //   npm ci --prefix v2          (fonts and photos come from the V2 site)
-//   node scripts/ads/render.mjs [--size 300x250] [--headline h1] [--view pouch|in-use|motion]
+//   node ad-portal/generator/render.mjs [--size 300x250] [--headline h1] [--view pouch|in-use|motion]
 //
 // Needs Playwright with Chromium (require('playwright')), Python 3 with Pillow, and ffmpeg.
-// Writes public/__ads/<campaign>/ (files + manifest.json + zips); encode.py keeps every file under 150 KB.
+// Writes ad-portal/seed/ (files + manifest.json); encode.py keeps every file under 150 KB.
+// Then `npm run seed:remote` uploads them to R2 and records them in D1.
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -71,4 +72,4 @@ console.log(`\nrendered ${jobs.length} ads`);
 
 const jobsFile = join(work, 'jobs.json');
 writeFileSync(jobsFile, JSON.stringify({ campaign: c, jobs, partial: !!(arg('size') || arg('headline') || arg('view')) }));
-execFileSync('python3', [join(here, 'encode.py'), jobsFile, join(repo, 'public/__ads', c.id)], { stdio: 'inherit' });
+execFileSync('python3', [join(here, 'encode.py'), jobsFile, join(here, '..', 'seed')], { stdio: 'inherit' });

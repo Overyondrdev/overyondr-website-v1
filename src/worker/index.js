@@ -1,16 +1,13 @@
 // Routes requests by hostname; all content is static assets in dist/.
-//   overyondrdev.com, www.  -> portal page (V1 / V2 buttons) and /admin (feedback)
-//   ads.overyondrdev.com    -> the ad library (src/pages/ads.astro, public/__ads, src/worker/ads)
+//   overyondrdev.com, www.  -> portal page (V1 / V2 buttons)
 //   v2.overyondrdev.com     -> the V2 redesign (built from v2/ into dist/__v2)
 //   anything else (v1.overyondrdev.com, and overyondr.com after cutover) -> the V1 site
 import site from '../v1/site.json';
 import { handleFeedbackApi } from './feedback/api.js';
-import { handleAdsApi } from './ads/api.js';
 import { currentUser, roleOf } from './feedback/auth.js';
 import { ensureSchema } from './feedback/schema.js';
 
 const PORTAL_HOSTS = new Set(['overyondrdev.com', 'www.overyondrdev.com']);
-const ADS_HOST = 'ads.overyondrdev.com';
 const SHARED_ASSET = /^\/(css|fonts|js|images|brand|_astro)\//;
 
 // Portal pages: show who is signed in (Cloudflare Access adds this header after login).
@@ -92,26 +89,6 @@ async function serveV2(request, env) {
   return res;
 }
 
-// ---------------------------------------------------------------- Ad library (ads.overyondrdev.com)
-// Page, API and ad files (public/__ads). Only on this host: never on the portal, V1, V2 or overyondr.com.
-// Fail closed: even though Cloudflare Access guards the host, nothing is served without a verified sign-in,
-// so the ads stay private if the host is ever left out of the Access application.
-async function serveAds(request, env, url) {
-  const user = await currentUser(request, env).catch(() => null);
-  if (!user) {
-    return new Response('Sign-in required. Open https://ads.overyondrdev.com/ and sign in with your @overyondr.com email.', {
-      status: 403, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
-  }
-  let res;
-  if (url.pathname === '/' || url.pathname === '/index.html') res = await portalPage(env, request, '/ads');
-  else if (url.pathname.startsWith('/__ads/api/')) res = await handleAdsApi(request, env, url.pathname.slice('/__ads/api/'.length));
-  else if (url.pathname.startsWith('/__ads/') || SHARED_ASSET.test(url.pathname)) res = await env.ASSETS.fetch(request);
-  else return Response.redirect(new URL('/', url), 302);
-  res = new Response(res.body, res);
-  res.headers.set('X-Robots-Tag', 'noindex');
-  return res;
-}
-
 // Squarespace served some pages only via query strings (blog authors, older-posts pages, RSS).
 function queryRoute(url) {
   if (!url.search) return site.queryRoutes[url.pathname] || null; // e.g. /blog/tag/Yondr
@@ -148,11 +125,10 @@ async function route(request, env) {
     if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
     return Response.redirect(new URL('/', url), 302);
   }
-  if (host === ADS_HOST) return serveAds(request, env, url);
   if (host.startsWith('v2.')) return serveV2(request, env);
 
   // V1 site
-  if (/^\/(portal|admin|__q\/|__v2|__ads\/|ads(\.html)?$)/.test(url.pathname)) return serve(env, request, '/__not_found__');
+  if (/^\/(portal|admin|__q\/|__v2)/.test(url.pathname)) return serve(env, request, '/__not_found__');
   const routed = queryRoute(url);
   if (routed) {
     const res = await serve(env, request, routed);

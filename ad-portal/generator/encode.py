@@ -97,7 +97,7 @@ for j in jobs:
 # Source images (pouch cut-out and photos) so the team can make other formats.
 sources = []
 os.makedirs(os.path.join(out, 'source'), exist_ok=True)
-repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))  # website repo root (photos come from v2/)
 for key, src in [('pouch', c['pouch'])] + list(c['photos'].items()):
     im = Image.open(os.path.join(repo, src['src']))
     im.thumbnail((2000, 2000))
@@ -113,7 +113,7 @@ order = {k: i for i, k in enumerate(list(sizes) + list(heads) + list(concepts))}
 items = sorted(creatives.values(), key=lambda x: (order[x['headline']], order[x['concept']], order[x['size']]))
 manifest = {
     'id': c['id'], 'name': c['name'], 'summary': c['summary'], 'launched': c['launched'],
-    'landingUrl': c['landingUrl'], 'studyUrl': c['studyUrl'], 'cta': c['cta'],
+    'studyUrl': c['studyUrl'], 'releaseUrl': c.get('releaseUrl'), 'cta': c['cta'], 'source': c['source'],
     'longHeadline': c['longHeadline'], 'headlines': c['headlines'], 'sizes': c['sizes'], 'concepts': c['concepts'],
     'limitBytes': LIMIT, 'generated': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
     'sources': sources,

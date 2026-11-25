@@ -1,0 +1,5 @@
+# Private team tool behind Cloudflare Access: keep it out of search results.
+/*
+  X-Robots-Tag: noindex
+  Referrer-Policy: same-origin
+  X-Content-Type-Options: nosniff

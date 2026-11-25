@@ -1,20 +1,22 @@
 # Display ads
 
-Generates the ads in the ad library (ads.overyondrdev.com) from one HTML template in the V2 website style.
+Generates the Harvard study ads for the ad portal (ads.overyondrdev.com) from one HTML template in the V2 website style.
+Run from the website repo root: fonts and photos come from `v2/`.
 
 | File | What |
 | --- | --- |
 | `campaign.json` | Copy (headlines, descriptions, stat, CTA, source line), sizes, photos. Edit this to change wording. |
 | `ad.html` | The template: three scenes (students using the pouch, the 1–2 weeks stat, the pouch end card) laid out for each size. |
 | `render.mjs` | Opens the template in Chromium, screenshots every still and every motion frame. |
-| `encode.py` | JPEG stills and GIF motion, each under 150 KB; writes `public/__ads/<set>/manifest.json` and `source/` images. |
+| `encode.py` | JPEG stills and GIF motion, each under 150 KB; writes `ad-portal/seed/` (`still/`, `motion/`, `source/`, `manifest.json`). |
 
 ## Run
 
 ```sh
 npm ci --prefix v2                 # fonts and photos come from the V2 site
-node scripts/ads/render.mjs        # all 90 ads, about 5 minutes
-node scripts/ads/render.mjs --size 728x90 --headline h2 --view motion   # just some
+node ad-portal/generator/render.mjs        # all 90 ads, about 5 minutes
+node ad-portal/generator/render.mjs --size 728x90 --headline h2 --view motion   # just some
+cd ad-portal && npm run seed:remote -- --by you@overyondr.com   # load them into the portal
 ```
 
 Needs Playwright with Chromium, Python 3 with Pillow, and ffmpeg.

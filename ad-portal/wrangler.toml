@@ -1,0 +1,33 @@
+# yondr-ad-portal: the Yondr ad library at https://ads.overyondrdev.com (its own Worker, separate from
+# overyondr-website-v1). Cloudflare Access app "overyondrdev.com (Yondr website dev)" covers *.overyondrdev.com.
+name = "yondr-ad-portal"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+account_id = "3fac6c19097c5692e17198cffa818085"
+
+# No public *.workers.dev or preview URLs: they would bypass the Access login.
+workers_dev = false
+preview_urls = false
+
+routes = [
+  { pattern = "ads.overyondrdev.com", custom_domain = true }
+]
+
+# The app (index.html, app.js, app.css, brand files). /api/* and /files/* go to the Worker.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*", "/files/*"]
+
+[observability]
+enabled = true
+
+[[r2_buckets]]
+binding = "AD_ASSETS"
+bucket_name = "yondr-ad-portal-assets"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yondr-ad-portal-db"
+database_id = "dfdcc2cc-4505-4ff7-944a-1fcd52abb04d"
+migrations_dir = "migrations"

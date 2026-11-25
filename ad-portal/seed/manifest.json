@@ -3,7 +3,6 @@
  "name": "Harvard Study 2026",
  "summary": "Display ads promoting the Harvard CEPR study on phone-free schools and Yondr’s mention in it.",
  "launched": "2026-11-24",
- "landingUrl": "https://www.overyondr.com",
  "studyUrl": "https://cepr.harvard.edu/phone-free-schools",
  "cta": "Read the study",
  "longHeadline": "Harvard study: Using a Yondr pouch can add 1–2 extra weeks of learning a year.",
@@ -1707,5 +1706,7 @@
    "frames": 53,
    "duration": 13.6
   }
- ]
+ ],
+ "releaseUrl": "https://docs.google.com/document/d/1Lk3F_QcvPzGUNIE1z25g8_oDALcozRWsTS2XA69Ctfg/edit",
+ "source": "Source: Center for Education Policy Research, Harvard University, 2026"
 }

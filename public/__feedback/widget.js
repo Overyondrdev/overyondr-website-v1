@@ -11,8 +11,6 @@
   var API = '/__feedback/api/';
   var host = location.hostname;
   var SITE = /^v2\./.test(host) ? 'v2' : /^(www\.)?overyondrdev\.com$/.test(host) ? 'portal' : 'v1';
-  // The ad library (ads.overyondrdev.com) is its own feedback area: no preview toolbar, no website tour.
-  if (/^ads\./.test(host)) SITE = 'ads';
   var TYPES = [
     ['bug', 'Bug', 'Something is broken or not working'],
     ['design', 'Design', 'Layout, visuals, spacing, imagery'],
@@ -429,7 +427,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
   }
   var observer = null, shiftTimer = null;
   function queueShift() { clearTimeout(shiftTimer); shiftTimer = setTimeout(shiftFixed, 300); }
-  if (SITE === 'v1' || SITE === 'v2') {
+  if (SITE !== 'portal') {
     var other = SITE === 'v1' ? 'v2' : 'v1';
     barFb = el('button', { class: 'b-fb', type: 'button', 'aria-label': 'Give feedback on this page', html: ICON.chat, onclick: function () { toggle(true); } },
       [el('span', { class: 'l', text: 'Give feedback' }), el('span', { class: 's', text: 'Feedback' })]);
@@ -686,7 +684,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     var o = e.target.closest && e.target.closest('[data-yfb-open]');
     if (o) { e.preventDefault(); if (tourEl) return; toggle(true); }
   });
-  if (window.top === window && SITE !== 'ads') setTimeout(autoTour, 700);
+  if (window.top === window) setTimeout(autoTour, 700);
 
   // ------------------------------------------------------------------ render
   var headEl, bodyEl, footEl;
@@ -731,7 +729,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
   function renderNew() {
     if (state.lastId) return renderThanks();
     bodyEl.appendChild(el('h3', { text: 'Share your thoughts' }));
-    bodyEl.appendChild(el('p', { class: 'sub', text: SITE === 'portal' ? 'Ideas, bugs, design notes, copy edits: anything about either version helps.' : SITE === 'ads' ? 'Thoughts on the ad library or the ads. To comment on one ad, open it and use its Feedback tab.' : 'Bugs, design notes, copy edits, ideas — anything about this page helps.' }));
+    bodyEl.appendChild(el('p', { class: 'sub', text: SITE === 'portal' ? 'Ideas, bugs, design notes, copy edits: anything about either version helps.' : 'Bugs, design notes, copy edits, ideas — anything about this page helps.' }));
 
     if (SITE === 'portal') {
       // On the version page, people may be thinking about either site.
@@ -801,7 +799,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     bodyEl.appendChild(seg);
 
     bodyEl.appendChild(el('div', { class: 'ctx' }, [
-      'On', el('b', { text: SITE === 'portal' ? 'the version page' : SITE === 'ads' ? 'the ad library' : SITE.toUpperCase() + ' ' + (location.pathname === '/' ? 'home' : location.pathname) }),
+      'On', el('b', { text: SITE === 'portal' ? 'the version page' : SITE.toUpperCase() + ' ' + (location.pathname === '/' ? 'home' : location.pathname) }),
       '· ' + window.innerWidth + '×' + window.innerHeight,
     ]));
     if (state.error) bodyEl.appendChild(el('div', { class: 'error', role: 'alert', text: state.error }));
