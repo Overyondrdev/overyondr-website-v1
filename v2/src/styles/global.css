@@ -597,6 +597,11 @@ textarea.input {
 .skip-link:focus {
   transform: none;
 }
+/* Hyphenated words in headings (wrapped at build time by src/middleware.ts) don't break at the hyphen. */
+.nobr,
+[data-split] .w {
+  white-space: nowrap;
+}
 .flow-row {
   display: flex;
   flex-wrap: wrap;
