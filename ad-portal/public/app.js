@@ -176,8 +176,6 @@
       ]),
       h('div', { class: 'actions' }, [
         live.length ? h('button', { type: 'button', class: 'btn lime', html: ICON.dl + ' Download all (' + live.length + ')', onclick: function () { downloadZip(live, s.id + '-all-ads.zip'); } }) : null,
-        s.study_url ? h('a', { class: 'btn ghost', href: s.study_url, target: '_blank', rel: 'noopener', text: 'Read the study ↗' }) : null,
-        s.release_url ? h('a', { class: 'btn ghost', href: s.release_url, target: '_blank', rel: 'noopener', text: 'Press release ↗' }) : null,
         h('button', { type: 'button', class: 'btn ghost', text: 'Upload ads', onclick: uploadForm }),
       ]),
     ]));
@@ -573,13 +571,11 @@
     var form = h('form', { class: 'form', style: 'padding:20px', onsubmit: function (e) {
       e.preventDefault();
       var fd = new FormData(form), body = {};
-      ['name', 'summary', 'study_url', 'release_url'].forEach(function (k) { body[k] = fd.get(k) || ''; });
+      ['name', 'summary'].forEach(function (k) { body[k] = fd.get(k) || ''; });
       api('sets', { method: 'POST', body: body }).then(function (r) { dlg.close(); toast('Ad set added'); return boot(r.id); }).catch(function (er) { errEl.textContent = er.message; });
     } }, [
       field('name', 'Name', h('input', { class: 'input', required: true, maxlength: 120, placeholder: 'e.g. Back to school 2027' })),
       field('summary', 'What the ads are for', h('textarea', { class: 'input', rows: 2, maxlength: 1000 })),
-      field('study_url', 'Reference link (optional)', h('input', { class: 'input', type: 'url', placeholder: 'https://…' })),
-      field('release_url', 'Press release or brief (optional)', h('input', { class: 'input', type: 'url', placeholder: 'https://…' })),
       errEl,
       h('div', { class: 'foot' }, [h('button', { type: 'button', class: 'btn line', text: 'Cancel', onclick: function () { dlg.close(); } }), h('button', { type: 'submit', class: 'btn forest', text: 'Add ad set' })]),
     ]);

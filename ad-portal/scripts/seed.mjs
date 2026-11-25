@@ -43,7 +43,7 @@ const copy = { headlines: c.headlines.map(({ id, text, desc }) => ({ id, text, d
   stat: c.stat, source: c.source, sizes: c.sizes, concepts: c.concepts };
 const sql = [
   `INSERT INTO ad_sets (id, name, summary, study_url, release_url, copy, created_by, created_at, updated_at)
-   VALUES (${[m.id, m.name, m.summary, m.studyUrl, m.releaseUrl, JSON.stringify(copy), by, ts, ts].map(q).join(', ')})
+   VALUES (${[m.id, m.name, m.summary, null, null, JSON.stringify(copy), by, ts, ts].map(q).join(', ')})
    ON CONFLICT(id) DO UPDATE SET name = excluded.name, summary = excluded.summary, study_url = excluded.study_url,
      release_url = excluded.release_url, copy = excluded.copy, updated_at = excluded.updated_at;`,
   ...m.creatives.map((x) => {

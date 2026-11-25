@@ -3,9 +3,8 @@
   "name": "Harvard Study 2026",
   "summary": "Display ads promoting the Harvard CEPR study on phone-free schools and Yondr’s mention in it.",
   "launched": "2026-11-24",
-  "studyUrl": "https://cepr.harvard.edu/phone-free-schools",
-  "cta": "Learn more",
-  "ctaShort": "Learn more",
+  "cta": "Learn More",
+  "ctaShort": "Learn More",
   "eyebrow": "New Harvard study",
   "source": "Source: Center for Education Policy Research, Harvard University, 2026",
   "sourceShort": "Source: Harvard CEPR, 2026",
@@ -119,6 +118,5 @@
   "pouch": {
     "src": "v2/src/assets/images/product-pouch.png",
     "alt": "Yondr phone pouch with a phone inside"
-  },
-  "releaseUrl": "https://docs.google.com/document/d/1Lk3F_QcvPzGUNIE1z25g8_oDALcozRWsTS2XA69Ctfg/edit"
+  }
 }

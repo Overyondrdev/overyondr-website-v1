@@ -125,7 +125,7 @@ order = {k: i for i, k in enumerate(list(sizes) + list(heads) + list(concepts))}
 items = sorted(creatives.values(), key=lambda x: (order[x['headline']], order[x['concept']], order[x['size']]))
 manifest = {
     'id': c['id'], 'name': c['name'], 'summary': c['summary'], 'launched': c['launched'],
-    'studyUrl': c['studyUrl'], 'releaseUrl': c.get('releaseUrl'), 'cta': c['cta'], 'source': c['source'],
+    'cta': c['cta'], 'source': c['source'],
     'longHeadline': c['longHeadline'], 'headlines': c['headlines'], 'sizes': c['sizes'], 'concepts': c['concepts'],
     'limitBytes': LIMIT, 'generated': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
     'sources': sources,
