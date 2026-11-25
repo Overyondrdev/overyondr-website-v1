@@ -7,7 +7,26 @@
 (function () {
   'use strict';
   var VIEWS = { pouch: 'Pouch still', 'in-use': 'In-use still', motion: 'Motion' };
-  var TPL_SOURCE = ['300x250', '336x280', '300x600', '160x600'];   // sizes that show a source line (generator/ad.html)
+  // Every piece of text each size and version shows, in on-ad order. Generated from generator/ad.html with
+  // `node generator/fields.mjs` (build() reports the data-field elements an ad keeps); re-run it after template changes.
+  var FIELDS = {"300x250": {"pouch": ["eyebrow", "headline", "stat.line", "cta"], "in-use": ["eyebrow", "headline", "cta", "sourceShort"], "motion": ["eyebrow", "headline", "cta", "sourceShort", "stat.pre", "stat.big", "stat.unit", "stat.note", "stat.line"]}, "336x280": {"pouch": ["eyebrow", "headline", "stat.line", "cta"], "in-use": ["eyebrow", "headline", "cta", "sourceShort"], "motion": ["eyebrow", "headline", "cta", "sourceShort", "stat.pre", "stat.big", "stat.unit", "stat.note", "stat.line"]}, "728x90": {"pouch": ["eyebrow", "headline", "stat.line", "cta"], "in-use": ["eyebrow", "headline", "stat.line", "cta"], "motion": ["eyebrow", "headline", "stat.line", "cta", "stat.pre", "stat.big", "stat.unit"]}, "320x50": {"pouch": ["headline", "ctaShort"], "in-use": ["headline", "ctaShort"], "motion": ["headline", "ctaShort", "stat.pre", "stat.big", "stat.unit"]}, "300x600": {"pouch": ["eyebrow", "headline", "stat.line", "desc", "cta", "source"], "in-use": ["eyebrow", "headline", "desc", "cta", "source"], "motion": ["eyebrow", "headline", "desc", "cta", "source", "stat.pre", "stat.big", "stat.unit", "stat.note", "stat.line"]}, "160x600": {"pouch": ["eyebrow", "headline", "stat.line", "cta", "sourceShort"], "in-use": ["eyebrow", "headline", "desc", "cta", "sourceShort"], "motion": ["eyebrow", "headline", "desc", "cta", "sourceShort", "stat.pre", "stat.big", "stat.unit", "stat.note", "stat.line"]}};
+  // How each field is labelled and checked in the editor. key = the per-ad override name.
+  var FIELD_META = {
+    eyebrow: { key: 'eyebrow', label: 'Tagline', max: 40 },
+    headline: { key: 'headline', label: 'Headline', max: 30 },
+    desc: { key: 'desc', label: 'Description', max: 90, multiline: true },
+    'stat.line': { key: 'statLine', label: 'Stat line', max: 50, hint: 'The stat number and the word after it are highlighted, e.g. “Can add 1–2 weeks of learning per year”.' },
+    'stat.pre': { key: 'statPre', label: 'Stat lead-in', max: 16, hint: 'Small words above the big number in the motion ads.' },
+    'stat.big': { key: 'statBig', label: 'Stat number', max: 8, hint: 'The big number in the motion ads.' },
+    'stat.unit': { key: 'statUnit', label: 'Stat words', max: 60, hint: 'Under the big number in the motion ads.' },
+    'stat.note': { key: 'statNote', label: 'Stat note', max: 60, hint: 'Small line under the stat in the motion ads.' },
+    cta: { key: 'cta', label: 'Button', max: 24 },
+    ctaShort: { key: 'cta', label: 'Button', max: 14 },
+    source: { key: 'source', label: 'Source line', max: 140 },
+    sourceShort: { key: 'source', label: 'Source line', max: 60 },
+  };
+  var STAT_KEYS = ['statPre', 'statBig', 'statUnit', 'statNote'];   // fields only the motion ads' middle scene shows
+  function shown(a) { return ((FIELDS[a.size] || {})[a.variant]) || []; }
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   // Copy paths: 'eyebrow', 'cta', 'stat.big', 'h1.text', 'h3.desc'.
@@ -25,9 +44,7 @@
   function overrideFor(path) {
     if (path === 'cta' || path === 'ctaShort') return 'cta';
     if (path === 'source' || path === 'sourceShort') return 'source';
-    if (path === 'stat.big') return 'statBig';
-    if (path === 'stat.unit') return 'statUnit';
-    if (path === 'stat.note') return 'statNote';
+    if (FIELD_META[path]) return FIELD_META[path].key;
     var m = /^h\d+\.(text|desc)$/.exec(path);
     if (m) return m[1] === 'text' ? 'headline' : 'desc';
     return path;
@@ -35,36 +52,24 @@
 
   // The text fields one ad shows, mirroring generator/ad.html.
   function fieldsFor(a) {
-    var hid = a.meta.headlineId, small = a.size === '320x50', half = a.size === '300x600';
-    var out = [{ key: 'headline', label: 'Headline', max: 30, path: hid + '.text' }];
-    if (half || (a.size === '160x600' && a.variant !== 'pouch' && a.variant !== 'motion')) out.push({ key: 'desc', label: 'Description', max: 90, path: hid + '.desc', multiline: true });
-    if (!small) out.push({ key: 'eyebrow', label: 'Tagline', max: 40, path: 'eyebrow' });
-    out.push({ key: 'cta', label: 'Button', max: small ? 14 : 24, path: small ? 'ctaShort' : 'cta' });
-    if (!small) out.push({ key: 'statBig', label: 'Stat number', max: 8, path: 'stat.big', hint: 'In “+1–2 weeks of learning a year”' + (a.variant === 'motion' ? ' and the big stat' : '') + '.' });
-    if (a.variant === 'motion' && !small) {
-      out.push({ key: 'statUnit', label: 'Stat words', max: 60, path: 'stat.unit' });
-      if (a.size !== '728x90') out.push({ key: 'statNote', label: 'Stat note', max: 60, path: 'stat.note' });
-    }
-    if (TPL_SOURCE.indexOf(a.size) >= 0) out.push({ key: 'source', label: 'Source line', max: half ? 140 : 60, path: half ? 'source' : 'sourceShort' });
-    return out;
+    var hid = a.meta.headlineId;
+    return shown(a).map(function (f) {
+      var m = FIELD_META[f];
+      var path = f === 'headline' ? hid + '.text' : f === 'desc' ? hid + '.desc' : f;
+      return { key: m.key, label: m.label, max: m.max, path: path, multiline: m.multiline, hint: m.hint };
+    });
   }
   // Ads that show a changed shared path, unless the ad has its own override for it.
   function affected(changed, ads) {
     return ads.filter(function (a) {
       var m = a.meta || {}, o = m.overrides || {};
       if (!m.generated || a.status === 'archived') return false;
-      var half = a.size === '300x600';
+      var on = shown(a);
       return changed.some(function (k) {
         if (o[overrideFor(k)] != null) return false;
-        if (k === 'eyebrow') return a.size !== '320x50';
-        if (k === 'stat.big') return a.size !== '320x50';
-        if (k === 'cta') return a.size !== '320x50';
-        if (k === 'ctaShort') return a.size === '320x50';
-        if (k === 'source') return half;
-        if (k === 'sourceShort') return TPL_SOURCE.indexOf(a.size) >= 0 && !half;
-        if (k === 'stat.unit' || k === 'stat.note') return a.variant === 'motion';
         var hm = /^(h\d+)\.(text|desc)$/.exec(k);
-        return hm && m.headlineId === hm[1];
+        if (hm) return m.headlineId === hm[1] && on.indexOf(hm[2] === 'text' ? 'headline' : 'desc') >= 0;
+        return on.indexOf(k) >= 0;
       });
     });
   }
@@ -83,6 +88,8 @@
     if (o.cta != null) { c.cta = o.cta; c.ctaShort = o.cta; }
     if (o.source != null) { c.source = o.source; c.sourceShort = o.source; }
     c.stat = Object.assign({}, c.stat);
+    if (o.statLine != null) c.stat.line = o.statLine;
+    if (o.statPre != null) c.stat.pre = o.statPre;
     if (o.statBig != null) c.stat.big = o.statBig;
     if (o.statUnit != null) c.stat.unit = o.statUnit;
     if (o.statNote != null) c.stat.note = o.statNote;
@@ -262,7 +269,7 @@
     var STAT_SCENE = 6.5, at = null;
     var redraw = function (play) { pv.draw(previewSpec(), play, at); };
     var focusField = function (f) {
-      var want = a.variant === 'motion' && (f.key === 'statUnit' || f.key === 'statNote' || f.key === 'statBig') ? STAT_SCENE : null;
+      var want = a.variant === 'motion' && STAT_KEYS.indexOf(f.key) >= 0 ? STAT_SCENE : null;
       if (want !== at) { at = want; redraw(false); sceneNote.textContent = at ? 'Showing the stat scene of the animation.' : 'Showing the end of the animation.'; }
     };
     var sceneNote = h('span', { class: 'hint', text: a.variant === 'motion' ? 'Showing the end of the animation.' : 'Live preview of this ad.' });
@@ -396,7 +403,10 @@
     ['cta', 'Button', 24, 'The call to action on every size except 320×50.'],
     ['ctaShort', 'Button on 320×50', 14, 'The mobile banner has less room. Keep it short.'],
   ];
-  var STAT = [['stat.big', 'Stat number', 8, ''], ['stat.unit', 'Stat words', 60, 'Shown big in the motion ads.'], ['stat.note', 'Stat note', 60, 'Small line under the stat in the motion ads.']];
+  var STAT = [['stat.line', 'Stat line', 50, 'On the still and banner ads. The stat number and the word after it are highlighted.'],
+    ['stat.pre', 'Stat lead-in', 16, 'Small words above the big number in the motion ads, e.g. “Can add”.'],
+    ['stat.big', 'Stat number', 8, 'The big number in the motion ads.'], ['stat.unit', 'Stat words', 60, 'Under the big number in the motion ads.'],
+    ['stat.note', 'Stat note', 60, 'Small line under the stat in the motion ads.']];
   var SOURCE = [['source', 'Source line (Half Page)', 140, ''], ['sourceShort', 'Source line (other sizes)', 60, '']];
   var tab = { saved: null, draft: null, preview: { headline: 'h1', size: '300x250', view: 'in-use' } };
 

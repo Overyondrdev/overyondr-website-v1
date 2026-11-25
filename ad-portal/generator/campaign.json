@@ -10,22 +10,23 @@
   "sourceShort": "Source: Harvard CEPR, 2026",
   "longHeadline": "Harvard study: Using a Yondr pouch can add 1–2 extra weeks of learning a year.",
   "stat": {
+    "pre": "Can add",
     "big": "1–2",
-    "unit": "extra weeks of learning a year",
-    "line": "+1–2 weeks of learning a year",
+    "unit": "weeks of learning per year",
+    "line": "Can add 1–2 weeks of learning per year",
     "note": "Harvard CEPR study of 3M+ students"
   },
   "headlines": [
     {
       "id": "h1",
       "text": "Harvard Study Names Yondr",
-      "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
+      "desc": "Harvard names Yondr’s phone-free program as a meaningful lever against learning loss.",
       "photo": "hands"
     },
     {
       "id": "h2",
       "text": "New Harvard Study on Yondr",
-      "desc": "Strict pouch programs added 1–2 weeks of learning each year.",
+      "desc": "Strict pouch programs can add 1–2 weeks of learning each year.",
       "photo": "desk"
     },
     {

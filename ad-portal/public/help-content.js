@@ -27,7 +27,7 @@ window.YONDR_HELP = {
       body: `<p>Your role is shown next to your email at the top right.</p>
 <table><thead><tr><th>Role</th><th>Can</th></tr></thead><tbody>
 <tr><td><span class="badge">Viewer</span></td><td>Browse every ad, download them (one, a selection or all), copy the ad text, comment and suggest changes. Everyone starts as a viewer.</td></tr>
-<tr><td><span class="badge editor">Editor</span></td><td>Everything viewers can do, plus edit headlines, taglines, descriptions and the button (the ads re-render), upload ads, replace files, set status and run dates, approve, and manage campaigns.</td></tr>
+<tr><td><span class="badge editor">Editor</span></td><td>Everything viewers can do, plus edit every piece of text on the ads: headlines, taglines, descriptions, the stat, the button and the source line (the ads re-render), upload ads, replace files, set status and run dates, approve, and manage campaigns.</td></tr>
 <tr><td><span class="badge admin">Admin</span></td><td>Everything editors can do, plus give people roles on the People tab and delete any ad or campaign.</td></tr></tbody></table>
 <p>Need more access? Ask an admin (listed at the bottom of every help page).</p>` },
     { id: 'tour', section: 'start', roles: 'all', title: 'Taking the tour again', keys: 'tutorial walkthrough onboarding intro guide',
@@ -104,7 +104,7 @@ window.YONDR_HELP = {
     // ------------------------------------------------------------------ Editing (editors)
     { id: 'edit-ad', section: 'edit', roles: 'editor', title: 'Editing an ad’s text', keys: 'edit change headline tagline button cta description wording text',
       body: `<ol><li>Click <b>Edit</b> on the ad’s card, or <b>Edit text</b> in its details.</li><li>Change the text. The preview shows exactly that ad as you type (motion ads jump to the scene you’re editing; <b>▶ Play</b> runs it).</li><li>Choose <a href="#edit-scope">every ad with this text or only this ad</a>.</li><li>Choose <b>Save</b>.</li></ol>
-<p>You only see the text that ad shows: a 320×50 has a headline and button; a Half Page also has a description and source line; motion ads add the stat.</p>` },
+<p>You see every piece of text that ad shows, and nothing it doesn’t: a 320×50 still has a headline and button; a Half Page also has the tagline, stat line, description and source line; motion ads add the stat scene (lead-in, big number, words and note). Every word on an ad can be changed here.</p>` },
     { id: 'edit-scope', section: 'edit', roles: 'editor', title: 'Every ad with this text, or only this ad?', keys: 'scope shared only this ad all ads consistent override',
       body: `<ul><li><b>Every ad with this text</b> (recommended) changes the shared copy, so every ad that shows it updates. The button tells you how many. A headline is shared by its 18 ads; the tagline and button by most of the set.</li><li><b>Only this ad</b> changes just this one, for example to shorten a line that’s cramped at one size. The ad gets the <b>Own copy</b> badge.</li></ul>` },
     { id: 'own-copy', section: 'edit', roles: 'all', title: 'Own copy', keys: 'own copy custom override different text one ad',

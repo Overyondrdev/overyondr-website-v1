@@ -37,6 +37,7 @@
   .statline b { color: var(--lime); font-weight: 700; }
   .big { font-family: var(--display); font-variation-settings: 'SOFT' 100; font-weight: 500; color: var(--lime); line-height: .8; letter-spacing: -0.04em; white-space: nowrap; }
   .unit { font-family: var(--display); font-variation-settings: 'SOFT' 100; font-weight: 400; color: var(--cream); line-height: 1.05; text-wrap: balance; }
+  .pre { font: 600 13px/1 var(--sans); color: var(--cream); white-space: nowrap; }
   .note { font: 600 10px/1.25 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--sage); }
   .photo { inset: 0; }
   .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -57,7 +58,8 @@
   .s300x250 .in-use .src { right: 14px; bottom: 16px; width: 96px; text-align: right; }
 
   .s300x250 .stat .logo { left: 16px; top: 16px; width: 62px; }
-  .s300x250 .stat .big { left: 14px; top: 50px; font-size: 100px; }
+  .s300x250 .stat .pre { left: 17px; top: 42px; font-size: 14px; }
+  .s300x250 .stat .big { left: 14px; top: 60px; font-size: 88px; }
   .s300x250 .stat .unit { left: 17px; top: 136px; width: 170px; height: 54px; font-size: 22px; }
   .s300x250 .stat .note { left: 17px; top: 200px; width: 170px; }
   .s300x250 .stat .blob { left: 206px; top: 60px; width: 150px; height: 240px; border-radius: 26px; }
@@ -83,7 +85,8 @@
   .s728x90 .cta { right: 18px; top: 29px; height: 32px; padding: 0 15px; font-size: 14px; }
   .s728x90 .src { display: none; }
 
-  .s728x90 .stat .big { left: 136px; top: 22px; font-size: 62px; }
+  .s728x90 .stat .pre { left: 139px; top: 12px; font-size: 13px; }
+  .s728x90 .stat .big { left: 136px; top: 30px; font-size: 54px; }
   .s728x90 .stat .eyebrow { display: none; }
   .s728x90 .stat .unit { left: 246px; top: 17px; width: 186px; height: 56px; font-size: 23px; }
   .s728x90 .stat .blob { left: 448px; top: 14px; width: 112px; height: 112px; border-radius: 999px; }
@@ -106,7 +109,8 @@
   .s320x50 .in-use .feather { left: 84px; top: 0; width: 25px; height: 50px; background: linear-gradient(90deg, rgb(28 43 14 / 0), var(--forest)); }
   .s320x50 .in-use .feather.l { left: 58px; width: 10px; background: linear-gradient(90deg, var(--forest), rgb(28 43 14 / 0)); }
   .s320x50 .in-use .hl { left: 113px; top: 6px; width: 104px; height: 38px; font-size: 16px; display: flex; align-items: center; }
-  .s320x50 .stat .big { left: 62px; top: 12px; font-size: 32px; }
+  .s320x50 .stat .pre { left: 63px; top: 6px; font-size: 9.5px; }
+  .s320x50 .stat .big { left: 62px; top: 18px; font-size: 28px; }
   .s320x50 .stat .unit { left: 122px; top: 7px; width: 104px; height: 36px; font-size: 15px; display: flex; align-items: center; }
   .s320x50 .stat .blob, .s320x50 .stat .pouch { display: none; }
   .s320x50 .pouch-sc .hl { left: 62px; top: 6px; width: 108px; height: 38px; font-size: 16px; display: flex; align-items: center; }
@@ -127,9 +131,10 @@
   .s300x600 .src { left: 22px; bottom: 18px; width: 256px; }
 
   .s300x600 .stat .eyebrow { left: 22px; top: 80px; }
-  .s300x600 .stat .big { left: 18px; top: 112px; font-size: 150px; }
-  .s300x600 .stat .unit { left: 22px; top: 238px; width: 250px; height: 66px; font-size: 30px; }
-  .s300x600 .stat .note { left: 22px; top: 312px; width: 250px; font-size: 11px; }
+  .s300x600 .stat .pre { left: 22px; top: 106px; font-size: 20px; }
+  .s300x600 .stat .big { left: 18px; top: 134px; font-size: 136px; }
+  .s300x600 .stat .unit { left: 22px; top: 248px; width: 250px; height: 66px; font-size: 30px; }
+  .s300x600 .stat .note { left: 22px; top: 322px; width: 250px; font-size: 11px; }
   .s300x600 .stat .blob { left: 60px; top: 424px; width: 220px; height: 220px; border-radius: 999px; }
   .s300x600 .stat .pouch { left: 98px; top: 396px; width: 118px; transform: rotate(-6deg); }
   .s300x600 .stat .cta, .s300x600 .stat .src { display: none; }
@@ -156,11 +161,12 @@
   .s160x600 .src { left: 16px; bottom: 12px; width: 130px; font-size: 7.5px; }
 
   .s160x600 .stat .eyebrow { left: 16px; top: 66px; }
-  .s160x600 .stat .big { left: 13px; top: 86px; font-size: 92px; }
-  .s160x600 .stat .unit { left: 16px; top: 160px; width: 130px; height: 78px; font-size: 24px; }
-  .s160x600 .stat .note { left: 16px; top: 240px; width: 130px; font-size: 9.5px; }
-  .s160x600 .stat .blob { left: 44px; top: 336px; width: 140px; height: 140px; border-radius: 999px; }
-  .s160x600 .stat .pouch { left: 30px; top: 272px; width: 100px; transform: rotate(-7deg); }
+  .s160x600 .stat .pre { left: 16px; top: 86px; font-size: 15px; }
+  .s160x600 .stat .big { left: 13px; top: 106px; font-size: 82px; }
+  .s160x600 .stat .unit { left: 16px; top: 176px; width: 130px; height: 72px; font-size: 22px; }
+  .s160x600 .stat .note { left: 16px; top: 254px; width: 130px; font-size: 9.5px; }
+  .s160x600 .stat .blob { left: 44px; top: 350px; width: 140px; height: 140px; border-radius: 999px; }
+  .s160x600 .stat .pouch { left: 30px; top: 290px; width: 100px; transform: rotate(-7deg); }
   .s160x600 .stat .cta, .s160x600 .stat .src { display: none; }
 
   .s160x600 .pouch-sc .eyebrow { left: 16px; top: 62px; }
@@ -183,6 +189,14 @@ const FOCUS = {
 };
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+// Stat line: the stat number and the word after it are highlighted ("Can add <b>1–2 weeks</b> of learning per year").
+const statline = (line, big) => {
+  const t = String(line || ''), i = big ? t.indexOf(big) : -1;
+  if (i < 0) return esc(t);
+  const m = /^\S*(\s+\S+)?/.exec(t.slice(i + big.length)) || [''];
+  const j = i + big.length + m[0].length;
+  return esc(t.slice(0, i)) + '<b>' + esc(t.slice(i, j)) + '</b>' + esc(t.slice(j));
+};
 // Headline: wrap each word for the motion reveal and colour "Yondr" lime.
 const headline = (t) => '<span class="in">' + t.split(' ').map((w) => `<span class="w">${/Yondr/.test(w) ? '<em>' + esc(w) + '</em>' : esc(w)}</span>`).join(' ') + '</span>';
 
@@ -197,7 +211,8 @@ window.build = async function (spec) {
   const shape = size.w / size.h > 3 ? 'wide' : size.h / size.w > 3 ? 'narrow' : size.h > size.w ? 'tall' : 'box';
   const photo = base + c.photos[h.photo].src;
   const pouch = base + c.pouch.src;
-  const cta = (size.id === '320x50' ? c.ctaShort : c.cta) + ' ' + ARROW;
+  const cta = esc(size.id === '320x50' ? c.ctaShort : c.cta) + ' ' + ARROW;
+  const ctaField = size.id === '320x50' ? 'ctaShort' : 'cta';
   const lw = scale === 1 ? size.w : 300, lh = scale === 1 ? size.h : 250;
 
   const root = document.getElementById('root');
@@ -208,34 +223,35 @@ window.build = async function (spec) {
         <div class="photo"><img src="${photo}" alt="" style="object-position:${FOCUS[h.photo][shape]}"></div>
         <div class="feather"></div><div class="feather l"></div><div class="scrim"></div>
         <div class="logo">${LOGO}</div>
-        <div class="eyebrow pill">${esc(c.eyebrow)}</div>
-        <h1 class="hl disp" data-a="0.3,0.25,words" data-fit>${headline(h.text)}</h1>
-        <p class="statline" data-a="1.0,0.35,sweep"><b>+${esc(c.stat.big)} weeks</b> of learning a year</p>
-        <p class="desc" data-a="1.2,0.5,sweep" data-fit>${esc(h.desc)}</p>
-        <div class="cta" data-a="1.6,0.3,sweep">${cta}</div>
-        <p class="src" data-a="1.6,0.3,sweep">${esc(size.w >= 300 && size.h >= 600 ? c.source : c.sourceShort)}</p>
+        <div class="eyebrow pill" data-field="eyebrow">${esc(c.eyebrow)}</div>
+        <h1 class="hl disp" data-a="0.3,0.25,words" data-fit data-field="headline">${headline(h.text)}</h1>
+        <p class="statline" data-a="1.0,0.35,sweep" data-field="stat.line">${statline(c.stat.line, c.stat.big)}</p>
+        <p class="desc" data-a="1.2,0.5,sweep" data-fit data-field="desc">${esc(h.desc)}</p>
+        <div class="cta" data-a="1.6,0.3,sweep" data-field="${ctaField}">${cta}</div>
+        <p class="src" data-a="1.6,0.3,sweep" data-field="${size.w >= 300 && size.h >= 600 ? 'source' : 'sourceShort'}">${esc(size.w >= 300 && size.h >= 600 ? c.source : c.sourceShort)}</p>
       </section>
       <section class="scene stat" data-scene="stat">
         <div class="blob"></div>
         <div class="pouch"><img src="${pouch}" alt=""></div>
         <div class="logo">${LOGO}</div>
-        <div class="eyebrow" data-a="0.1,0.3,sweep">${esc(c.eyebrow)}</div>
-        <div class="big" data-a="0.25,0.4,lift">${esc(c.stat.big)}</div>
-        <div class="unit" data-a="0.6,0.45,sweep" data-fit>${esc(c.stat.unit)}</div>
-        <div class="note" data-a="1.0,0.35,sweep">${esc(c.stat.note)}</div>
-        <div class="cta">${cta}</div>
-        <p class="src">${esc(c.sourceShort)}</p>
+        <div class="eyebrow" data-a="0.1,0.3,sweep" data-field="eyebrow">${esc(c.eyebrow)}</div>
+        <div class="pre" data-a="0.15,0.3,sweep" data-field="stat.pre">${esc(c.stat.pre || '')}</div>
+        <div class="big" data-a="0.25,0.4,lift" data-field="stat.big">${esc(c.stat.big)}</div>
+        <div class="unit" data-a="0.6,0.45,sweep" data-fit data-field="stat.unit">${esc(c.stat.unit)}</div>
+        <div class="note" data-a="1.0,0.35,sweep" data-field="stat.note">${esc(c.stat.note)}</div>
+        <div class="cta" data-field="${ctaField}">${cta}</div>
+        <p class="src" data-field="sourceShort">${esc(c.sourceShort)}</p>
       </section>
       <section class="scene pouch-sc" data-scene="pouch">
         <div class="blob"></div>
         <div class="pouch"><img src="${pouch}" alt=""></div>
         <div class="logo">${LOGO}</div>
-        <div class="eyebrow" data-a="0.05,0.3,sweep">${esc(c.eyebrow)}</div>
-        <h1 class="hl disp" data-a="0.15,0.25,words" data-fit>${headline(h.text)}</h1>
-        <p class="statline" data-a="0.9,0.35,sweep"><b>+${esc(c.stat.big)} weeks</b> of learning a year</p>
-        <p class="desc" data-a="1.1,0.5,sweep" data-fit>${esc(h.desc)}</p>
-        <div class="cta" data-a="1.4,0.3,sweep">${cta}</div>
-        <p class="src" data-a="1.4,0.3,sweep">${esc(size.w >= 300 && size.h >= 600 ? c.source : c.sourceShort)}</p>
+        <div class="eyebrow" data-a="0.05,0.3,sweep" data-field="eyebrow">${esc(c.eyebrow)}</div>
+        <h1 class="hl disp" data-a="0.15,0.25,words" data-fit data-field="headline">${headline(h.text)}</h1>
+        <p class="statline" data-a="0.9,0.35,sweep" data-field="stat.line">${statline(c.stat.line, c.stat.big)}</p>
+        <p class="desc" data-a="1.1,0.5,sweep" data-fit data-field="desc">${esc(h.desc)}</p>
+        <div class="cta" data-a="1.4,0.3,sweep" data-field="${ctaField}">${cta}</div>
+        <p class="src" data-a="1.4,0.3,sweep" data-field="${size.w >= 300 && size.h >= 600 ? 'source' : 'sourceShort'}">${esc(size.w >= 300 && size.h >= 600 ? c.source : c.sourceShort)}</p>
       </section>
       <div class="wipe"></div>
     </div>
@@ -268,7 +284,9 @@ window.build = async function (spec) {
     });
   }
   window.seek(view === 'motion' ? 0 : 1e6);
-  return { duration: 13.5 };
+  // The copy fields this ad actually shows (hidden elements were removed above): the portal's editor offers exactly these.
+  const fields = [...new Set([...root.querySelectorAll('[data-field]')].map((el) => el.dataset.field))];
+  return { duration: 13.5, fields };
 };
 
 // An element only shows where the size's layout positions it (desc, source etc. are optional on small sizes).
