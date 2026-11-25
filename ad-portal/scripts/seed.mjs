@@ -27,10 +27,11 @@ const c = JSON.parse(readFileSync(join(root, 'generator/campaign.json'), 'utf8')
 const BUCKET = 'yondr-ad-portal-assets';
 const DB = 'yondr-ad-portal-db';
 const TYPE = { jpg: 'image/jpeg', gif: 'image/gif', png: 'image/png', webp: 'image/webp' };
+// --posters-only: upload just the motion posters and set poster_key, leaving files and records otherwise alone.
 const key = (file) => `sets/${m.id}/${file}`;
 const wrangler = (args) => execFileSync('npx', ['wrangler', '-c', 'wrangler.toml', ...args], { cwd: root, stdio: ['ignore', 'pipe', 'inherit'] });
 
-const files = [...m.creatives.map((x) => x.file), ...(m.sources || []).map((s) => s.file)];
+const files = has('posters-only') ? m.creatives.filter((x) => x.poster).map((x) => x.poster) : [...m.creatives.flatMap((x) => (x.poster ? [x.file, x.poster] : [x.file])), ...(m.sources || []).map((s) => s.file)];
 if (!has('skip-files')) {
   files.forEach((f, i) => {
     process.stdout.write(`\r  R2 ${i + 1}/${files.length} ${f.padEnd(60)}`);
@@ -58,10 +59,10 @@ const sql = [
     const meta = { headlineId: x.headline, desc: x.desc, size: x.size, sizeName: x.sizeName, duration: x.duration, frames: x.frames, generated: true };
     const title = `${x.headlineText} · ${x.conceptName} · ${x.w}×${x.h}`;
     const ext = x.file.split('.').pop();
-    return `INSERT INTO ads (id, set_id, title, headline, variant, kind, format, width, height, bytes, r2_key, content_type, status, meta, uploaded_by, created_at, updated_at)
-   VALUES (${[x.id, m.id, title, x.headlineText, x.concept, x.kind, x.format, x.w, x.h, x.bytes, key(x.file), TYPE[ext], 'in_review', JSON.stringify(meta), by, ts, ts].map(q).join(', ')})
-   ON CONFLICT(id) DO UPDATE SET width = excluded.width, height = excluded.height, bytes = excluded.bytes, r2_key = excluded.r2_key,
-     content_type = excluded.content_type, format = excluded.format, kind = excluded.kind, meta = excluded.meta, updated_at = excluded.updated_at;`;
+    return `INSERT INTO ads (id, set_id, title, headline, variant, kind, format, width, height, bytes, r2_key, content_type, status, meta, uploaded_by, created_at, updated_at, poster_key)
+   VALUES (${[x.id, m.id, title, x.headlineText, x.concept, x.kind, x.format, x.w, x.h, x.bytes, key(x.file), TYPE[ext], 'in_review', JSON.stringify(meta), by, ts, ts, x.poster ? key(x.poster) : null].map(q).join(', ')})
+   ON CONFLICT(id) DO UPDATE SET poster_key = excluded.poster_key${has('posters-only') ? '' : `, width = excluded.width, height = excluded.height, bytes = excluded.bytes, r2_key = excluded.r2_key,
+     content_type = excluded.content_type, format = excluded.format, kind = excluded.kind, meta = excluded.meta, updated_at = excluded.updated_at`};`;
   }),
   ...(m.sources || []).map((s) => {
     const ext = s.file.split('.').pop();

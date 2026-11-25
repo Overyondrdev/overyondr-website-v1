@@ -10,15 +10,15 @@
   var STEPS = {
     viewer: [
       { title: 'Welcome to the Yondr ad library', text: 'Every Yondr display ad, in every size, ready to download and use. Four quick tips.', wide: true },
-      { sel: '[data-toolbar]', title: 'Find ads fast', text: 'Filter by version, size, headline and status.' },
-      { sel: '.card', title: 'Open, download, select', text: 'Click an ad for details and comments, ↓ to download it, or tick several to get a zip.' },
+      { sel: '[data-toolbar]', title: 'Find ads fast', text: 'Search, or filter by version, size, headline and status. Matrix shows the whole set on one screen.' },
+      { sel: '.card', title: 'Open, download, select', text: 'Click an ad for details and comments, ↓ to download it, or tick several (or use Download kit) to get a zip.' },
       { sel: '[data-help-btn]', title: 'Need anything else?', text: 'Ad copy and specs are on the Copy & specs tab. Help has answers to everything, and this tour.' },
     ],
     editor: [
-      { sel: '.card .btn.forest', title: 'Edit any ad', text: 'Click Edit to change an ad’s text with a live preview. Use Edit copy for set-wide changes and Upload ads to add new ones.', pad: 6 },
+      { sel: '.card .btn.forest', title: 'Edit any ad', text: 'Click Edit to change an ad’s text with a live preview; it updates in the background. Review steps through ads waiting for approval.', pad: 6 },
     ],
     admin: [
-      { sel: '[data-tab="people"]', title: 'Give people access', text: 'On People, make someone a viewer, editor or admin.' },
+      { sel: '[data-tab="people"]', title: 'Give people access', text: 'On People, make someone a viewer, editor or admin. The bell keeps everyone posted on suggestions and reviews.' },
     ],
   };
   var NEW_TITLE = { editor: 'You’re now an editor', admin: 'You’re now an admin' };

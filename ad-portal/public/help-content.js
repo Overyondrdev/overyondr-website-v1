@@ -12,7 +12,7 @@ window.YONDR_HELP = {
     { id: 'trouble', title: 'Troubleshooting', icon: 'wrench', blurb: 'Sign-in problems, missing buttons, saves that stopped.' },
     { id: 'privacy', title: 'Privacy & sharing', icon: 'lock', blurb: 'Who can see the ads, and sharing them safely.' },
   ],
-  popular: ['download-zip', 'edit-ad', 'formats', 'roles', 'copy-specs', 'old-version'],
+  popular: ['download-zip', 'kits', 'edit-ad', 'formats', 'roles', 'notifications'],
   articles: [
     // ------------------------------------------------------------------ Getting started
     { id: 'what-is', section: 'start', roles: 'all', title: 'What the ad library is', keys: 'about overview portal purpose',
@@ -38,21 +38,23 @@ window.YONDR_HELP = {
 <p><span class="badge editor">Editors</span> can create a set: choose <b>+ New ad set…</b> in that menu, give it a name and a short description, then upload its ads.</p>` },
 
     // ------------------------------------------------------------------ Finding ads
-    { id: 'filters', section: 'find', roles: 'all', title: 'Filtering and grouping ads', keys: 'filter size headline status group sort search find',
+    { id: 'filters', section: 'find', roles: 'all', title: 'Searching and filtering ads', keys: 'filter search find size headline status group sort',
       body: `<p>The bar above the ads narrows the library:</p>
-<ul><li><b>Show</b>: all, pouch stills, in-use stills or motion.</li><li><b>Size</b>: pick one or more sizes; the small shapes show each size’s proportions.</li><li><b>Headline</b>, <b>Status</b> and <b>Group by</b> (size or headline).</li></ul>
-<p>Archived ads are hidden unless you choose <b>Every status</b> or <b>Archived</b>. Your filters are remembered next time. <b>Clear filters</b> resets them.</p>` },
+<ul><li><b>Search</b>: type words from the headline, a size (“728”), a version (“motion”) or a status. Every word must match.</li><li><b>Show</b>: all, pouch stills, in-use stills or motion.</li><li><b>Size</b>: pick one or more sizes; the small shapes show each size’s proportions.</li><li><b>Headline</b>, <b>Status</b> and <b>Group by</b> (size or headline).</li></ul>
+<p>Viewers see <b>approved</b> ads by default; editors see everything but archived. Your filters are remembered next time. <b>Clear filters</b> resets them.</p>` },
+    { id: 'matrix', section: 'find', roles: 'all', title: 'The matrix view', keys: 'matrix table overview grid view all at once compare',
+      body: `<p>Choose <b>Matrix</b> next to the search box to see the whole set on one screen: headlines down the side, sizes across the top, one version at a time (pick pouch, in use or motion above the table). The dot on each ad shows its status. Click any ad to open it; hover a motion ad to play it.</p>` },
     { id: 'ad-details', section: 'find', roles: 'all', title: 'An ad’s details', keys: 'open ad preview zoom full size details page next previous',
       body: `<p>Click any ad (or <b>Details</b>) to open it. You’ll see it at actual size (or <b>Zoom 2×</b>), its file, size, format and file size, status, campaigns and comments.</p>
 <p>Use <kbd>←</kbd> <kbd>→</kbd> to move to the previous or next ad, and <kbd>Esc</kbd> to close.</p>` },
     { id: 'statuses', section: 'find', roles: 'all', title: 'What the statuses mean', keys: 'status in review approved needs changes archived',
       body: `<ul><li><b>In review</b>: new or just changed, waiting for a check. Edited ads go back to this automatically.</li><li><b>Approved</b>: ready to run.</li><li><b>Needs changes</b>: someone asked for a fix.</li><li><b>Archived</b>: kept but hidden from the library.</li></ul>
-<p>Use approved ads in campaigns. <span class="badge editor">Editors</span> set statuses in an ad’s details, or for several ads at once from the selection bar.</p>` },
+<p>Use approved ads in campaigns. Viewers see approved ads by default; ads in review show a “Not approved yet” note. <span class="badge editor">Editors</span> set statuses in an ad’s details, with the <a href="#review-queue">review queue</a>, or for several ads at once from the selection bar.</p>` },
     { id: 'badges', section: 'find', roles: 'all', title: 'Badges on ad cards', keys: 'icons pills tick pencil comment own copy campaign red size',
       body: `<ul><li><b>Status</b> (In review, Approved…).</li><li><b>✓ 2</b>: two people approved it. <b>✎ 1</b>: one asked for changes.</li><li><b>💬 3</b>: three comments.</li><li><b>In 2 campaigns</b>: it’s used in two campaigns.</li><li><b>Own copy</b>: this ad’s text differs from the rest of its set (see <a href="#own-copy">Own copy</a>).</li><li>A <b>red file size</b> means the file is over 150 KB.</li></ul>` },
     { id: 'motion', section: 'find', roles: 'all', title: 'Motion ads', keys: 'animated gif animation length loop replay plays twice 30 seconds',
       body: `<p>Motion ads are animated GIFs, about 13.6 seconds long. They play twice (about 27 seconds, under the 30-second limit most ad networks set) and stop on the end card with the logo and button.</p>
-<p>In an ad’s details, <b>↻ Replay</b> plays it again. A few of the larger motion ads use fewer than 256 colours to stay under 150 KB.</p>` },
+<p>In the library, motion ads show their end card (marked ▶) so the page stays fast: hover one, or tab to it, to play it. In an ad’s details, <b>↻ Replay</b> plays it again. A few of the larger motion ads use fewer than 256 colours to stay under 150 KB.</p>` },
     { id: 'links', section: 'find', roles: 'all', title: 'Sharing a link to an ad', keys: 'link url share send colleague address',
       body: `<p>When an ad is open, the address bar holds a direct link to it (it ends in <code>#ad=…</code>). Copy it and send it to a colleague: it opens straight to that ad. Links only work for people with an @overyondr.com email.</p>` },
 
@@ -62,6 +64,10 @@ window.YONDR_HELP = {
     { id: 'download-zip', section: 'download', roles: 'all', title: 'Downloading several ads, or all of them', keys: 'zip bulk all everything whole set multiple select batch',
       body: `<ol><li>Hover an ad and tick the box in its corner (or use <b>Select all</b> next to a size or headline).</li><li>In the bar at the bottom, choose <b>Download .zip</b>.</li></ol>
 <p><b>Download all</b> at the top gets every ad in the set. In the zip, ads are in <code>still/</code> and <code>motion/</code> folders by size. Campaigns have their own <b>Download … ads (.zip)</b> button.</p>` },
+    { id: 'kits', section: 'download', roles: 'all', title: 'Download kits', keys: 'kit bundle package mobile desktop every size campaign download preset',
+      body: `<p><b>Download kit</b> (next to the search box) builds a zip for a campaign in one go:</p>
+<ul><li><b>Sizes</b>: every size, mobile (320×50, 300×250, 336×280) or desktop (728×90, 300×600, 160×600, 300×250, 336×280).</li><li><b>Headline</b>: all or one.</li><li><b>Versions</b>: pouch, in use, motion.</li><li><b>Approved ads only</b> (on by default).</li></ul>
+<p>It shows how many ads and megabytes before you download.</p>` },
     { id: 'formats', section: 'download', roles: 'all', title: 'File formats, sizes and the 150 KB limit', keys: 'jpeg jpg gif size dimensions kb limit spec iab',
       body: `<p>Stills are <b>JPEG</b> and motion ads are animated <b>GIF</b>. Every Harvard study ad is under <b>150 KB</b>, the limit most ad networks set.</p>
 <table><thead><tr><th>Size</th><th>Name</th></tr></thead><tbody>
@@ -83,8 +89,15 @@ window.YONDR_HELP = {
     // ------------------------------------------------------------------ Comments & reviews
     { id: 'comment', section: 'feedback', roles: 'all', title: 'Commenting on an ad', keys: 'comment feedback note design copy problem idea question',
       body: `<p>Open an ad, scroll to <b>Comments</b>, pick a kind (Design, Copy, Problem, Idea, Question, Love it), write your comment and choose <b>Post comment</b>. Everyone can see comments.</p>` },
+    { id: 'notifications', section: 'feedback', roles: 'all', title: 'Notifications (the bell)', keys: 'notifications bell alerts slack email inbox notified told unread',
+      body: `<p>The bell at the top shows what needs you:</p>
+<ul><li><span class="badge editor">Editors</span>: suggestions and comments, ads that need review after edits or uploads, and “needs changes”.</li><li>If you uploaded an ad: comments and change requests on it.</li><li>Everyone: when your role changes.</li></ul>
+<p>Click one to open the ad. <b>Mark all read</b> clears the count. The bell checks for news every minute. Your admins can also send these to a Slack channel.</p>` },
     { id: 'suggest-change', section: 'feedback', roles: 'all', title: 'Suggesting a change to an ad', keys: 'suggest change request edit wording viewer',
       body: `<p>Open the ad and choose <b>Suggest a change</b>. It opens a <b>Copy</b> comment on that ad: say what it should say instead. Editors see an <b>Edit text</b> link right on your comment.</p>` },
+    { id: 'review-queue', section: 'feedback', roles: 'editor', title: 'The review queue and approving in bulk', keys: 'review queue approve all bulk keyboard shortcuts needs changes',
+      body: `<p><b>Review (n)</b> next to the search box steps through every ad in review, one at a time, at full size. Press <kbd>A</kbd> to approve, <kbd>N</kbd> for needs changes (add a note and it’s posted as a comment), <kbd>→</kbd> to skip and <kbd>←</kbd> to go back.</p>
+<p>To approve several at once, select them and choose <b>✓ Approve</b> in the bar at the bottom (or <b>Set status…</b> for any other status).</p>` },
     { id: 'review', section: 'feedback', roles: 'editor', title: 'Approving an ad or asking for changes', keys: 'approve review needs changes sign off',
       body: `<p>In an ad’s details, under <b>Review</b>, choose <b>✓ Approve</b> or <b>✎ Needs changes</b>. Click again to take it back. The card shows how many people chose each. To make it official, set the ad’s <a href="#status-dates">status</a> too.</p>` },
 
@@ -101,7 +114,9 @@ window.YONDR_HELP = {
       body: `<p><b>Edit copy</b> shows every shared text in one place: tagline, buttons, the five headlines and descriptions, the stat and the source lines. Pick a headline, size and version to preview. The bar at the bottom shows how many ads your changes update. Changed fields are highlighted until you save or <b>Discard</b>.</p>` },
     { id: 'saving', section: 'edit', roles: 'editor', title: 'What happens when you save', keys: 'save render upload time minutes keep tab open in review progress stop',
       body: `<ol><li>Your browser re-renders each affected ad from the template, as sharp, small files (each under 150 KB).</li><li>The copy is saved and the new files replace the old ones.</li><li>Those ads go back to <b>In review</b>.</li></ol>
-<p>Stills take a second; motion ads take 15 to 30 seconds each. A headline change (18 ads) takes about 2 minutes; the main button (about 75 ads) about 10. <b>Keep the tab open</b> until it finishes. <b>Stop</b> cancels before anything is saved.</p>` },
+<p>It runs <b>in the background</b>: a progress card appears bottom-left and the ads being updated show “Updating…”, so you can keep browsing. A headline change (18 ads) takes about half a minute, the main button (about 75 ads) a couple of minutes, faster on newer computers. <b>Keep the tab open</b> until it finishes; <b>Stop</b> cancels before anything is saved. Reviewers are notified when it’s done.</p>` },
+    { id: 'history', section: 'edit', roles: 'editor', title: 'Copy history and undo', keys: 'history undo restore version previous rollback revert',
+      body: `<p>Every save on the <b>Edit copy</b> tab is kept. Choose <b>↺ History</b> to see who changed what and when. <b>Load</b> puts that version in the form: check the preview, then save to restore it (the ads re-render as usual). <b>Cancel</b> on the note goes back to the current copy.</p>` },
     { id: 'long-text', section: 'edit', roles: 'editor', title: 'When text is too long', keys: 'too long shrink fit characters limit counter red',
       body: `<p>Text that doesn’t fit its space shrinks to fit, so watch the preview: very long lines get small. The counter turns red past the suggested length (30 characters for headlines, the Google Ads limit). Shorter is almost always better in a display ad.</p>` },
     { id: 'browsers', section: 'edit', roles: 'editor', title: 'Which browsers can edit ads', keys: 'safari chrome edge firefox browser support',
@@ -141,6 +156,8 @@ window.YONDR_HELP = {
     // ------------------------------------------------------------------ Troubleshooting
     { id: 'cant-sign-in', section: 'trouble', roles: 'all', title: 'I can’t sign in', keys: 'login problem code not arriving access denied',
       body: `<ul><li>Use your <b>@overyondr.com</b> address; others can’t sign in.</li><li>No code? Check spam, wait a minute and try again. Codes expire after a short while, so use the newest one.</li><li>Still stuck? Ask an admin (below).</li></ul>` },
+    { id: 'no-ads', section: 'trouble', roles: 'all', title: 'I don’t see any ads', keys: 'empty no ads nothing shows missing blank approved',
+      body: `<p>Viewers see approved ads by default. If nothing has been approved yet, you’ll see “No approved ads yet”: choose <b>Show ads in review</b> (or the Status filter) to look at them, and check with an editor before using one. Otherwise, <b>Clear filters</b> or the search box may be hiding them.</p>` },
     { id: 'no-edit', section: 'trouble', roles: 'all', title: 'I don’t see Edit, Upload or People', keys: 'missing button edit upload cant edit permission viewer',
       body: `<p>Those depend on your role (shown next to your email). Viewers don’t see Edit or Upload; only admins see People. Use <b>Suggest a change</b> on an ad, or ask an admin for editor access.</p>` },
     { id: 'save-stopped', section: 'trouble', roles: 'editor', title: 'A save stopped, or some ads didn’t upload', keys: 'failed error retry save stopped closed tab upload failed',

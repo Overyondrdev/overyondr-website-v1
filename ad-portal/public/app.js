@@ -22,7 +22,9 @@
   function isEditor() { return role === 'editor' || role === 'admin'; }
   function isAdmin() { return role === 'admin'; }
   var picked = new Set();
-  var f = load('filters', { show: 'all', sizes: [], headline: 'all', status: 'active', group: 'size' });
+  // Filters are remembered per browser. Viewers see approved ads by default, editors everything but archived.
+  var f = load('filters2', null);
+  function defaults() { return { show: 'all', sizes: [], headline: 'all', status: isEditor() ? 'active' : 'approved', group: 'size', q: '', view: 'grid', matrix: 'in-use' }; }
   var tab = 'ads';
   var openCampaign = null;
   var detailId = null;
@@ -77,6 +79,32 @@
     });
   }
   // ?v= changes when a file is replaced (same key, new bytes), so browsers never show a stale copy.
+  var scripts = {};
+  function loadScript(src) {
+    return scripts[src] || (scripts[src] = new Promise(function (ok, no) {
+      var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { delete scripts[src]; no(new Error('Couldn’t load ' + src + '. Check your connection.')); };
+      document.head.appendChild(s);
+    }));
+  }
+  // The editor and renderer (~60 KB) load only for editors, when first needed (and in idle time after the page loads).
+  function needEditor() { return Promise.all([loadScript('/render.js'), loadScript('/editor.js')]); }
+  function canEditText(c) { return !!(c.meta && c.meta.generated && c.meta.headlineId && c.meta.headlineId !== 'other'); }
+  function updating(c) { return !!(window.YondrEditor && window.YondrEditor.updating(c.id)); }
+  // Motion ads show their poster (end card) until you hover or focus them: the grid stays light.
+  function posterUrl(c) { return c.posterKey ? '/files/' + c.posterKey + '?v=' + encodeURIComponent(c.updated || c.bytes) : fileUrl(c); }
+  function adImg(c, attrs) {
+    var still = c.kind === 'motion' && c.posterKey;
+    var img = h('img', Object.assign({ src: still ? posterUrl(c) : fileUrl(c), loading: 'lazy', decoding: 'async', alt: (c.kind === 'motion' ? 'Animated ad: ' : 'Ad: ') + c.headlineText }, attrs || {}));
+    if (still) img.dataset.anim = fileUrl(c);
+    return img;
+  }
+  function playOnHover(el) {
+    var img = el.querySelector('img[data-anim]');
+    if (!img) return;
+    var still = img.src, on = function () { img.src = img.dataset.anim; }, off = function () { img.src = still; };
+    el.addEventListener('mouseenter', on); el.addEventListener('focus', on);
+    el.addEventListener('mouseleave', off); el.addEventListener('blur', off);
+  }
   function fileUrl(c) { return '/files/' + c.key + '?v=' + encodeURIComponent(c.updated || c.bytes); }
   function byId(id) { for (var i = 0; i < M.ads.length; i++) if (M.ads[i].id === id) return M.ads[i]; return null; }
   function campaign(id) { for (var i = 0; i < D.campaigns.length; i++) if (D.campaigns[i].id === id) return D.campaigns[i]; return null; }
@@ -95,7 +123,7 @@
         id: a.id, key: a.r2_key, title: a.title, status: a.status, variant: a.variant, kind: a.kind, format: a.format,
         w: a.width, h: a.height, size: size, sizeName: STANDARD[size] || 'Custom size', bytes: a.bytes,
         headline: m.headlineId || 'other', headlineText: a.headline || a.title, desc: m.desc || '', duration: m.duration,
-        start: a.campaign_start, end: a.campaign_end, uploadedBy: a.uploaded_by, created: a.created_at, updated: a.updated_at, stats: a.stats, meta: m,
+        start: a.campaign_start, end: a.campaign_end, uploadedBy: a.uploaded_by, created: a.created_at, updated: a.updated_at, stats: a.stats, meta: m, posterKey: a.poster_key,
       };
     });
     var order = (copyData.sizes || []).map(function (s) { return s.id; });
@@ -197,10 +225,17 @@
       if (f.show !== 'all' && c.variant !== f.show) return false;
       if (f.sizes.length && f.sizes.indexOf(c.size) < 0) return false;
       if (f.headline !== 'all' && c.headline !== f.headline) return false;
+      if (!matches(c, f.q)) return false;
       return true;
     });
   }
-  function setF(k, v) { f[k] = v; save('filters', f); renderToolbar(); renderGrid(); }
+  function setF(k, v) { f[k] = v; save('filters2', f); renderToolbar(); renderGrid(); }
+  function words(s) { return String(s || '').toLowerCase(); }
+  function matches(c, q) {
+    if (!q) return true;
+    var hay = words([c.headlineText, c.title, c.desc, c.size, c.w + '×' + c.h, c.sizeName, VARIANTS[c.variant], ASTATUS[c.status], c.format].join(' '));
+    return q.toLowerCase().split(/\s+/).filter(Boolean).every(function (t) { return hay.indexOf(t) >= 0; });
+  }
 
   function renderToolbar() {
     var bar = $('[data-toolbar]');
@@ -224,11 +259,21 @@
     var grp = h('select', { class: 'input', 'aria-label': 'Group by', onchange: function (e) { setF('group', e.target.value); } }, [
       h('option', { value: 'size', selected: f.group === 'size', text: 'Group by size' }),
       h('option', { value: 'headline', selected: f.group === 'headline', text: 'Group by headline' })]);
-    var any = f.show !== 'all' || f.sizes.length || f.headline !== 'all' || f.status !== 'active';
-    bar.appendChild(show);
+    var d0 = defaults();
+    var any = f.show !== 'all' || f.sizes.length || f.headline !== 'all' || f.status !== d0.status || f.q;
+    var search = h('input', { class: 'input tb-search', type: 'search', placeholder: 'Search ads…', value: f.q || '', 'aria-label': 'Search ads' });
+    search.addEventListener('input', function () { clearTimeout(search._t); search._t = setTimeout(function () { f.q = search.value.trim(); save('filters2', f); renderGrid(); }, 150); });
+    var views = h('div', { class: 'seg', role: 'group', 'aria-label': 'View' }, [['grid', 'Grid'], ['matrix', 'Matrix']].map(function (v) {
+      return h('button', { type: 'button', 'aria-pressed': String(f.view === v[0]), text: v[1], onclick: function () { setF('view', v[0]); } });
+    }));
+    var inReview = M.ads.filter(function (a) { return a.status === 'in_review'; }).length;
+    bar.appendChild(h('div', { class: 'tb-top' }, [search, views,
+      h('button', { type: 'button', class: 'btn line sm', html: ICON.dl + ' Download kit', onclick: kitForm }),
+      isEditor() && inReview ? h('button', { type: 'button', class: 'btn forest sm', text: 'Review (' + inReview + ')', title: 'Step through ads waiting for review', onclick: reviewQueue }) : null]));
+    if (f.view !== 'matrix') bar.appendChild(show);
     bar.appendChild(sizes);
-    bar.appendChild(h('div', { class: 'fgroup' }, [hs, st, grp, any ? h('button', { type: 'button', class: 'linkbtn', text: 'Clear filters', onclick: function () {
-      f = { show: 'all', sizes: [], headline: 'all', status: 'active', group: f.group }; save('filters', f); renderToolbar(); renderGrid(); } }) : null]));
+    bar.appendChild(h('div', { class: 'fgroup' }, [hs, st, f.view !== 'matrix' ? grp : null, any ? h('button', { type: 'button', class: 'linkbtn', text: 'Clear filters', onclick: function () {
+      var keep = { group: f.group, view: f.view, matrix: f.matrix }; f = Object.assign(defaults(), keep); save('filters2', f); renderToolbar(); renderGrid(); } }) : null]));
   }
 
   // ---------------------------------------------------------------- grid
@@ -239,11 +284,14 @@
     if (x.comments) badges.push(h('span', { class: 'pill', title: x.comments + ' comments', text: '💬 ' + x.comments }));
     if (x.campaigns.length) badges.push(h('span', { class: 'pill live', text: 'In ' + x.campaigns.length + ' campaign' + (x.campaigns.length > 1 ? 's' : '') }));
     if (c.meta && c.meta.overrides) badges.push(h('span', { class: 'pill', title: 'This ad has its own text, different from the rest of the set', text: 'Own copy' }));
+    if (updating(c)) badges.unshift(h('span', { class: 'pill updating', text: 'Updating…' }));
     var w = Math.min(c.w, 728), scale = w / c.w;
+    var frame = h('button', { type: 'button', class: 'frame' + (c.kind === 'motion' ? ' is-motion' : ''), 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } },
+      [adImg(c, { width: w, height: Math.round(c.h * scale) })]);
+    playOnHover(frame);
     return h('article', { class: 'card' + (on ? ' picked' : ''), style: 'width:' + (w + 28) + 'px', 'data-id': c.id }, [
       h('button', { type: 'button', class: 'pick', role: 'checkbox', 'aria-checked': String(on), 'aria-label': 'Select ' + label(c), html: on ? ICON.check : '', onclick: function () { togglePick(c.id); } }),
-      h('button', { type: 'button', class: 'frame', 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } },
-        [h('img', { src: fileUrl(c), width: w, height: Math.round(c.h * scale), loading: 'lazy', decoding: 'async', alt: (c.kind === 'motion' ? 'Animated ad: ' : 'Ad: ') + c.headlineText })]),
+      frame,
       h('div', { class: 'meta' }, [
         h('p', { class: 'title', text: c.headlineText }),
         h('div', { class: 'sub' }, [h('span', { class: 'pill' + (c.kind === 'motion' ? ' motion' : ''), text: VARIANTS[c.variant] || 'Other' }),
@@ -268,7 +316,15 @@
       return;
     }
     var list = visible();
-    if (!list.length) { grid.appendChild(h('div', { class: 'empty' }, [h('h3', { text: 'No ads match these filters' }), h('p', { text: 'Try another size, headline or status, or clear the filters.' })])); return; }
+    if (!list.length) {
+      var waiting = f.status === 'approved' && M.ads.some(function (a) { return a.status === 'in_review'; }) && !M.ads.some(function (a) { return a.status === 'approved'; });
+      grid.appendChild(h('div', { class: 'empty' }, waiting
+        ? [h('h3', { text: 'No approved ads yet' }), h('p', { text: 'These ads are still being reviewed and may change. You can look at them, but check with an editor before using one.' }),
+          h('button', { type: 'button', class: 'btn line', style: 'margin-top:14px', text: 'Show ads in review', onclick: function () { setF('status', 'active'); } })]
+        : [h('h3', { text: 'No ads match these filters' }), h('p', { text: 'Try another size, headline or status, or clear the filters.' })]));
+      return;
+    }
+    if (f.view === 'matrix') { renderMatrix(grid, list); return; }
     var groups = f.group === 'headline'
       ? M.headlines.map(function (x) { return { title: x.text, dim: '', items: list.filter(function (c) { return c.headline === x.id; }) }; })
       : M.sizes.map(function (s) { return { title: s.name, dim: s.w + ' × ' + s.h, items: list.filter(function (c) { return c.size === s.id; }) }; });
@@ -283,6 +339,30 @@
       ]));
     });
     grid.classList.toggle('selecting', picked.size > 0);
+  }
+  // Matrix: headlines down, sizes across, one version at a time. The whole set on one screen.
+  function renderMatrix(grid, list) {
+    var vs = M.variants.length ? M.variants : ['other'];
+    if (vs.indexOf(f.matrix) < 0) f.matrix = vs[0];
+    grid.appendChild(h('div', { class: 'seg', role: 'group', 'aria-label': 'Version', style: 'margin-bottom:14px' }, vs.map(function (v) {
+      return h('button', { type: 'button', 'aria-pressed': String(f.matrix === v), text: VARIANTS[v], onclick: function () { setF('matrix', v); } });
+    })));
+    var inView = list.filter(function (c) { return c.variant === f.matrix; });
+    var sizes = M.sizes.filter(function (s) { return inView.some(function (c) { return c.size === s.id; }); });
+    var heads = M.headlines.filter(function (x) { return inView.some(function (c) { return c.headline === x.id; }); });
+    var cell = function (x, s) {
+      var c = list.find(function (a) { return a.headline === x.id && a.size === s.id && a.variant === f.matrix; });
+      if (!c) return h('td', { class: 'mx-empty', text: '—' });
+      var k = Math.min(1, 150 / c.w, 110 / c.h);
+      var b = h('button', { type: 'button', class: 'mx-cell', 'aria-label': 'Open ' + label(c) + ': ' + c.headlineText, onclick: function () { openDetail(c.id); } },
+        [adImg(c, { width: Math.round(c.w * k), height: Math.round(c.h * k) }), h('span', { class: 'dot status-' + c.status, title: ASTATUS[c.status] })]);
+      playOnHover(b);
+      return h('td', {}, [b]);
+    };
+    grid.appendChild(h('div', { class: 'mx-wrap' }, [h('table', { class: 'matrix' }, [
+      h('thead', {}, [h('tr', {}, [h('th', { scope: 'col', text: 'Headline' })].concat(sizes.map(function (s) { return h('th', { scope: 'col' }, [s.w + '×' + s.h, h('small', { text: s.name })]); })))]),
+      h('tbody', {}, heads.map(function (x) { return h('tr', {}, [h('th', { scope: 'row', text: x.text })].concat(sizes.map(function (s) { return cell(x, s); }))); })),
+    ])]));
   }
   function togglePick(id) {
     if (picked.has(id)) picked.delete(id); else picked.add(id);
@@ -309,14 +389,102 @@
     st.addEventListener('change', function () {
       if (!st.value) return;
       var v = st.value;
-      Promise.all(list.map(function (c) { return api('ads/' + c.id, { method: 'PATCH', body: { status: v } }); }))
-        .then(function () { toast(list.length + ' ads marked ' + ASTATUS[v].toLowerCase()); picked.clear(); return refresh(); }).catch(function (e) { toast(e.message); });
+      bulkStatus(list, v);
     });
     [h('span', {}, [h('b', { text: String(picked.size) }), ' selected']),
       h('button', { type: 'button', class: 'btn lime sm', html: ICON.dl + ' Download .zip', onclick: function () { downloadZip(list, M.set.id + '-' + list.length + '-ads.zip'); } }),
+      isEditor() ? h('button', { type: 'button', class: 'btn forest sm', text: '✓ Approve', onclick: function () { bulkStatus(list, 'approved'); } }) : null,
       isEditor() ? sel : null, isEditor() ? st : null,
       h('button', { type: 'button', class: 'linkbtn', text: 'Clear', onclick: function () { picked.clear(); renderGrid(); renderSelbar(); } }),
     ].forEach(function (k) { bar.appendChild(k); });
+  }
+
+  function bulkStatus(list, v) {
+    return api('ads', { method: 'PATCH', body: { ids: list.map(function (c) { return c.id; }), status: v } })
+      .then(function () { toast(list.length + ' ad' + (list.length > 1 ? 's' : '') + ' marked ' + ASTATUS[v].toLowerCase()); picked.clear(); return refresh(); })
+      .catch(function (e) { toast(e.message); });
+  }
+
+  // ---------------------------------------------------------------- review queue (editors): step through ads in review
+  function reviewQueue() {
+    var queue = M.ads.filter(function (a) { return a.status === 'in_review'; }), i = 0, approved = 0, changes = 0;
+    if (!queue.length) return toast('Nothing waiting for review.');
+    var body = h('div', { class: 'rq' });
+    var dlg = $('[data-form]');
+    dlg.classList.add('wide');
+    var act = function (status) {
+      var c = queue[i], note = body.querySelector('.rq-note');
+      var reqs = [api('ads/' + c.id, { method: 'PATCH', body: { status: status } }), api('ads/' + c.id + '/review', { method: 'POST', body: { value: status === 'approved' ? 1 : -1 } })];
+      if (status === 'needs_changes' && note && note.value.trim()) reqs.push(api('ads/' + c.id + '/comments', { method: 'POST', body: { type: 'design', body: note.value.trim() } }));
+      Promise.all(reqs).then(function () { c.status = status; if (status === 'approved') approved++; else changes++; i++; paint(); }).catch(function (e) { toast(e.message); });
+    };
+    function paint() {
+      body.innerHTML = '';
+      if (i >= queue.length) {
+        body.appendChild(h('div', { class: 'empty' }, [h('h3', { text: 'All done' }), h('p', { text: approved + ' approved, ' + changes + ' sent back for changes.' }),
+          h('button', { type: 'button', class: 'btn forest', style: 'margin-top:14px', text: 'Close', onclick: function () { dlg.close(); } })]));
+        return;
+      }
+      var c = queue[i];
+      body.appendChild(h('p', { class: 'rq-count', text: (i + 1) + ' of ' + queue.length + ' · ' + label(c) }));
+      body.appendChild(h('div', { class: 'rq-stage' }, [h('img', { src: fileUrl(c), width: c.w, height: c.h, alt: 'Ad: ' + c.headlineText })]));
+      body.appendChild(h('p', { class: 'rq-head', text: c.headlineText }));
+      body.appendChild(h('input', { class: 'input rq-note', placeholder: 'What should change? (optional, sent as a comment with “Needs changes”)', 'aria-label': 'Note for needs changes' }));
+      body.appendChild(h('div', { class: 'rq-actions' }, [
+        h('button', { type: 'button', class: 'btn line', text: '← Back', disabled: i === 0, onclick: function () { i--; paint(); } }),
+        h('button', { type: 'button', class: 'btn line', text: 'Skip →', onclick: function () { i++; paint(); } }),
+        h('span', { style: 'flex:1' }),
+        h('button', { type: 'button', class: 'btn line', html: '✎ Needs changes <kbd>N</kbd>', onclick: function () { act('needs_changes'); } }),
+        h('button', { type: 'button', class: 'btn forest', html: '✓ Approve <kbd>A</kbd>', onclick: function () { act('approved'); } }),
+      ]));
+    }
+    var key = function (e) {
+      if (!dlg.open || /input|textarea/i.test(e.target.tagName) || i >= queue.length) return;
+      if (e.key === 'a' || e.key === 'A') { e.preventDefault(); act('approved'); }
+      else if (e.key === 'n' || e.key === 'N') { e.preventDefault(); act('needs_changes'); }
+      else if (e.key === 'ArrowRight') { i++; paint(); } else if (e.key === 'ArrowLeft' && i > 0) { i--; paint(); }
+    };
+    document.addEventListener('keydown', key);
+    dlg.addEventListener('close', function done() { document.removeEventListener('keydown', key); dlg.classList.remove('wide'); dlg.removeEventListener('close', done); refresh(); });
+    paint();
+    sheet('Review ads', body).querySelector('.sheet-head h2').after(helpLink('review-queue', 'The review queue'));
+  }
+
+  // ---------------------------------------------------------------- download kits
+  var KITS = [['every', 'Every size', null], ['mobile', 'Mobile', ['320x50', '300x250', '336x280']], ['desktop', 'Desktop', ['728x90', '300x600', '160x600', '300x250', '336x280']]];
+  function kitForm() {
+    var kit = 'every', head = 'all', vs = {}, approvedOnly = !isEditor() || M.ads.some(function (a) { return a.status === 'approved'; });
+    M.variants.forEach(function (v) { vs[v] = true; });
+    var out = h('div', { class: 'kit' });
+    var pick = function () {
+      var sizes = KITS.find(function (k) { return k[0] === kit; })[2];
+      return M.ads.filter(function (a) {
+        return a.status !== 'archived' && (!approvedOnly || a.status === 'approved') && vs[a.variant] && (head === 'all' || a.headline === head) && (!sizes || sizes.indexOf(a.size) >= 0);
+      });
+    };
+    function paint() {
+      var list = pick(), bytes = list.reduce(function (n, a) { return n + a.bytes; }, 0);
+      out.innerHTML = '';
+      out.appendChild(h('fieldset', { class: 'kit-set' }, [h('legend', { text: 'Sizes' }), h('div', { class: 'seg' }, KITS.map(function (k) {
+        return h('button', { type: 'button', 'aria-pressed': String(kit === k[0]), text: k[1] + (k[2] ? ' (' + k[2].length + ')' : ''), onclick: function () { kit = k[0]; paint(); } });
+      }))]));
+      out.appendChild(h('label', { class: 'ef' }, ['Headline', h('select', { class: 'input', onchange: function (e) { head = e.target.value; paint(); } },
+        [h('option', { value: 'all', text: 'All headlines' })].concat(M.headlines.map(function (x) { return h('option', { value: x.id, selected: head === x.id, text: x.text }); })))]));
+      out.appendChild(h('fieldset', { class: 'kit-set' }, [h('legend', { text: 'Versions' })].concat(M.variants.map(function (v) {
+        var cb = h('input', { type: 'checkbox', checked: vs[v] }); cb.addEventListener('change', function () { vs[v] = cb.checked; paint(); });
+        return h('label', { class: 'kit-check' }, [cb, VARIANTS[v]]);
+      }))));
+      var ap = h('input', { type: 'checkbox', checked: approvedOnly }); ap.addEventListener('change', function () { approvedOnly = ap.checked; paint(); });
+      out.appendChild(h('label', { class: 'kit-check' }, [ap, 'Approved ads only (recommended)']));
+      out.appendChild(h('div', { class: 'foot' }, [h('span', { class: 'ed-sum', style: 'color:var(--yondr-moss)', text: list.length ? list.length + ' ads · ' + (bytes / 1e6).toFixed(1) + ' MB' : 'No ads match. ' + (approvedOnly ? 'None are approved yet; untick “Approved only” to include ads in review.' : '') }),
+        h('button', { type: 'button', class: 'btn lime', disabled: !list.length, html: ICON.dl + ' Download zip', onclick: function () {
+          var name = M.set.id + '-' + kit + (head !== 'all' ? '-' + head : '') + '.zip';
+          downloadZip(list, name); $('[data-form]').close();
+        } })]));
+    }
+    paint();
+    var dlg = sheet('Download a kit', h('div', { style: 'padding:20px' }, [h('p', { class: 'hint', style: 'margin:0 0 14px;font-size:14px;color:var(--yondr-moss)', text: 'Pick what the campaign needs and get it as one zip, sorted into still/ and motion/ folders by size.' }), out]));
+    dlg.querySelector('.sheet-head h2').after(helpLink('kits', 'Download kits'));
   }
 
   // ---------------------------------------------------------------- detail
@@ -349,8 +517,12 @@
       busy: function (b) { dlg._busy = b; dlg.classList.toggle('is-busy', b); },
       saved: function () { done(); refresh().then(function () { var n = byId(c.id); if (n && dlg.open) { renderDetail(n); loadComments(n); } }); },
     };
-    if (window.YondrEditor.canEditText(c)) window.YondrEditor.editAd(editorApi(), c, body, cb);
-    else window.YondrEditor.replaceFile(editorApi(), c, body, cb);
+    body.appendChild(h('p', { class: 'loading', style: 'padding:24px', text: 'Loading the editor…' }));
+    needEditor().then(function () {
+      if (!dlg.open || !dlg._edit) return;
+      if (canEditText(c)) window.YondrEditor.editAd(editorApi(), c, body, cb);
+      else window.YondrEditor.replaceFile(editorApi(), c, body, cb);
+    }).catch(function (e) { body.innerHTML = ''; body.appendChild(h('p', { class: 'notice', text: e.message })); });
   }
   function step(d) {
     var list = visible(), i = list.findIndex(function (c) { return c.id === detailId; });
@@ -393,7 +565,7 @@
         } }) : null]),
     ]);
 
-    var canText = window.YondrEditor && window.YondrEditor.canEditText(c);
+    var canText = canEditText(c);
     var side = h('div', { class: 'side' }, [
       h('div', { style: 'display:flex;flex-wrap:wrap;gap:10px' }, [
         h('button', { type: 'button', class: 'btn lime', html: ICON.dl + ' Download ' + c.format, onclick: function () { downloadOne(c); } }),
@@ -401,6 +573,8 @@
           : h('button', { type: 'button', class: 'btn line', text: '✎ Suggest a change', onclick: function () { suggest(c); } }),
         h('button', { type: 'button', class: 'btn line', text: 'Copy file name', onclick: function () { copy(fileName(c), 'File name'); } }),
       ]),
+      !isEditor() && c.status !== 'approved' ? h('p', { class: 'notice', style: 'margin:0', text: 'Not approved yet. It may still change, so check with an editor before using it in a campaign.' }) : null,
+      updating(c) ? h('p', { class: 'notice', style: 'margin:0', text: 'This ad is being updated. The new version appears when the update finishes.' }) : null,
       c.meta && c.meta.overrides ? h('p', { class: 'notice', style: 'margin:0', text: 'This ad has its own text, different from the rest of the set' + (isEditor() ? '. Edit text to change it or go back to the shared copy.' : '.') }) : null,
       h('section', {}, [h('h3', { text: 'Details' }), h('dl', { class: 'specs' }, specs.reduce(function (a, s) { return a.concat([h('dt', { text: s[0] }), h('dd', { text: s[1] })]); }, []))]),
       isEditor() ? h('section', {}, [h('h3', { text: 'Status & dates' }), edit])
@@ -502,6 +676,7 @@
     renderHero(); renderToolbar(); renderGrid(); renderSelbar();
     if (tab === 'campaigns') renderCampaigns();
     if (tab === 'copy') renderCopy();
+    if (tab === 'edit' && window.YondrEditor) window.YondrEditor.render($('[data-panel="edit"]'), editorApi());
     var dlg = $('[data-detail]');
     if (dlg.open && detailId && byId(detailId)) { renderDetail(byId(detailId)); loadComments(byId(detailId)); }
   }
@@ -595,9 +770,16 @@
           ['headline', 'status', 'campaign_start', 'campaign_end'].forEach(function (k) { fd.append(k, fd0.get(k) || ''); });
           if (variant.value) fd.append('variant', variant.value);
           go.textContent = 'Uploading ' + (done + 1) + ' of ' + queue.length + '…';
-          return api('sets/' + M.set.id + '/ads', { method: 'POST', body: fd }).then(function () { done++; item.row.style.opacity = '.45'; });
+          var poster = item.file.type === 'image/gif' ? needEditor().then(function () { return window.YondrRender.posterFromFile(item.file); }).catch(function () { return null; }) : Promise.resolve(null);
+          return poster.then(function (pb) {
+            if (pb) fd.append('poster', new File([pb], 'poster.jpg', { type: 'image/jpeg' }));
+            return api('sets/' + M.set.id + '/ads', { method: 'POST', body: fd });
+          }).then(function () { done++; item.row.style.opacity = '.45'; });
         });
-      }, Promise.resolve()).then(function () { dlg.close(); toast('Uploaded ' + done + ' ad' + (done > 1 ? 's' : '')); f.status = 'active'; return refresh(); })
+      }, Promise.resolve()).then(function () {
+        api('sets/' + M.set.id + '/rerendered', { method: 'POST', body: { kind: 'upload', count: done } }).catch(function () {});
+        dlg.close(); toast('Uploaded ' + done + ' ad' + (done > 1 ? 's' : '') + '. Reviewers have been told.'); f.status = 'active'; save('filters2', f); return refresh();
+      })
         .catch(function (er) { errEl.textContent = er.message + (done ? ' (' + done + ' uploaded before this.)' : ''); go.disabled = false; go.textContent = 'Upload'; });
     } }, [
       input, drop, list,
@@ -672,7 +854,7 @@
             k.notes ? h('dt', { text: 'Notes' }) : null, k.notes ? h('dd', { style: 'white-space:pre-wrap;font-weight:400', text: k.notes }) : null]),
           ads.length ? h('div', { class: 'thumbs' }, ads.map(function (c) {
             return h('div', { class: 'thumb' }, [
-              h('button', { type: 'button', class: 'tframe', 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } }, [h('img', { src: fileUrl(c), alt: '', loading: 'lazy' })]),
+              h('button', { type: 'button', class: 'tframe', 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } }, [h('img', { src: posterUrl(c), alt: '', loading: 'lazy', decoding: 'async' })]),
               h('span', { text: c.w + '×' + c.h + ' · ' + (VARIANTS[c.variant] || 'Other') }),
               h('div', { class: 'tools' }, [
                 h('button', { type: 'button', class: 'btn line', html: ICON.dl + ' Download', onclick: function () { downloadOne(c); } }),
@@ -740,7 +922,11 @@
     renderSelbar();
     if (t === 'campaigns') renderCampaigns();
     if (t === 'copy') renderCopy();
-    if (t === 'edit') window.YondrEditor.render($('[data-panel="edit"]'), editorApi());
+    if (t === 'edit') {
+      var ep = $('[data-panel="edit"]');
+      if (!window.YondrEditor) { ep.innerHTML = ''; ep.appendChild(h('p', { class: 'loading', text: 'Loading the editor…' })); }
+      needEditor().then(function () { if (tab === 'edit') window.YondrEditor.render(ep, editorApi()); }).catch(function (e) { toast(e.message); });
+    }
     if (t === 'people') renderPeople();
     if (!fromHash) history.replaceState(null, '', t === 'ads' ? location.pathname + location.search : '#' + t);
   }
@@ -783,39 +969,81 @@
     sel.hidden = false;
     sel.onchange = function () { if (sel.value === '__new') { sel.value = current; setForm(); } else boot(sel.value); };
   }
+  // One request to start: the remembered set (with the sets list and who you are). Falls back to the first set.
   function boot(want) {
-    return api('sets').then(function (r) {
-      sets = r.sets;
-      if (!sets.length) {
+    var q = new URLSearchParams(location.search).get('set');
+    var id = want || q || load('set', null);
+    var first = id ? api('sets/' + encodeURIComponent(id)).catch(function () { return null; }) : Promise.resolve(null);
+    return first.then(function (d) {
+      if (d) return d;
+      return api('sets').then(function (r) { return r.sets.length ? api('sets/' + encodeURIComponent(r.sets[0].id)) : { empty: true }; });
+    }).then(function (d) {
+      if (d.empty) {
         $('[data-grid]').innerHTML = '';
         $('[data-grid]').appendChild(h('div', { class: 'empty' }, [h('h3', { text: 'No ad sets yet' }), h('p', { text: 'Create a set, then upload its ads.' }),
           h('button', { type: 'button', class: 'btn forest', style: 'margin-top:14px', text: '+ New ad set', onclick: setForm })]));
         return;
       }
-      var q = new URLSearchParams(location.search).get('set');
-      var id = [want, q, load('set', null)].find(function (x) { return x && sets.some(function (s) { return s.id === x; }); }) || sets[0].id;
+      sets = d.sets; id = d.set.id;
       save('set', id);
       if (sets.length > 1 || q) history.replaceState(null, '', '?set=' + id + location.hash);
       picked.clear();
-      return api('sets/' + encodeURIComponent(id)).then(function (d) {
-        D = d; me = d.me.email; role = d.me.role || 'viewer'; M = model(d);
-        $('[data-email]').textContent = me || '';
-        var rb = $('[data-role]'); rb.textContent = (d.me.owner ? 'Owner' : ROLE_NAMES[role]); rb.hidden = false;
-        rb.title = { viewer: 'You can view, download and comment', editor: 'You can also edit copy, upload, review and manage campaigns', admin: 'You can also manage people' }[role];
-        $('[data-upload]').hidden = !isEditor();
-        $('[data-tab="edit"]').hidden = !isEditor();
-        $('[data-tab="people"]').hidden = !isAdmin();
-        renderPicker(id);
-        rerender();
-        route();
-        startTour();
-      });
+      D = d; me = d.me.email; role = d.me.role || 'viewer'; M = model(d);
+      if (!f) f = defaults();
+      f = Object.assign(defaults(), f);
+      $('[data-email]').textContent = me || '';
+      var rb = $('[data-role]'); rb.textContent = (d.me.owner ? 'Owner' : ROLE_NAMES[role]); rb.hidden = false;
+      rb.title = { viewer: 'You can view, download and comment', editor: 'You can also edit copy, upload, review and manage campaigns', admin: 'You can also manage people' }[role];
+      $('[data-upload]').hidden = !isEditor();
+      $('[data-tab="edit"]').hidden = !isEditor();
+      $('[data-tab="people"]').hidden = !isAdmin();
+      renderPicker(id);
+      rerender();
+      route();
+      startTour(d.me);
+      startInbox();
+      if (isEditor()) (window.requestIdleCallback || setTimeout)(function () { needEditor().catch(function () {}); });
     }).catch(function (e) { $('[data-grid]').innerHTML = ''; $('[data-grid]').appendChild(h('p', { class: 'notice', text: 'The ad library couldn’t load: ' + e.message })); });
   }
+  // ---------------------------------------------------------------- notifications (the bell)
+  var inboxTimer = null;
+  function startInbox() {
+    if (inboxTimer) return;
+    loadInbox();
+    // Check every minute while the tab is visible, and when you come back to it.
+    inboxTimer = setInterval(function () { if (document.visibilityState === 'visible') loadInbox(); }, 60000);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') loadInbox(); });
+  }
+  function loadInbox() {
+    return api('notifications').then(function (r) {
+      var badge = $('[data-bell-count]'), bell = $('[data-bell]');
+      badge.textContent = r.unread > 9 ? '9+' : String(r.unread);
+      badge.hidden = !r.unread;
+      bell.setAttribute('aria-label', 'Notifications' + (r.unread ? ', ' + r.unread + ' unread' : ''));
+      paintInbox(r);
+    }).catch(function () {});
+  }
+  function paintInbox(r) {
+    var box = $('#inbox');
+    box.innerHTML = '';
+    box.appendChild(h('div', { class: 'inbox-head' }, [h('b', { text: 'Notifications' }),
+      r.unread ? h('button', { type: 'button', class: 'linkbtn', text: 'Mark all read', onclick: function () { api('notifications/read', { method: 'POST', body: { all: true } }).then(loadInbox); } }) : null]));
+    if (!r.items.length) { box.appendChild(h('p', { class: 'inbox-empty', text: 'Nothing yet. Suggestions, comments, reviews and role changes show up here.' })); return; }
+    var ICONS = { suggestion: '✎', comment: '💬', review_needed: '👀', changes_requested: '↺', role: '★' };
+    box.appendChild(h('ul', { class: 'inbox-list' }, r.items.map(function (n) {
+      return h('li', {}, [h('button', { type: 'button', class: n.read_at ? '' : 'unread', onclick: function () {
+        if (!n.read_at) api('notifications/read', { method: 'POST', body: { id: n.id } }).then(loadInbox);
+        if (box.hidePopover) box.hidePopover();
+        var go = function () { if (n.ad_id && byId(n.ad_id)) openDetail(n.ad_id); else if (n.kind === 'review_needed' && isEditor()) { setTab('ads'); setF('status', 'in_review'); } };
+        if (n.set_id && M && n.set_id !== M.set.id) boot(n.set_id).then(go); else go();
+      } }, [h('span', { class: 'inbox-ico', 'aria-hidden': 'true', text: ICONS[n.kind] || '•' }), h('span', {}, [n.text, h('small', { text: ago(n.created_at) })])])]);
+    })));
+  }
+
   // ---------------------------------------------------------------- tour + help
   var tourStarted = false;
   function saveTour(r) { return api('me/tour', { method: 'POST', body: { role: r } }).catch(function () {}); }
-  function startTour() {
+  function startTour(meInfo) {
     if (tourStarted || !window.YondrTour) return;
     tourStarted = true;
     var q = new URLSearchParams(location.search);
@@ -824,7 +1052,7 @@
       setTimeout(function () { window.YondrTour.start(role, saveTour); }, 500);
       return;
     }
-    api('me').then(function (meInfo) { if (!location.hash || location.hash === '#') window.YondrTour.maybe(meInfo, saveTour); }).catch(function () {});
+    if (!location.hash || location.hash === '#') window.YondrTour.maybe(meInfo, saveTour);
   }
   document.querySelector('[data-tour-replay]').addEventListener('click', function () {
     var menu = document.getElementById('help-menu');
@@ -839,7 +1067,7 @@
 
   // Shared with editor.js (the Edit copy tab).
   function editorApi() {
-    return { api: api, toast: toast, refresh: refresh, h: h, helpLink: helpLink, model: function () { return M; }, data: function () { return D; }, me: function () { return me; }, setTab: setTab };
+    return { api: api, toast: toast, refresh: refresh, rerender: function () { renderGrid(); }, h: h, helpLink: helpLink, model: function () { return M; }, data: function () { return D; }, me: function () { return me; }, setTab: setTab };
   }
 
   // ---------------------------------------------------------------- People tab (admins)

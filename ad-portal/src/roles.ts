@@ -4,6 +4,8 @@
 //   admin   + give people roles (People tab), delete any ad or campaign
 // Owners (OWNER_EMAILS in wrangler.toml) are always admins and can't be changed from the portal.
 
+import { notify } from './notify';
+
 export type Role = 'viewer' | 'editor' | 'admin';
 export const ROLES: Role[] = ['viewer', 'editor', 'admin'];
 const RANK: Record<Role, number> = { viewer: 0, editor: 1, admin: 2 };
@@ -75,7 +77,7 @@ export async function log(env: RoleEnv, actor: string, action: string, target: s
 }
 
 // ------------------------------------------------------------------ People tab (admins)
-export async function usersApi(request: Request, env: RoleEnv, me: Who, target?: string): Promise<Response> {
+export async function usersApi(request: Request, env: RoleEnv, me: Who, target?: string, ctx?: ExecutionContext): Promise<Response> {
   if (!can(me, 'admin')) return err(403, 'Only admins can manage people.');
   const m = request.method;
   const own = owners(env);
@@ -100,6 +102,7 @@ export async function usersApi(request: Request, env: RoleEnv, me: Who, target?:
     await env.DB.prepare(`INSERT INTO users (email, role, added_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(email) DO UPDATE SET role = excluded.role, added_by = excluded.added_by, updated_at = excluded.updated_at`).bind(email, b.role, me.email, ts, ts).run();
     await log(env, me.email, 'role_set', email, { role: b.role });
+    await notify(env, [email], { kind: 'role', actor: me.email, text: `${me.email.split('@')[0]} made you ${({ admin: 'an admin', editor: 'an editor', viewer: 'a viewer' } as Record<string, string>)[b.role]} in the ad library. Take a look at what’s new.` });
     return usersApi(new Request(request.url), env, me);
   }
   if (m === 'DELETE') {

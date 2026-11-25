@@ -337,7 +337,8 @@
    "bytes": 86379,
    "colors": 256,
    "frames": 45,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h1-motion-300x250.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h1-motion-336x280",
@@ -356,7 +357,8 @@
    "bytes": 101195,
    "colors": 256,
    "frames": 45,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h1-motion-336x280.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h1-motion-728x90",
@@ -375,7 +377,8 @@
    "bytes": 59326,
    "colors": 256,
    "frames": 43,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h1-motion-728x90.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h1-motion-320x50",
@@ -394,7 +397,8 @@
    "bytes": 27269,
    "colors": 256,
    "frames": 40,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h1-motion-320x50.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h1-motion-300x600",
@@ -413,7 +417,8 @@
    "bytes": 144712,
    "colors": 192,
    "frames": 51,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h1-motion-300x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h1-motion-160x600",
@@ -432,7 +437,8 @@
    "bytes": 100447,
    "colors": 256,
    "frames": 49,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h1-motion-160x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h2-pouch-300x250",
@@ -655,7 +661,8 @@
    "bytes": 85009,
    "colors": 256,
    "frames": 47,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h2-motion-300x250.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h2-motion-336x280",
@@ -674,7 +681,8 @@
    "bytes": 97751,
    "colors": 256,
    "frames": 47,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h2-motion-336x280.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h2-motion-728x90",
@@ -693,7 +701,8 @@
    "bytes": 58123,
    "colors": 256,
    "frames": 44,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h2-motion-728x90.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h2-motion-320x50",
@@ -712,7 +721,8 @@
    "bytes": 27155,
    "colors": 256,
    "frames": 43,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h2-motion-320x50.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h2-motion-300x600",
@@ -731,7 +741,8 @@
    "bytes": 142929,
    "colors": 224,
    "frames": 52,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h2-motion-300x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h2-motion-160x600",
@@ -750,7 +761,8 @@
    "bytes": 97615,
    "colors": 256,
    "frames": 51,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h2-motion-160x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h3-pouch-300x250",
@@ -973,7 +985,8 @@
    "bytes": 89236,
    "colors": 256,
    "frames": 47,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h3-motion-300x250.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h3-motion-336x280",
@@ -992,7 +1005,8 @@
    "bytes": 102691,
    "colors": 256,
    "frames": 47,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h3-motion-336x280.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h3-motion-728x90",
@@ -1011,7 +1025,8 @@
    "bytes": 59597,
    "colors": 256,
    "frames": 44,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h3-motion-728x90.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h3-motion-320x50",
@@ -1030,7 +1045,8 @@
    "bytes": 26758,
    "colors": 256,
    "frames": 42,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h3-motion-320x50.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h3-motion-300x600",
@@ -1049,7 +1065,8 @@
    "bytes": 141314,
    "colors": 160,
    "frames": 54,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h3-motion-300x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h3-motion-160x600",
@@ -1068,7 +1085,8 @@
    "bytes": 101873,
    "colors": 256,
    "frames": 50,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h3-motion-160x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h4-pouch-300x250",
@@ -1291,7 +1309,8 @@
    "bytes": 85882,
    "colors": 256,
    "frames": 47,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h4-motion-300x250.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h4-motion-336x280",
@@ -1310,7 +1329,8 @@
    "bytes": 98960,
    "colors": 256,
    "frames": 47,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h4-motion-336x280.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h4-motion-728x90",
@@ -1329,7 +1349,8 @@
    "bytes": 57857,
    "colors": 256,
    "frames": 44,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h4-motion-728x90.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h4-motion-320x50",
@@ -1348,7 +1369,8 @@
    "bytes": 27136,
    "colors": 256,
    "frames": 43,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h4-motion-320x50.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h4-motion-300x600",
@@ -1367,7 +1389,8 @@
    "bytes": 140627,
    "colors": 160,
    "frames": 53,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h4-motion-300x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h4-motion-160x600",
@@ -1386,7 +1409,8 @@
    "bytes": 99362,
    "colors": 256,
    "frames": 52,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h4-motion-160x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h5-pouch-300x250",
@@ -1609,7 +1633,8 @@
    "bytes": 85623,
    "colors": 256,
    "frames": 45,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h5-motion-300x250.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h5-motion-336x280",
@@ -1628,7 +1653,8 @@
    "bytes": 98845,
    "colors": 256,
    "frames": 45,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h5-motion-336x280.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h5-motion-728x90",
@@ -1647,7 +1673,8 @@
    "bytes": 57248,
    "colors": 256,
    "frames": 43,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h5-motion-728x90.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h5-motion-320x50",
@@ -1666,7 +1693,8 @@
    "bytes": 27180,
    "colors": 256,
    "frames": 40,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h5-motion-320x50.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h5-motion-300x600",
@@ -1685,7 +1713,8 @@
    "bytes": 144925,
    "colors": 192,
    "frames": 51,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h5-motion-300x600.gif.poster.jpg"
   },
   {
    "id": "harvard-study-2026-h5-motion-160x600",
@@ -1704,7 +1733,8 @@
    "bytes": 101237,
    "colors": 256,
    "frames": 49,
-   "duration": 13.6
+   "duration": 13.6,
+   "poster": "motion/harvard-study-2026-h5-motion-160x600.gif.poster.jpg"
   }
  ]
 }

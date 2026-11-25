@@ -69,7 +69,7 @@
     });
   }
   function estimate(list) {
-    var s = list.reduce(function (n, a) { return n + (a.variant === 'motion' ? (a.w * a.h > 100000 ? 28 : 18) : 0.6); }, 0);
+    var s = list.reduce(function (n, a) { return n + (a.variant === 'motion' ? (a.w * a.h > 100000 ? 6 : 3.5) : 0.6); }, 0) + 3;   // measured on a 4-core machine; faster with more cores
     return s < 45 ? 'under a minute' : 'about ' + Math.ceil(s / 60) + ' minute' + (s >= 90 ? 's' : '');
   }
   function sizeOf(c, id) { return (c.sizes || []).find(function (s) { return s.id === id; }) || { id: id, w: +id.split('x')[0], h: +id.split('x')[1] }; }
@@ -135,16 +135,19 @@
   }
 
   // ------------------------------------------------------------------ the pipeline: render all, then save copy, then upload
-  var busy = false;
+  // Renders on this page (snapshots) while Web Workers encode the GIFs, so several ads are in flight at once.
+  var busy = false, pending = {};
   // jobs: [{ ad, spec, headline, desc, overrides (undefined = keep) }]. ui: { status(text), progress(value, max), stopped() }.
   function run(ctx, jobs, opts, ui) {
     busy = true;
+    jobs.forEach(function (j) { pending[j.ad.id] = true; });
     var leave = function (e) { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', leave);
     var host = document.createElement('div');
     document.body.appendChild(host);
-    var rendered = [], failed = [], R = null;
+    var results = [], encodes = [], failed = [], R = null, finished = 0;
     var setId = ctx.model().set.id;
+    var tick = function () { finished++; ui.progress(finished, jobs.length); };
     ui.progress(0, jobs.length);
     return window.YondrRender.open(host).then(function (r) {
       R = r;
@@ -152,25 +155,33 @@
       function next() {
         if (ui.stopped()) throw new Error('stopped');
         if (i >= jobs.length) return;
-        var j = jobs[i], a = j.ad;
-        ui.status('Rendering ' + (jobs.length > 1 ? (i + 1) + ' of ' + jobs.length + ': ' : '') + a.w + '×' + a.h + ' ' + VIEWS[a.variant] + '…');
-        var job = a.variant === 'motion' ? R.motion(j.spec, function (f, n) { ui.progress(i + f / n, jobs.length); }) : R.still(j.spec);
-        return job.then(function (out) { rendered.push({ job: j, out: out }); i++; ui.progress(i, jobs.length); return next(); });
+        var k = i, j = jobs[k], a = j.ad;
+        ui.status('Rendering ' + (jobs.length > 1 ? (k + 1) + ' of ' + jobs.length + ': ' : '') + a.w + '×' + a.h + ' ' + VIEWS[a.variant] + '…');
+        var job = a.variant === 'motion'
+          ? R.motion(j.spec).then(function (cap) { encodes.push(cap.done.then(function (out) { results[k] = { job: j, out: out }; tick(); })); })
+          : R.still(j.spec).then(function (out) { results[k] = { job: j, out: out }; tick(); });
+        return job.then(function () { i++; return next(); });
       }
       return next();
     }).then(function () {
+      ui.status('Finishing ' + encodes.length + ' animation' + (encodes.length === 1 ? '' : 's') + '…');
+      return Promise.all(encodes);
+    }).then(function () {
+      if (ui.stopped()) throw new Error('stopped');
       if (!opts.copyBody) return;
       ui.status('Saving copy…');
       return ctx.api('sets/' + setId + '/copy', { method: 'PUT', body: opts.copyBody });
     }).then(function () {
-      var k = 0;
-      ui.progress(0, rendered.length);
-      function up() {
-        if (k >= rendered.length) return;
-        var r = rendered[k], j = r.job, a = j.ad;
-        ui.status('Uploading ' + (rendered.length > 1 ? (k + 1) + ' of ' + rendered.length : 'the new file') + '…');
+      var done = results.filter(Boolean), k = 0;
+      ui.progress(0, done.length);
+      // Upload a few at a time.
+      function worker() {
+        if (k >= done.length) return Promise.resolve();
+        var r = done[k++], j = r.job, a = j.ad;
+        ui.status('Uploading ' + Math.min(k, done.length) + ' of ' + done.length + '…');
         var fd = new FormData();
         fd.append('file', new File([r.out.blob], a.key.split('/').pop(), { type: a.variant === 'motion' ? 'image/gif' : 'image/jpeg' }));
+        if (r.out.poster) fd.append('poster', new File([r.out.poster], 'poster.jpg', { type: 'image/jpeg' }));
         fd.append('headline', j.headline);
         var t = newTitle(a, j.headline);
         if (t) fd.append('title', t);
@@ -179,13 +190,37 @@
         fd.append('meta', JSON.stringify(meta));
         return ctx.api('ads/' + a.id + '/file', { method: 'PUT', body: fd })
           .catch(function (e) { failed.push({ ad: a, error: e.message }); })
-          .then(function () { k++; ui.progress(k, rendered.length); return up(); });
+          .then(function () { ui.progress(k, done.length); return worker(); });
       }
-      return up();
-    }).then(function () {
-      return ctx.api('sets/' + setId + '/rerendered', { method: 'POST', body: { count: rendered.length - failed.length, failed: failed.length, changed: opts.changed || [] } }).catch(function () {});
-    }).then(function () { return { done: rendered.length - failed.length, failed: failed }; })
-      .finally(function () { if (R) R.close(); host.remove(); window.removeEventListener('beforeunload', leave); busy = false; });
+      return Promise.all([worker(), worker(), worker()]).then(function () { return done.length; });
+    }).then(function (n) {
+      return ctx.api('sets/' + setId + '/rerendered', { method: 'POST', body: { count: n - failed.length, failed: failed.length, changed: opts.changed || [], adId: jobs.length === 1 ? jobs[0].ad.id : undefined } })
+        .catch(function () {}).then(function () { return { done: n - failed.length, failed: failed }; });
+    }).finally(function () {
+      if (R) R.close(); host.remove(); window.removeEventListener('beforeunload', leave); busy = false;
+      jobs.forEach(function (j) { delete pending[j.ad.id]; });
+    });
+  }
+
+  // Runs an update in the background: a small progress card bottom-left, so people can keep using the library.
+  function startUpdate(ctx, jobs, opts, onDone) {
+    var h = ctx.h;
+    if (busy) { ctx.toast('Another update is still running. Try again when it finishes.'); return false; }
+    var pill = h('div', { class: 'job-pill', role: 'status', 'aria-live': 'polite' });
+    var ui = progressBar(h, pill);
+    document.body.appendChild(pill);
+    ctx.toast(jobs.length > 1 ? 'Updating ' + jobs.length + ' ads. You can keep working; keep this tab open.' : 'Updating the ad…');
+    var job = run(ctx, jobs, opts, ui);   // marks the ads as updating straight away…
+    if (ctx.rerender) ctx.rerender();       // …so the grid shows their “Updating…” badges
+    job.then(function (r) {
+      if (r.failed.length) ctx.toast(r.done + ' updated, ' + r.failed.length + ' didn’t upload: ' + r.failed[0].error);
+      else ctx.toast(r.done > 1 ? 'Done. ' + r.done + ' ads updated and back in review.' : 'Done. The ad is updated and back in review.');
+      if (onDone) onDone(true, r);
+    }).catch(function (e) {
+      ctx.toast(e.message === 'stopped' ? 'Stopped. Nothing was changed.' : 'Not saved: ' + e.message);
+      if (onDone) onDone(false);
+    }).then(function () { pill.remove(); return ctx.refresh(); });
+    return true;
   }
 
   function progressBar(h, el, onStop) {
@@ -281,24 +316,11 @@
           note || f.hint ? h('span', { class: 'hint', text: [note, f.hint].filter(Boolean).join(' · ') }) : null]));
       });
     }
+    // Saving runs in the background: the window goes back to the ad and a progress card shows bottom-left.
     function save(p) {
-      var ui = progressBar(h, foot);
-      list.querySelectorAll('input,textarea').forEach(function (x) { x.disabled = true; });
-      scopeEl.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
-      cb.busy(true);
-      run(ctx, p.jobs, { copyBody: p.copy ? copyBody(p.copy, p.paths) : null, changed: p.paths || fields.filter(function (f) { return vals[f.key] !== orig[f.key]; }).map(function (f) { return 'ad:' + f.key; }) }, ui)
-        .then(function (r) {
-          cb.busy(false);
-          if (r.failed.length) ctx.toast(r.done + ' updated, ' + r.failed.length + ' didn’t upload: ' + r.failed[0].error);
-          else ctx.toast(r.done > 1 ? 'Saved. ' + r.done + ' ads updated and back in review.' : 'Saved. This ad is updated and back in review.');
-          cb.saved();
-        }).catch(function (e) {
-          cb.busy(false);
-          ctx.toast(e.message === 'stopped' ? 'Stopped. Nothing was changed.' : 'Not saved: ' + e.message);
-          list.querySelectorAll('input,textarea').forEach(function (x) { x.disabled = false; });
-          scopeEl.querySelectorAll('button').forEach(function (x) { x.disabled = false; });
-          paintFoot();
-        });
+      var started = startUpdate(ctx, p.jobs, { copyBody: p.copy ? copyBody(p.copy, p.paths) : null,
+        changed: p.paths || fields.filter(function (f) { return vals[f.key] !== orig[f.key]; }).map(function (f) { return 'ad:' + f.key; }) });
+      if (started) cb.saved();
     }
 
     body.innerHTML = '';
@@ -347,7 +369,10 @@
       save.disabled = true; note.textContent = 'Uploading…'; cb.busy(true);
       var fd = new FormData();
       fd.append('file', file);
-      ctx.api('ads/' + a.id + '/file', { method: 'PUT', body: fd }).then(function () { cb.busy(false); ctx.toast('File replaced. The ad is back in review.'); cb.saved(); })
+      (a.kind === 'motion' ? window.YondrRender.posterFromFile(file) : Promise.resolve(null)).then(function (poster) {
+        if (poster) fd.append('poster', new File([poster], 'poster.jpg', { type: 'image/jpeg' }));
+        return ctx.api('ads/' + a.id + '/file', { method: 'PUT', body: fd });
+      }).then(function () { cb.busy(false); ctx.toast('File replaced. The ad is back in review.'); cb.saved(); })
         .catch(function (e) { cb.busy(false); errEl.textContent = e.message; save.disabled = false; note.textContent = ''; });
     });
     body.innerHTML = '';
@@ -374,10 +399,15 @@
 
   function renderTab(panel, ctx) {
     var h = ctx.h, M = ctx.model();
-    if (busy) return;
+    if (busy) {
+      panel.innerHTML = '';
+      panel.appendChild(h('div', { class: 'empty' }, [h('h3', { text: 'Updating ads…' }),
+        h('p', { text: 'Your changes are being applied (progress is in the corner). You can keep browsing; editing opens again when it’s done.' })]));
+      return;
+    }
     var cur = M.set.copy || {};
     var dirty = tab.saved && tabChanges().length;
-    if (!dirty || JSON.stringify(tab.saved) !== JSON.stringify(cur)) { tab.saved = clone(cur); tab.draft = clone(cur); }
+    if ((!dirty && !tab.restored) || JSON.stringify(tab.saved) !== JSON.stringify(cur)) { tab.saved = clone(cur); tab.draft = clone(cur); tab.restored = null; }
     var saved = tab.saved, draft = tab.draft, pvs = tab.preview;
     panel.innerHTML = '';
     if (!saved.headlines || !saved.cta) {
@@ -387,7 +417,36 @@
     if (!saved.headlines.some(function (x) { return x.id === pvs.headline; })) pvs.headline = saved.headlines[0].id;
     var gen = M.ads.filter(function (a) { return a.meta && a.meta.generated; }).length;
     panel.appendChild(h('div', { class: 'camp-head' }, [h('h2', { text: 'Edit ad copy' }), ctx.helpLink('edit-copy-tab', 'The Edit copy tab'),
+      h('button', { type: 'button', class: 'btn line sm', text: '↺ History', 'aria-expanded': 'false', onclick: function (e) { toggleHistory(e.currentTarget); } }),
       h('p', { text: 'Every shared text in one place (' + gen + ' template ads). To change one ad, or the text on one ad only, open the ad and choose Edit. Saving re-renders the ads that show what you changed and puts them back “In review”.' })]));
+    var hist = h('div', { class: 'panel history', hidden: true });
+    panel.appendChild(hist);
+    if (tab.restored) panel.appendChild(h('div', { class: 'notice' }, ['Loaded the version from ' + tab.restored + '. Check the preview, then save to restore it. ',
+      h('button', { type: 'button', class: 'linkbtn', text: 'Cancel', onclick: function () { tab.draft = clone(tab.saved); tab.restored = null; renderTab(panel, ctx); } })]));
+    // Version history: every save is kept; loading one puts it in the form so you can preview, then save to restore.
+    function toggleHistory(btn) {
+      var open = hist.hidden;
+      hist.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+      if (!open) return;
+      hist.innerHTML = '<p class="hint">Loading…</p>';
+      ctx.api('sets/' + M.set.id + '/copy/versions').then(function (r) {
+        hist.innerHTML = '';
+        hist.appendChild(h('h3', { text: 'Copy history' }));
+        if (!r.versions.length) { hist.appendChild(h('p', { class: 'hint', text: 'No saved versions yet. Each save from now on is kept here.' })); return; }
+        hist.appendChild(h('ul', { class: 'uses' }, r.versions.map(function (v, i) {
+          var when = new Date(v.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+          var who = v.created_by === 'original' ? 'Original copy' : v.created_by.split('@')[0];
+          var what = v.changed.length ? v.changed.length + ' change' + (v.changed.length > 1 ? 's' : '') + ': ' + v.changed.slice(0, 4).join(', ') + (v.changed.length > 4 ? '…' : '') : '';
+          return h('li', {}, [h('span', { class: 'name' }, [h('b', { text: i === 0 ? 'Current · ' : '' }), who + ' · ' + when, what ? h('br') : null, what ? h('span', { class: 'hint', text: what }) : null]),
+            i === 0 ? null : h('button', { type: 'button', class: 'btn line sm', text: 'Load', onclick: function () {
+              ctx.api('sets/' + M.set.id + '/copy/versions/' + v.id).then(function (full) {
+                tab.draft = clone(Object.assign({}, tab.saved, full.copy)); tab.restored = who + ', ' + when; renderTab(panel, ctx);
+                ctx.toast('Version loaded. Review it, then save to restore.');
+              }).catch(function (er) { ctx.toast(er.message); });
+            } })]);
+        })));
+      }).catch(function (er) { hist.innerHTML = ''; hist.appendChild(h('p', { class: 'err', text: er.message })); });
+    }
 
     var stage = h('div', { class: 'pv-stage' });
     var pv = Preview(h, stage, 560);
@@ -422,14 +481,12 @@
       return h('label', { class: 'ef' }, [h('span', { class: 'ef-top' }, [lbl, inp.count]), inp.el, hint ? h('span', { class: 'hint', text: hint }) : null]);
     }
     function save(ch, list) {
-      var ui = progressBar(h, bar);
       var jobs = list.map(function (a) { var s = specFor(a, draft, a.meta.overrides); return { ad: a, spec: s, headline: s.h.text, desc: s.h.desc }; });
-      run(ctx, jobs, { copyBody: copyBody(draft, ch), changed: ch }, ui).then(function (r) {
-        tab.saved = clone(draft);
-        ctx.toast(r.failed.length ? 'Saved. ' + r.failed.length + ' ads didn’t upload; save again to retry.' : 'Saved. ' + r.done + ' ads updated and back in review.');
-        return ctx.refresh();
-      }).catch(function (e) { ctx.toast(e.message === 'stopped' ? 'Stopped. Nothing was changed.' : 'Not saved: ' + e.message); })
-        .then(function () { renderTab(panel, ctx); });
+      var started = startUpdate(ctx, jobs, { copyBody: copyBody(draft, ch), changed: ch }, function (ok) {
+        if (ok) { tab.saved = clone(draft); tab.restored = null; }
+        renderTab(panel, ctx);
+      });
+      if (started) renderTab(panel, ctx);
     }
     var focusHeadline = function (id) { return function () { if (pvs.headline !== id) { pvs.headline = id; syncPickers(); redraw(false); } }; };
     var form = h('div', { class: 'ed-form' }, [
@@ -476,5 +533,6 @@
     replaceFile: replaceFile,
     canEditText: function (a) { return !!(a.meta && a.meta.generated && a.meta.headlineId && a.meta.headlineId !== 'other'); },
     busy: function () { return busy; },
+    updating: function (id) { return !!pending[id]; },
   };
 })();

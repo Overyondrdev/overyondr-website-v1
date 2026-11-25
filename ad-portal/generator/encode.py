@@ -44,6 +44,15 @@ def jpeg(png, dest, w, h):
     return {'bytes': buf.tell(), 'quality': q}
 
 
+def poster(gif_path):
+    """The GIF's last frame (its end card) as a JPEG, shown in the portal's grid instead of the animation."""
+    im = Image.open(gif_path)
+    im.seek(im.n_frames - 1)
+    dest = gif_path + '.poster.jpg'
+    im.convert('RGB').save(dest, 'JPEG', quality=88, subsampling=0, optimize=True)
+    return os.path.getsize(dest)
+
+
 def gif(frames, fps, dest, w, h):
     # Merge runs of identical frames into one frame with a longer delay.
     step = 1 / fps
@@ -95,6 +104,8 @@ for j in jobs:
     else:
         rel = f"motion/{j['name']}.gif"
         info = gif(j['frames'], j['fps'], os.path.join(out, rel), s['w'], s['h'])
+        poster(os.path.join(out, rel))
+        info['poster'] = rel + '.poster.jpg'
         fmt = 'GIF'
     if info['bytes'] > LIMIT:
         over.append(f"{rel} is {info['bytes']} bytes, over the {LIMIT} byte limit")

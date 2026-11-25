@@ -12,6 +12,7 @@
 import { serveStatic } from './static';
 import { accessEmail } from './access';
 import { can, helpContacts, helpFeedback, log, seen, setTourRole, tourRole, usersApi, whoIs, type Who } from './roles';
+import { editors, inbox, notify } from './notify';
 
 interface Env {
   AD_ASSETS: R2Bucket;
@@ -20,6 +21,7 @@ interface Env {
   OWNER_EMAILS?: string; // always admins (comma-separated)
   DEFAULT_ROLE?: string; // role for everyone else who signs in (viewer)
   DEV_EMAIL?: string; // local development only (.dev.vars); never set in production
+  SLACK_WEBHOOK_URL?: string; // optional secret: Slack incoming webhook for notifications (src/notify.ts)
 }
 
 const STATUSES = ['in_review', 'approved', 'needs_changes', 'archived'];
@@ -78,9 +80,12 @@ async function file(request: Request, env: Env, key: string): Promise<Response> 
   const headers = new Headers();
   obj.writeHttpMetadata(headers);
   headers.set('etag', obj.httpEtag);
-  headers.set('cache-control', 'private, max-age=3600');
+  // Ad URLs carry ?v=<updated_at>, which changes whenever the file is replaced, so versioned requests can be
+  // cached for good. Unversioned ones (old links) get an hour.
+  const url = new URL(request.url);
+  headers.set('cache-control', url.searchParams.has('v') ? 'private, max-age=31536000, immutable' : 'private, max-age=3600');
   headers.set('x-robots-tag', 'noindex');
-  if (new URL(request.url).searchParams.has('download')) headers.set('content-disposition', `attachment; filename="${key.split('/').pop()}"`);
+  if (url.searchParams.has('download')) headers.set('content-disposition', `attachment; filename="${key.split('/').pop()}"`);
   if (!('body' in obj) || !obj.body) return new Response(null, { status: 304, headers });
   return new Response(obj.body, { headers });
 }
@@ -95,6 +100,7 @@ async function listSets(env: Env) {
 
 async function getSet(env: Env, id: string, who: Who) {
   const email = who.email;
+  await seen(env, email);
   const set = await env.DB.prepare('SELECT * FROM ad_sets WHERE id = ?').bind(id).first<Record<string, any>>();
   if (!set) return err(404, 'Ad set not found.');
   const [ads, files, campaigns, links, reviews, mine, comments, downloads] = await env.DB.batch([
@@ -116,7 +122,8 @@ async function getSet(env: Env, id: string, who: Who) {
   for (const r of comments.results as any[]) at(r.ad_id).comments = r.n;
   for (const r of downloads.results as any[]) at(r.ad_id).downloads = r.n;
   return json({
-    me: { email, role: who.role, owner: who.owner },
+    me: { email, role: who.role, owner: who.owner, tourRole: await tourRole(env, email) },
+    sets: (await env.DB.prepare(`SELECT s.id, s.name, (SELECT COUNT(*) FROM ads a WHERE a.set_id = s.id AND a.status != 'archived') AS ad_count FROM ad_sets s ORDER BY s.created_at DESC`).all()).results,
     set: { ...set, copy: parse(set.copy) },
     ads: (ads.results as any[]).map((a) => ({ ...a, meta: parse(a.meta), stats: at(a.id) })),
     files: files.results,
@@ -138,6 +145,14 @@ async function createSet(request: Request, env: Env, email: string) {
 }
 
 // ------------------------------------------------------------------ ads
+// Motion ads get a still poster (their end card) for the grid. The browser makes it and sends it as "poster".
+async function savePoster(env: Env, form: FormData, key: string): Promise<string | null> {
+  const p = form.get('poster');
+  if (!p || typeof p === 'string' || !['image/jpeg', 'image/webp'].includes(p.type) || p.size > 600_000) return null;
+  const pkey = key + '.poster.' + (p.type === 'image/webp' ? 'webp' : 'jpg');
+  await env.AD_ASSETS.put(pkey, await p.arrayBuffer(), { httpMetadata: { contentType: p.type } });
+  return pkey;
+}
 async function upload(request: Request, env: Env, setId: string, email: string) {
   if (!(await env.DB.prepare('SELECT 1 FROM ad_sets WHERE id = ?').bind(setId).first())) return err(404, 'Ad set not found.');
   const form = await request.formData().catch(() => null);
@@ -158,15 +173,16 @@ async function upload(request: Request, env: Env, setId: string, email: string) 
   const status = STATUSES.includes(String(form.get('status'))) ? String(form.get('status')) : 'in_review';
   const ts = now();
   await env.AD_ASSETS.put(key, bytes, { httpMetadata: { contentType: type }, customMetadata: { uploadedBy: email, originalName: f.name.slice(0, 200) } });
+  const posterKey = isMotion ? await savePoster(env, form, key) : null;
   await env.DB.prepare(`INSERT INTO ads (id, set_id, title, headline, variant, kind, format, width, height, bytes, r2_key, content_type, status,
-      campaign_start, campaign_end, meta, uploaded_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      campaign_start, campaign_end, meta, uploaded_by, created_at, updated_at, poster_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .bind(id, setId, clip(form.get('title'), 200) || f.name.slice(0, 200), clip(form.get('headline'), 200) || null, variant, isMotion ? 'motion' : 'still',
       TYPES[type], dims.width, dims.height, bytes.length, key, type, status, date(form.get('campaign_start')), date(form.get('campaign_end')),
-      JSON.stringify({ desc: clip(form.get('desc'), 300) || undefined, originalName: f.name.slice(0, 200) }), email, ts, ts).run();
+      JSON.stringify({ desc: clip(form.get('desc'), 300) || undefined, originalName: f.name.slice(0, 200) }), email, ts, ts, posterKey).run();
   return json({ id }, 201);
 }
 
-async function updateAd(request: Request, env: Env, id: string) {
+async function updateAd(request: Request, env: Env, id: string, who: Who, ctx: ExecutionContext) {
   const ad = await env.DB.prepare('SELECT id FROM ads WHERE id = ?').bind(id).first();
   if (!ad) return err(404, 'Ad not found.');
   const b: any = await request.json().catch(() => ({}));
@@ -179,7 +195,26 @@ async function updateAd(request: Request, env: Env, id: string) {
   if ('campaign_end' in b) { sets.push('campaign_end = ?'); args.push(date(b.campaign_end)); }
   if (!sets.length) return err(400, 'Nothing to change.');
   await env.DB.prepare(`UPDATE ads SET ${sets.join(', ')}, updated_at = ? WHERE id = ?`).bind(...args, now(), id).run();
+  if (b.status === 'needs_changes') await notifyChanges(env, [id], who, ctx);
   return json({ ok: true });
+}
+
+// Several ads at once (Set status, Approve selected, the review queue).
+async function bulkStatus(request: Request, env: Env, who: Who, ctx: ExecutionContext) {
+  const b: any = await request.json().catch(() => ({}));
+  const ids = (Array.isArray(b.ids) ? b.ids : []).filter((x: unknown) => typeof x === 'string' && ID.test(x)).slice(0, 500);
+  if (!ids.length) return err(400, 'Choose some ads.');
+  if (!STATUSES.includes(b.status)) return err(400, 'Unknown status.');
+  const ts = now();
+  await env.DB.batch(ids.map((id: string) => env.DB.prepare('UPDATE ads SET status = ?, updated_at = ? WHERE id = ?').bind(b.status, ts, id)));
+  if (b.status === 'needs_changes') await notifyChanges(env, ids, who, ctx);
+  return json({ ok: true, count: ids.length });
+}
+async function notifyChanges(env: Env, ids: string[], who: Who, ctx: ExecutionContext) {
+  const first = await env.DB.prepare('SELECT set_id, title, uploaded_by FROM ads WHERE id = ?').bind(ids[0]).first<any>();
+  if (!first) return;
+  await notify(env, [...(await editors(env)), first.uploaded_by], { kind: 'changes_requested', actor: who.email, setId: first.set_id, adId: ids.length === 1 ? ids[0] : null,
+    text: `${who.email.split('@')[0]} asked for changes on ${ids.length === 1 ? first.title : ids.length + ' ads'}.` }, ctx);
 }
 
 async function deleteAd(env: Env, id: string, who: Who) {
@@ -193,13 +228,14 @@ async function deleteAd(env: Env, id: string, who: Who) {
   return json({ ok: true });
 }
 
-async function review(request: Request, env: Env, id: string, email: string) {
+async function review(request: Request, env: Env, id: string, email: string, who: Who, ctx: ExecutionContext) {
   if (!(await env.DB.prepare('SELECT 1 FROM ads WHERE id = ?').bind(id).first())) return err(404, 'Ad not found.');
   const { value } = (await request.json().catch(() => ({}))) as any;
   const v = value === 1 || value === -1 ? value : 0;
   if (v) await env.DB.prepare(`INSERT INTO reviews (ad_id, email, value, created_at) VALUES (?, ?, ?, ?)
       ON CONFLICT(ad_id, email) DO UPDATE SET value = excluded.value, created_at = excluded.created_at`).bind(id, email, v, now()).run();
   else await env.DB.prepare('DELETE FROM reviews WHERE ad_id = ? AND email = ?').bind(id, email).run();
+  if (v === -1) await notifyChanges(env, [id], who, ctx);
   const r = await env.DB.prepare('SELECT SUM(value = 1) AS up, SUM(value = -1) AS down FROM reviews WHERE ad_id = ?').bind(id).first<any>();
   return json({ up: r?.up || 0, down: r?.down || 0, mine: v });
 }
@@ -212,13 +248,19 @@ async function comments(env: Env, id: string) {
   return json({ items: c.results, reviews: r.results });
 }
 
-async function addComment(request: Request, env: Env, id: string, email: string) {
-  if (!(await env.DB.prepare('SELECT 1 FROM ads WHERE id = ?').bind(id).first())) return err(404, 'Ad not found.');
+async function addComment(request: Request, env: Env, id: string, email: string, ctx: ExecutionContext) {
+  const ad = await env.DB.prepare('SELECT set_id, title, uploaded_by FROM ads WHERE id = ?').bind(id).first<any>();
+  if (!ad) return err(404, 'Ad not found.');
   const b: any = await request.json().catch(() => ({}));
   const body = clip(b.body, 5000);
   if (!body) return err(400, 'Write a comment first.');
   await env.DB.prepare('INSERT INTO comments (ad_id, author_email, type, body, created_at) VALUES (?, ?, ?, ?, ?)')
     .bind(id, email, COMMENT_TYPES.includes(b.type) ? b.type : 'other', body, now()).run();
+  // Editors hear about suggestions and comments; the uploader hears about comments on their ad.
+  const name = email.split('@')[0];
+  const suggestion = b.type === 'content';
+  await notify(env, [...(await editors(env)), ad.uploaded_by], { kind: suggestion ? 'suggestion' : 'comment', actor: email, setId: ad.set_id, adId: id,
+    text: `${name} ${suggestion ? 'suggested a change on' : 'commented on'} ${ad.title}: “${body.slice(0, 140)}${body.length > 140 ? '…' : ''}”` }, ctx);
   return comments(env, id);
 }
 
@@ -345,10 +387,26 @@ async function updateCopy(request: Request, env: Env, setId: string, who: Who) {
     });
   }
   if (!changed.length) return json({ copy: cur, changed });
-  await env.DB.prepare('UPDATE ad_sets SET copy = ?, updated_at = ? WHERE id = ?').bind(JSON.stringify(next), now(), setId).run();
+  // Keep every version (the first save also records the copy it started from) so it can be restored.
+  const ts = now();
+  const hasHistory = await env.DB.prepare('SELECT 1 FROM copy_versions WHERE set_id = ? LIMIT 1').bind(setId).first();
+  await env.DB.batch([
+    ...(hasHistory ? [] : [env.DB.prepare('INSERT INTO copy_versions (set_id, copy, changed, created_by, created_at) VALUES (?, ?, ?, ?, ?)').bind(setId, JSON.stringify(cur), '[]', 'original', ts)]),
+    env.DB.prepare('INSERT INTO copy_versions (set_id, copy, changed, created_by, created_at) VALUES (?, ?, ?, ?, ?)').bind(setId, JSON.stringify(next), JSON.stringify(changed), who.email, ts),
+    env.DB.prepare('UPDATE ad_sets SET copy = ?, updated_at = ? WHERE id = ?').bind(JSON.stringify(next), ts, setId),
+  ]);
   await log(env, who.email, 'copy_updated', setId, { changed, before: Object.fromEntries(changed.map((k) => [k, pick(cur, k)])), after: Object.fromEntries(changed.map((k) => [k, pick(next, k)])) });
   return json({ copy: next, changed });
 }
+async function copyVersions(env: Env, setId: string, vid?: string) {
+  if (vid) {
+    const v = await env.DB.prepare('SELECT * FROM copy_versions WHERE set_id = ? AND id = ?').bind(setId, parseInt(vid, 10) || 0).first<any>();
+    return v ? json({ ...v, copy: parse(v.copy), changed: parse(v.changed) }) : err(404, 'Version not found.');
+  }
+  const { results } = await env.DB.prepare('SELECT id, changed, created_by, created_at FROM copy_versions WHERE set_id = ? ORDER BY id DESC LIMIT 50').bind(setId).all<any>();
+  return json({ versions: results.map((v) => ({ ...v, changed: parse(v.changed) })) });
+}
+
 function pick(copy: any, path: string) {
   const [a, b] = path.split('.');
   if (/^h\d+$/.test(a)) return (copy.headlines || []).find((h: any) => h.id === a)?.[b];
@@ -370,8 +428,9 @@ async function replaceFile(request: Request, env: Env, id: string, who: Who) {
   const meta: Record<string, any> = { ...parse(ad.meta), ...pickMeta(extra), rerenderedBy: who.email, rerenderedAt: now() };
   if (meta.overrides && !Object.keys(meta.overrides).length) delete meta.overrides; // back to the shared copy
   await env.AD_ASSETS.put(ad.r2_key, bytes, { httpMetadata: { contentType: f.type }, customMetadata: { uploadedBy: who.email } });
-  await env.DB.prepare('UPDATE ads SET bytes = ?, headline = COALESCE(?, headline), title = COALESCE(?, title), meta = ?, status = ?, updated_at = ? WHERE id = ?')
-    .bind(bytes.length, clip(form.get('headline'), 200) || null, clip(form.get('title'), 200) || null, JSON.stringify(meta), 'in_review', now(), id).run();
+  const posterKey = ad.kind === 'motion' ? await savePoster(env, form, ad.r2_key) : null;
+  await env.DB.prepare('UPDATE ads SET bytes = ?, headline = COALESCE(?, headline), title = COALESCE(?, title), meta = ?, status = ?, poster_key = COALESCE(?, poster_key), updated_at = ? WHERE id = ?')
+    .bind(bytes.length, clip(form.get('headline'), 200) || null, clip(form.get('title'), 200) || null, JSON.stringify(meta), 'in_review', posterKey, now(), id).run();
   return json({ ok: true, bytes: bytes.length });
 }
 // Per-ad copy overrides ("Only this ad" in the portal): text this one ad shows instead of the set's shared copy.
@@ -388,14 +447,19 @@ function pickMeta(m: any) {
   return out;
 }
 
-async function logRerender(request: Request, env: Env, setId: string, who: Who) {
+// After a batch of edits or uploads: log it and tell the reviewers.
+async function logRerender(request: Request, env: Env, setId: string, who: Who, ctx: ExecutionContext) {
   const b: any = await request.json().catch(() => ({}));
-  await log(env, who.email, 'ads_rerendered', setId, { count: Number(b.count) || 0, failed: Number(b.failed) || 0, changed: Array.isArray(b.changed) ? b.changed.slice(0, 40) : [] });
+  const count = Number(b.count) || 0;
+  const uploaded = b.kind === 'upload';
+  await log(env, who.email, uploaded ? 'ads_uploaded' : 'ads_rerendered', setId, { count, failed: Number(b.failed) || 0, changed: Array.isArray(b.changed) ? b.changed.slice(0, 40) : [] });
+  if (count) await notify(env, await editors(env), { kind: 'review_needed', actor: who.email, setId, adId: count === 1 && typeof b.adId === 'string' ? b.adId : null,
+    text: `${who.email.split('@')[0]} ${uploaded ? 'uploaded' : 'updated'} ${count === 1 ? 'an ad' : count + ' ads'}; ${count === 1 ? 'it needs' : 'they need'} review.` }, ctx);
   return json({ ok: true });
 }
 
 // ------------------------------------------------------------------ router
-async function api(request: Request, env: Env, path: string, email: string): Promise<Response> {
+async function api(request: Request, env: Env, path: string, email: string, ctx: ExecutionContext): Promise<Response> {
   const m = request.method;
   const seg = path.split('/').filter(Boolean).map(decodeURIComponent);
   const who = await whoIs(env, email);
@@ -407,23 +471,26 @@ async function api(request: Request, env: Env, path: string, email: string): Pro
   if (seg[0] === 'me') { await seen(env, email); return json({ email, role: who.role, owner: who.owner, tourRole: await tourRole(env, email) }); }
   if (seg[0] === 'help' && seg[1] === 'contacts' && m === 'GET') return helpContacts(env);
   if (seg[0] === 'help' && seg[1] === 'feedback' && m === 'POST') return helpFeedback(request, env, who);
-  if (seg[0] === 'users') return usersApi(request, env, who, seg[1]);
+  if (seg[0] === 'users') return usersApi(request, env, who, seg[1], ctx);
+  if (seg[0] === 'notifications') return inbox(request, env, email, seg[1]);
   if (seg[0] === 'sets' && seg.length === 1) return m === 'POST' ? editor(() => createSet(request, env, me)) : listSets(env);
   if (seg[0] === 'sets' && seg[1] && ID.test(seg[1])) {
     if (seg.length === 2 && m === 'GET') return getSet(env, seg[1], who);
     if (seg[2] === 'ads' && m === 'POST') return editor(() => upload(request, env, seg[1], me));
     if (seg[2] === 'copy' && m === 'PUT') return editor(() => updateCopy(request, env, seg[1], who).catch((e) => err(400, e.message)));
-    if (seg[2] === 'rerendered' && m === 'POST') return editor(() => logRerender(request, env, seg[1], who));
+    if (seg[2] === 'rerendered' && m === 'POST') return editor(() => logRerender(request, env, seg[1], who, ctx));
+    if (seg[2] === 'copy' && seg[3] === 'versions' && m === 'GET') return editor(() => copyVersions(env, seg[1], seg[4]));
     if (seg[2] === 'campaigns' && m === 'POST') return editor(() => createCampaign(request, env, seg[1], me));
     if (seg[2] === 'campaigns.csv' && m === 'GET') return campaignsCsv(env, seg[1]);
   }
+  if (seg[0] === 'ads' && seg.length === 1 && m === 'PATCH') return editor(() => bulkStatus(request, env, who, ctx));
   if (seg[0] === 'ads' && seg[1] && ID.test(seg[1])) {
-    if (seg.length === 2 && m === 'PATCH') return editor(() => updateAd(request, env, seg[1]));
+    if (seg.length === 2 && m === 'PATCH') return editor(() => updateAd(request, env, seg[1], who, ctx));
     if (seg.length === 2 && m === 'DELETE') return editor(() => deleteAd(env, seg[1], who));
     if (seg[2] === 'file' && m === 'PUT') return editor(() => replaceFile(request, env, seg[1], who));
-    if (seg[2] === 'review' && m === 'POST') return editor(() => review(request, env, seg[1], me));
+    if (seg[2] === 'review' && m === 'POST') return editor(() => review(request, env, seg[1], me, who, ctx));
     if (seg[2] === 'comments' && m === 'GET') return comments(env, seg[1]);
-    if (seg[2] === 'comments' && m === 'POST') return addComment(request, env, seg[1], me);
+    if (seg[2] === 'comments' && m === 'POST') return addComment(request, env, seg[1], me, ctx);
   }
   if (seg[0] === 'campaigns' && seg[1]) {
     const id = parseInt(seg[1], 10);
@@ -434,7 +501,7 @@ async function api(request: Request, env: Env, path: string, email: string): Pro
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const email = await accessEmail(request, env);
     if (!email) {
@@ -442,7 +509,7 @@ export default {
         status: 403, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
     }
     try {
-      if (url.pathname.startsWith('/api/')) return await api(request, env, url.pathname.slice(5), email);
+      if (url.pathname.startsWith('/api/')) return await api(request, env, url.pathname.slice(5), email, ctx);
       if (url.pathname.startsWith('/files/')) {
         const key = decodeURIComponent(url.pathname.slice(7));
         if (!/^sets\/[a-z0-9-]+\/[a-z0-9./_-]+$/.test(key) || key.includes('..')) return new Response('Not found', { status: 404 });
