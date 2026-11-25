@@ -22,6 +22,14 @@ sign-in problems), HTTPS-only external assets. No `<link>` or `<svg>` (the edito
 `yondr-brand-public` (`https://pub-3b315bec28984b5c8320e77f4b7ab91b.r2.dev/yondr-off-white.svg`), because
 overyondrdev.com's own files are behind Access and can't load before sign-in. That bucket holds only public brand files.
 
+## Current setup (live)
+
+The template is published as `Yondr sign-in` and assigned to the Access app "overyondrdev.com (Yondr website dev)"
+(`custom_pages` on the app). **Apply instant authentication is off** on that app: with it on, Access skips the login
+page and goes straight to Cloudflare's own one-time-code screen, so this page would never show. The logo is served from
+the public R2 bucket `yondr-brand-public`. The account is on Zero Trust Standard (needed for custom pages).
+To roll back: set the app's Login page to **Cloudflare default** (and turn instant authentication back on if wanted).
+
 ## On the Free plan (partial)
 
 Cloudflare One → **Reusable components** → **Custom pages** → **Access login page** → **Manage**:
