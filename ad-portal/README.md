@@ -41,6 +41,16 @@ Owners (`OWNER_EMAILS` in `wrangler.toml`) are always admins and can't be change
 
 ## Editing copy
 
+**On an ad** (the usual way): editors click **Edit** on any ad card, or **Edit text** in its details, or follow a
+link ending `#ad=<id>/edit`. They see only the text that ad shows, a live preview of exactly that ad (motion ads jump
+to the scene being edited), and choose **Every ad with this text** (the shared copy; the footer says how many ads it
+updates) or **Only this ad** (a per-ad override stored in the ad's `meta.overrides`, shown as “Own copy”; later shared
+edits skip that field on that ad until someone chooses “Go back to the shared copy”). Ads uploaded as finished files
+offer **Replace file** instead (same size and format). Viewers get **Suggest a change**, which opens a Copy comment on
+the ad; editors see an **Edit text** link on those comments.
+
+**The Edit copy tab** shows every shared field at once, for set-wide changes.
+
 Editors change the tagline, buttons, stat, source lines, headlines and descriptions on the **Edit copy** tab, with a
 live preview. Saving works out which ads show the changed text, re-renders them **in the editor's browser** from the
 same template the offline generator uses (`generator/ad.html`; drawn at 2×, downsampled and sharpened, JPEG under

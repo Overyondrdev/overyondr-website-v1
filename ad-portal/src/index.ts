@@ -367,15 +367,23 @@ async function replaceFile(request: Request, env: Env, id: string, who: Who) {
   const dims = dimensions(bytes, f.type);
   if (!dims || dims.width !== ad.width || dims.height !== ad.height) return err(400, `The new file must be ${ad.width}×${ad.height}.`);
   const extra = parse(String(form.get('meta') || '{}'));
-  const meta = { ...parse(ad.meta), ...pickMeta(extra), rerenderedBy: who.email, rerenderedAt: now() };
+  const meta: Record<string, any> = { ...parse(ad.meta), ...pickMeta(extra), rerenderedBy: who.email, rerenderedAt: now() };
+  if (meta.overrides && !Object.keys(meta.overrides).length) delete meta.overrides; // back to the shared copy
   await env.AD_ASSETS.put(ad.r2_key, bytes, { httpMetadata: { contentType: f.type }, customMetadata: { uploadedBy: who.email } });
   await env.DB.prepare('UPDATE ads SET bytes = ?, headline = COALESCE(?, headline), title = COALESCE(?, title), meta = ?, status = ?, updated_at = ? WHERE id = ?')
     .bind(bytes.length, clip(form.get('headline'), 200) || null, clip(form.get('title'), 200) || null, JSON.stringify(meta), 'in_review', now(), id).run();
   return json({ ok: true, bytes: bytes.length });
 }
+// Per-ad copy overrides ("Only this ad" in the portal): text this one ad shows instead of the set's shared copy.
+const OVERRIDES: Record<string, number> = { headline: 60, desc: 140, eyebrow: 40, cta: 24, source: 140, statBig: 8, statUnit: 60, statNote: 60 };
 function pickMeta(m: any) {
   const out: Record<string, unknown> = {};
   if (typeof m.desc === 'string') out.desc = m.desc.slice(0, 300);
+  if (m.overrides && typeof m.overrides === 'object') {
+    const o: Record<string, string> = {};
+    for (const [k, n] of Object.entries(OVERRIDES)) if (typeof m.overrides[k] === 'string' && m.overrides[k].trim()) o[k] = m.overrides[k].trim().slice(0, n);
+    out.overrides = o;
+  }
   for (const k of ['duration', 'frames', 'colors', 'quality']) if (typeof m[k] === 'number') out[k] = m[k];
   return out;
 }

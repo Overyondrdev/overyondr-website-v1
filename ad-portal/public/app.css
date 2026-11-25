@@ -338,3 +338,24 @@ table.people select.input { min-width: 130px; }
   .ed-preview { position: static; order: -1; }
   .roles { grid-template-columns: 1fr; }
 }
+
+/* ---------------------------------------------------------------- editing an ad in its own window */
+.stagebox .pv-stage { width: 100%; margin: 0; }
+.scope { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.scope-opt { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--yondr-stone);
+             background: #fff; color: var(--yondr-ink); font: 400 13px/1.35 var(--yondr-font-text); cursor: pointer; }
+.scope-opt b { font-size: 14px; color: var(--yondr-forest); }
+.scope-opt span { color: var(--yondr-moss); }
+.scope-opt[aria-checked="true"] { border-color: var(--yondr-forest); box-shadow: 0 0 0 2px var(--yondr-forest); background: #fbffe9; }
+.scope-opt:disabled { opacity: .6; cursor: default; }
+.ed-fields { display: flex; flex-direction: column; gap: 14px; }
+.ed-bar.in-dialog { position: sticky; bottom: 0; margin: 0; border-radius: 0; }
+dialog.sheet.is-busy .sheet-head .iconbtn { opacity: .4; pointer-events: none; }
+.side .hint { font-size: 12.5px; color: var(--yondr-moss); margin: 0; }
+@media (max-width: 640px) { .scope { grid-template-columns: 1fr; } }
+.stagebox .tools .hint { font-size: 12.5px; color: var(--yondr-moss); }
+@media (max-width: 640px) {
+  .ed-bar.in-dialog { padding: 10px 14px; gap: 8px; }
+  .ed-bar.in-dialog .ed-sum { flex-basis: 100%; min-width: 0; font-size: 13px; }
+  .ed-bar.in-dialog .btn { flex: 1; }
+}

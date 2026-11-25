@@ -238,6 +238,7 @@
     if (x.down) badges.push(h('span', { class: 'pill down', title: x.down + ' asked for changes', text: '✎ ' + x.down }));
     if (x.comments) badges.push(h('span', { class: 'pill', title: x.comments + ' comments', text: '💬 ' + x.comments }));
     if (x.campaigns.length) badges.push(h('span', { class: 'pill live', text: 'In ' + x.campaigns.length + ' campaign' + (x.campaigns.length > 1 ? 's' : '') }));
+    if (c.meta && c.meta.overrides) badges.push(h('span', { class: 'pill', title: 'This ad has its own text, different from the rest of the set', text: 'Own copy' }));
     var w = Math.min(c.w, 728), scale = w / c.w;
     return h('article', { class: 'card' + (on ? ' picked' : ''), style: 'width:' + (w + 28) + 'px', 'data-id': c.id }, [
       h('button', { type: 'button', class: 'pick', role: 'checkbox', 'aria-checked': String(on), 'aria-label': 'Select ' + label(c), html: on ? ICON.check : '', onclick: function () { togglePick(c.id); } }),
@@ -251,6 +252,7 @@
         c.start || c.end ? h('div', { class: 'sub', text: 'Runs ' + dates(c.start, c.end) }) : null,
         h('div', { class: 'row' }, [
           h('button', { type: 'button', class: 'btn line sm', text: 'Details', onclick: function () { openDetail(c.id); } }),
+          isEditor() ? h('button', { type: 'button', class: 'btn forest sm', text: 'Edit', 'aria-label': 'Edit ' + label(c), onclick: function () { openDetail(c.id, false, true); } }) : null,
           h('span', { class: 'spacer' }),
           h('button', { type: 'button', class: 'iconbtn', title: 'Download ' + fileName(c), 'aria-label': 'Download ' + fileName(c), html: ICON.dl, onclick: function () { downloadOne(c); } }),
         ]),
@@ -318,15 +320,37 @@
   }
 
   // ---------------------------------------------------------------- detail
-  function openDetail(id, keepHash) {
+  // edit: open straight into edit mode (editors). Deep link: #ad=<id>/edit
+  function openDetail(id, keepHash, edit) {
     var c = byId(id);
     if (!c) return;
-    detailId = id;
-    if (!keepHash) history.replaceState(null, '', '#ad=' + id);
-    renderDetail(c);
     var dlg = $('[data-detail]');
+    if (dlg._busy) return;
+    detailId = id;
+    dlg._edit = !!edit && isEditor();
+    if (!keepHash) history.replaceState(null, '', '#ad=' + id + (dlg._edit ? '/edit' : ''));
+    renderDetail(c);
     if (!dlg.open) dlg.showModal();
-    loadComments(c);
+    if (!dlg._edit) loadComments(c);
+  }
+  function editHere(c) { openDetail(c.id, false, true); }
+  function renderEdit(c) {
+    var dlg = $('[data-detail]');
+    var body = h('div', { class: 'sheet-body' });
+    var done = function () { dlg._edit = false; history.replaceState(null, '', '#ad=' + c.id); };
+    dlg.innerHTML = '';
+    dlg.appendChild(h('div', { class: 'sheet-head' }, [
+      h('h2', { id: 'detail-title', text: 'Editing · ' + label(c) }),
+      h('button', { type: 'button', class: 'iconbtn', 'aria-label': 'Close', html: ICON.x, onclick: function () { if (!dlg._busy) dlg.close(); } }),
+    ]));
+    dlg.appendChild(body);
+    var cb = {
+      cancel: function () { done(); renderDetail(c); loadComments(c); },
+      busy: function (b) { dlg._busy = b; dlg.classList.toggle('is-busy', b); },
+      saved: function () { done(); refresh().then(function () { var n = byId(c.id); if (n && dlg.open) { renderDetail(n); loadComments(n); } }); },
+    };
+    if (window.YondrEditor.canEditText(c)) window.YondrEditor.editAd(editorApi(), c, body, cb);
+    else window.YondrEditor.replaceFile(editorApi(), c, body, cb);
   }
   function step(d) {
     var list = visible(), i = list.findIndex(function (c) { return c.id === detailId; });
@@ -335,6 +359,7 @@
   }
   function renderDetail(c) {
     var dlg = $('[data-detail]'), x = c.stats, zoom = dlg._zoom || 1;
+    if (dlg._edit) return renderEdit(c);
     var img = h('img', { src: fileUrl(c), width: c.w * zoom, height: c.h * zoom, alt: (c.kind === 'motion' ? 'Animated ad: ' : 'Ad: ') + c.headlineText });
     var tools = [h('button', { type: 'button', class: 'btn line sm', 'aria-pressed': String(zoom === 2), text: zoom === 2 ? 'Actual size' : 'Zoom 2×', onclick: function () { dlg._zoom = zoom === 2 ? 1 : 2; renderDetail(c); } })];
     if (c.kind === 'motion') tools.unshift(h('button', { type: 'button', class: 'btn line sm', text: '↻ Replay', onclick: function () { img.src = fileUrl(c) + '&r=' + Date.now(); } }));
@@ -368,11 +393,15 @@
         } }) : null]),
     ]);
 
+    var canText = window.YondrEditor && window.YondrEditor.canEditText(c);
     var side = h('div', { class: 'side' }, [
       h('div', { style: 'display:flex;flex-wrap:wrap;gap:10px' }, [
         h('button', { type: 'button', class: 'btn lime', html: ICON.dl + ' Download ' + c.format, onclick: function () { downloadOne(c); } }),
+        isEditor() ? h('button', { type: 'button', class: 'btn forest', text: canText ? '✎ Edit text' : '✎ Replace file', onclick: function () { editHere(c); } })
+          : h('button', { type: 'button', class: 'btn line', text: '✎ Suggest a change', onclick: function () { suggest(c); } }),
         h('button', { type: 'button', class: 'btn line', text: 'Copy file name', onclick: function () { copy(fileName(c), 'File name'); } }),
       ]),
+      c.meta && c.meta.overrides ? h('p', { class: 'notice', style: 'margin:0', text: 'This ad has its own text, different from the rest of the set' + (isEditor() ? '. Edit text to change it or go back to the shared copy.' : '.') }) : null,
       h('section', {}, [h('h3', { text: 'Details' }), h('dl', { class: 'specs' }, specs.reduce(function (a, s) { return a.concat([h('dt', { text: s[0] }), h('dd', { text: s[1] })]); }, []))]),
       isEditor() ? h('section', {}, [h('h3', { text: 'Status & dates' }), edit])
         : h('section', {}, [h('h3', { text: 'Status' }), h('div', { class: 'sub' }, [statusPill(c.status), c.start || c.end ? ' Runs ' + dates(c.start, c.end) : null])]),
@@ -409,6 +438,13 @@
         h('button', { type: 'button', class: 'btn line sm', text: '+ New campaign', onclick: function () { campaignForm(null, [c.id]); } })]),
     ]);
   }
+  // Viewers can't edit, so "Suggest a change" jumps to a copy comment on this ad.
+  function suggest(c) {
+    var chip = Array.prototype.find.call(document.querySelectorAll('[data-detail] .fgroup .chip'), function (b) { return b.textContent === 'Copy'; });
+    if (chip) chip.click();
+    var ta = $('[data-detail] textarea');
+    if (ta) { ta.placeholder = 'What should this ad say or look like instead? Editors will see it on the ad.'; ta.scrollIntoView({ behavior: 'smooth', block: 'center' }); ta.focus(); }
+  }
   function commentsSection(c) {
     var type = 'design';
     var ta = h('textarea', { class: 'input', rows: 3, maxlength: 5000, placeholder: 'What works, what should change? Be specific: copy, colour, image, legibility…', 'aria-label': 'Your comment on this ad' });
@@ -438,7 +474,10 @@
     if (!r.items.length) ul.appendChild(h('li', { style: 'color:var(--yondr-moss)', text: 'No comments yet. Be the first.' }));
     r.items.forEach(function (i) {
       var t = FB_TYPES.find(function (x) { return x[0] === i.type; });
-      ul.appendChild(h('li', {}, [h('div', { class: 'by' }, [h('b', { text: person(i.author_email) }), '· ' + ago(i.created_at), h('span', { class: 'pill', text: t ? t[1] : 'Other' })]), h('p', { text: i.body })]));
+      var ad = byId(i.ad_id);
+      ul.appendChild(h('li', {}, [h('div', { class: 'by' }, [h('b', { text: person(i.author_email) }), '· ' + ago(i.created_at), h('span', { class: 'pill', text: t ? t[1] : 'Other' }),
+        isEditor() && ad && i.type === 'content' ? h('button', { type: 'button', class: 'linkbtn', style: 'margin-left:auto', text: '✎ Edit text', onclick: function () { editHere(ad); } }) : null]),
+        h('p', { text: i.body })]));
     });
     var who = $('[data-reviewers]');
     if (who) {
@@ -714,21 +753,27 @@
     });
   });
   var detailDlg = $('[data-detail]');
-  detailDlg.addEventListener('close', function () { detailId = null; if (/^#ad=/.test(location.hash)) history.replaceState(null, '', tab === 'ads' ? location.pathname + location.search : '#' + tab); });
-  detailDlg.addEventListener('click', function (e) { if (e.target === detailDlg) detailDlg.close(); });
+  detailDlg.addEventListener('close', function () { detailId = null; detailDlg._edit = false; if (/^#ad=/.test(location.hash)) history.replaceState(null, '', tab === 'ads' ? location.pathname + location.search : '#' + tab); });
+  detailDlg.addEventListener('click', function (e) { if (e.target === detailDlg && !detailDlg._busy && !detailDlg._edit) detailDlg.close(); });
+  detailDlg.addEventListener('cancel', function (e) {
+    if (detailDlg._busy) { e.preventDefault(); toast('Still saving. Use Stop to cancel.'); return; }
+    if (detailDlg._edit) { e.preventDefault(); detailDlg._edit = false; var c = byId(detailId); if (c) { renderDetail(c); loadComments(c); history.replaceState(null, '', '#ad=' + c.id); } }
+  });
   $('[data-form]').addEventListener('click', function (e) { if (e.target === e.currentTarget) e.currentTarget.close(); });
   document.addEventListener('keydown', function (e) {
-    if (!detailDlg.open || /input|textarea|select/i.test(e.target.tagName)) return;
+    if (!detailDlg.open || detailDlg._edit || /input|textarea|select/i.test(e.target.tagName)) return;
     if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1);
   });
   $('[data-upload]').addEventListener('click', function () { if (M) uploadForm(); });
 
   function route() {
-    var m = /^#ad=([a-z0-9-]+)/.exec(location.hash);
-    if (m) { setTab('ads', true); openDetail(m[1], true); return; }
+    var m = /^#ad=([a-z0-9-]+)(\/edit)?/.exec(location.hash);
+    if (m) { setTab('ads', true); openDetail(m[1], true, !!m[2]); return; }
     var t = location.hash.slice(1);
     if (t === 'campaigns' || t === 'copy' || (t === 'edit' && isEditor()) || (t === 'people' && isAdmin())) setTab(t, true);
   }
+  // Links pasted into an open tab (#ad=<id>, #ad=<id>/edit, #campaigns…) work without a reload.
+  window.addEventListener('hashchange', function () { if (M) route(); });
   function renderPicker(current) {
     var sel = $('[data-set-picker]');
     sel.innerHTML = '';
