@@ -16,6 +16,9 @@ Needs the Zero Trust **Pay-as-you-go** or **Enterprise** plan (templates aren't 
 4. Sign out (`https://overyondr.cloudflareaccess.com/cdn-cgi/access/logout`) and open overyondrdev.com to check it,
    on a phone too.
 
+Cloudflare's sign-in box (field and "Send login code" button) can't be styled from the page; the card around it
+follows light/dark mode because the box does.
+
 Rules from Cloudflare: no JavaScript, keep exactly one `<cf-access-authbox>`, keep `message.text` visible (it explains
 sign-in problems), HTTPS-only external assets. No `<link>` or `<svg>` (the editor rejects them): fonts are
 `@font-face` rules pointing at Google's font files, and the logo is an `<img>` from the public R2 bucket
