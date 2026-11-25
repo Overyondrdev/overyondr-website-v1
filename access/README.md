@@ -24,7 +24,7 @@ overyondrdev.com's own files are behind Access and can't load before sign-in. Th
 
 ## Current setup (live)
 
-The template is published as `Yondr sign-in` and assigned to the Access app "overyondrdev.com (Yondr website dev)"
+The template is published as `Yondr sign-in` (uid `6b0305b6-850c-4af2-92b9-476752bfc89d`; updates work via `PUT /accounts/{id}/access/custom_pages/{uid}`, creating one only in the dashboard) and assigned to the Access app "overyondrdev.com (Yondr website dev)"
 (`custom_pages` on the app). **Apply instant authentication is off** on that app: with it on, Access skips the login
 page and goes straight to Cloudflare's own one-time-code screen, so this page would never show. The logo is served from
 the public R2 bucket `yondr-brand-public`. The account is on Zero Trust Standard (needed for custom pages).
