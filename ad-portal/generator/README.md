@@ -36,6 +36,11 @@ grid instead of the animation. `scripts/seed.mjs` uploads posters with the ads (
 The template's fonts live in `fonts/` (OFL); the portal serves the same `ad.html` at `/render/ad.html` to re-render ads
 after copy edits, so a change here changes both. Run `npm run pull-copy` first if copy was edited in the portal.
 
+Every text element in `ad.html` carries `data-field` (its copy path), and `build()` returns the fields an ad shows.
+The portal's editor offers exactly those, from the `FIELDS` table in `public/editor.js`: after changing the template,
+run `node ad-portal/generator/fields.mjs` and paste its output there. The stat line on the stills (`stat.line`)
+highlights the stat number and the word after it.
+
 Everything is rendered at 2× and downsampled with Lanczos plus a light unsharp mask (lighter for motion), which keeps
 the photos crisp: the browser's own 1× downscale of the 2000 px photos is noticeably soft. The largest motion ads then
 use fewer than 256 colours to stay under 150 KB (`colors` in the run output).

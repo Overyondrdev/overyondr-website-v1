@@ -366,10 +366,11 @@ async function updateCopy(request: Request, env: Env, setId: string, who: Who) {
   }
   if (b.stat && typeof b.stat === 'object') {
     const stat = { ...(cur.stat || {}) };
-    for (const [k, n] of [['big', 8], ['unit', 60], ['note', 60]] as [string, number][]) {
+    // pre (the small lead-in above the big number, e.g. "Can add") may be empty; the rest can't.
+    for (const [k, n] of [['line', 50], ['pre', 16], ['big', 8], ['unit', 60], ['note', 60]] as [string, number][]) {
       if (!(k in b.stat)) continue;
       const v = clip(b.stat[k], n);
-      if (!v) return err(400, 'The stat can’t be empty.');
+      if (!v && k !== 'pre') return err(400, 'The stat can’t be empty.');
       if (v !== stat[k]) { stat[k] = v; changed.push('stat.' + k); }
     }
     next.stat = stat;
@@ -434,7 +435,7 @@ async function replaceFile(request: Request, env: Env, id: string, who: Who) {
   return json({ ok: true, bytes: bytes.length });
 }
 // Per-ad copy overrides ("Only this ad" in the portal): text this one ad shows instead of the set's shared copy.
-const OVERRIDES: Record<string, number> = { headline: 60, desc: 140, eyebrow: 40, cta: 24, source: 140, statBig: 8, statUnit: 60, statNote: 60 };
+const OVERRIDES: Record<string, number> = { headline: 60, desc: 140, eyebrow: 40, cta: 24, source: 140, statLine: 50, statPre: 16, statBig: 8, statUnit: 60, statNote: 60 };
 function pickMeta(m: any) {
   const out: Record<string, unknown> = {};
   if (typeof m.desc === 'string') out.desc = m.desc.slice(0, 300);
