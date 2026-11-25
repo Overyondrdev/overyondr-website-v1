@@ -16,7 +16,23 @@
     people: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.8 3 2.6 3.5 5.2"/>',
     wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5l3 3 5.8-5.8a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z"/>',
     lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+    // The same line icons the ad library shows on its buttons and badges (app.js ICON).
+    check: '<path d="M5 12l5 5 9-10"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    play: '<path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="none"/>',
+    replay: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/>',
+    history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>',
+    up: '<path d="M7 10v10H4V10zM7 10l4-7a2 2 0 0 1 3 1.8L13.4 9H19a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7"/>',
+    down: '<path d="M7 14V4H4v10zM7 14l4 7a2 2 0 0 0 3-1.8l-.6-4.2H19a2 2 0 0 0 2-2.3l-1.2-7A2 2 0 0 0 17.8 4H7"/>',
   };
+  // Articles are written with the glyphs people see named in the text (✓ 2, ✎ 1, 💬 3, the ↓ button…). Show them as the
+  // library's own icons, so the help matches the screen. Arrow keys in <kbd> and "Help → Take the tour" stay as text.
+  var GLYPHS = { '✓': 'check', '✎': 'pen', '💬': 'chat', '↓': 'download', '▶': 'play', '↻': 'replay', '↺': 'history', '✕': 'x' };
+  function glyphs(html) {
+    return html.replace(/(<kbd>[^<]*<\/kbd>)|(✓|✎|💬|↓|▶|↻|↺|✕)/g, function (m, kbd, g) {
+      return kbd || '<span class="hc-i" role="img" aria-label="' + ({ check: 'approve', pen: 'needs changes', chat: 'comments', download: 'download', play: 'play', replay: 'replay', history: 'history', x: 'remove' })[GLYPHS[g]] + '">' + icon(GLYPHS[g], 16) + '</span>';
+    });
+  }
   function icon(n, s) { return '<svg viewBox="0 0 24 24" width="' + (s || 22) + '" height="' + (s || 22) + '" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function text(html) { var d = document.createElement('div'); d.innerHTML = html; return d.textContent.replace(/\s+/g, ' ').trim(); }
@@ -151,8 +167,8 @@
         return '<a href="#' + x.id + '"' + (x === a ? ' aria-current="page"' : '') + '>' + esc(x.title) + '</a>'; }).join('') +
       '<p class="hc-side-h" style="margin-top:18px">Other topics</p>' + sections().filter(function (x) { return x !== s; }).map(function (x) { return '<a href="#s-' + x.id + '">' + esc(x.title) + '</a>'; }).join('') + '</nav>' +
       '<article class="hc-body"><header>' + roleBadge(a) + '<h1 style="view-transition-name:art-title">' + esc(a.title) + '</h1></header>' +
-      '<div class="hc-prose">' + a.body + '</div>' +
-      '<div class="hc-helpful" data-helpful><span>Was this helpful?</span><button type="button" class="btn line sm" data-yes>👍 Yes</button><button type="button" class="btn line sm" data-no>👎 No</button></div>' +
+      '<div class="hc-prose">' + glyphs(a.body) + '</div>' +
+      '<div class="hc-helpful" data-helpful><span>Was this helpful?</span><button type="button" class="btn line sm" data-yes>' + icon('up', 16) + 'Yes</button><button type="button" class="btn line sm" data-no>' + icon('down', 16) + 'No</button></div>' +
       '<div class="hc-pn">' + (prev ? '<a href="#' + prev.id + '"><small>Previous</small>' + esc(prev.title) + '</a>' : '<span></span>') + (next ? '<a class="next" href="#' + next.id + '"><small>Next</small>' + esc(next.title) + '</a>' : '') + '</div>' +
       '</article>' +
       '<aside class="hc-rel">' + (related.length ? '<p class="hc-side-h">Related</p>' + related.map(function (x) { return '<a href="#' + x.id + '">' + esc(x.title) + '</a>'; }).join('') : '') +

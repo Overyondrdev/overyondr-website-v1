@@ -57,7 +57,10 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
       .brand img { width: 104px; height: auto; display: block; }
       .brand span { font-size: 12px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--yondr-moss); padding-left: 14px; border-left: 1px solid var(--yondr-stone); }
       .who { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: 14px; color: var(--yondr-moss); min-width: 0; }
-      .who .email { color: var(--yondr-ink); font-weight: 600; max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .who .signed { display: inline-flex; align-items: baseline; min-width: 0; max-width: 100%; white-space: nowrap; }
+      .who .label { flex-shrink: 0; }
+      /* inline-block so max-width applies: long addresses end in an ellipsis (full address in the title) */
+      .who .email { display: inline-block; vertical-align: bottom; margin-left: .25em; color: var(--yondr-ink); font-weight: 600; max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .who a, .who button { font: inherit; cursor: pointer; background: transparent; color: var(--yondr-forest); font-weight: 600; text-decoration: none; border: 1px solid var(--yondr-stone); padding: 7px 14px; border-radius: 999px; transition: border-color .2s, background .2s; white-space: nowrap; }
       .who a:hover, .who button:hover { border-color: var(--yondr-forest); background: var(--yondr-mist); }
       .who .give { display: inline-flex; align-items: center; gap: 8px; background: var(--yondr-forest); border-color: var(--yondr-forest); color: var(--yondr-offwhite); font-weight: 700; }
@@ -73,6 +76,7 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
       .site-foot small { font-size: 14px; }
       .site-foot nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
       .site-foot a { text-decoration: none; color: var(--yondr-forest); font-weight: 600; }
+      .site-foot a svg { vertical-align: -2px; margin-left: 2px; }
       .site-foot a:hover { text-decoration: underline; text-underline-offset: 4px; }
 
       /* Motion (guidelines §6): fade and rise, 0.7 s, staggered 0.1 s; nothing loops. */
@@ -83,6 +87,14 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
         .brand span { display: none; }
         .who .signed { display: none; }
         .who a, .who button { padding: 6px 12px; font-size: 13px; }
+      }
+      /* When the top bar wraps (tablet widths), give "Signed in as" its own line so no button is left alone on a row. */
+      @media (min-width: 641px) and (max-width: 1100px) { .who .signed { flex-basis: 100%; } }
+      /* Touch screens: 44px targets for the top-bar pills and footer links. */
+      @media (pointer: coarse) {
+        .who a, .who button { min-height: 44px; display: inline-flex; align-items: center; }
+        .who a[hidden] { display: none; }
+        .site-foot a { display: inline-flex; align-items: center; min-height: 44px; }
       }
       @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
     </style>
@@ -97,7 +109,7 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
           <span>Website preview</span>
         </a>
         <div class="who" data-who data-anon>
-          <span class="signed"><span class="label">Signed in as </span><span class="email" data-user-email></span></span>
+          <span class="signed"><span class="label">Signed in as</span><span class="email" data-user-email></span></span>
           <button type="button" data-yfb-tour>Take the tour</button>
           <button type="button" class="give" data-yfb-open aria-label="Give feedback">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01" stroke-width="2.6"/></svg>
@@ -114,10 +126,14 @@ const { title, description = 'Private preview of the Yondr website.' } = Astro.p
         <p class="tagline">Be Here Now</p>
         <small>© 2026 Yondr, Inc. · Internal preview. Please don't share links outside Yondr.</small>
         <nav aria-label="Footer">
-          <a href="https://www.overyondr.com/" rel="noopener">Live site ↗</a>
+          <a href="https://www.overyondr.com/" rel="noopener">Live site<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
           <a href="mailto:marketing@overyondr.com">Need access? marketing@overyondr.com</a>
         </nav>
       </div></div>
     </footer>
+    <script is:inline>
+      // Full address on hover when a long email is cut off with an ellipsis.
+      document.querySelectorAll('[data-user-email]').forEach(function (el) { if (el.textContent) el.title = el.textContent; });
+    </script>
   </body>
 </html>

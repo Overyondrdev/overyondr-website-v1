@@ -9,6 +9,18 @@
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
   var body = document.body;
 
+  /* ---- Footer placement. A few pages (/blog/digital-overload-in-schools, /hackersjack,
+     /newyork-education, /ny-education) have an unclosed block in their content, so the parser
+     nests the site footer inside the last page section: squeezed into a side column, pushed off
+     to the right (horizontal scroll), or collapsed to zero width. Put it back after <main>. ---- */
+  function footerPlacement() {
+    var footer = document.getElementById('footer-sections');
+    var wrapper = document.getElementById('siteWrapper');
+    var main = document.getElementById('page');
+    if (!footer || !wrapper || !main || footer.parentNode === wrapper || main.parentNode !== wrapper) return;
+    wrapper.insertBefore(footer, main.nextSibling);
+  }
+
   /* ---- Header height (layout reserves space for the fixed header) ---- */
   function headerHeight() {
     var header = document.getElementById('header');
@@ -48,15 +60,45 @@
       });
       btn.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); open(true); var a = $('a', item); if (a) a.focus(); }
-        if (e.key === 'Escape') open(false);
+      });
+      // Escape closes the dropdown from the title or from any link inside it, and returns focus to the title.
+      item.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape' || btn.getAttribute('aria-expanded') !== 'true') return;
+        open(false);
+        if (document.activeElement !== btn) btn.focus();
       });
     });
+  }
+
+  /* ---- Focus helpers for overlays (menu, lightbox, cookie dialog) ---- */
+  function tabbables(root) {
+    var vw = window.innerWidth;
+    return $$('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])', root).filter(function (el) {
+      if (el.getAttribute('tabindex') === '-1') return false;
+      var r = el.getBoundingClientRect();
+      // visible and on screen (menu folders slide off-screen rather than being hidden)
+      return r.width > 0 && r.height > 0 && r.right > 0 && r.left < vw && getComputedStyle(el).visibility !== 'hidden';
+    });
+  }
+  // Keep Tab / Shift+Tab inside the given elements while an overlay is open.
+  function trapTab(e, roots) {
+    if (e.key !== 'Tab') return;
+    var list = [];
+    roots.forEach(function (r) { if (r) list = list.concat(tabbables(r)); });
+    if (!list.length) return;
+    var i = list.indexOf(document.activeElement);
+    if (i === -1) { e.preventDefault(); list[0].focus(); return; }
+    if (e.shiftKey && i === 0) { e.preventDefault(); list[list.length - 1].focus(); }
+    else if (!e.shiftKey && i === list.length - 1) { e.preventDefault(); list[0].focus(); }
   }
 
   /* ---- Mobile / overlay menu ---- */
   function mobileMenu() {
     var burgers = $$('.header-burger-btn');
     if (!burgers.length) return;
+    var menu = $('.header-menu');
+    var lastBurger = null;
+    var isOpen = function () { return body.classList.contains('header--menu-open'); };
     var setOpen = function (open) {
       body.classList.toggle('header--menu-open', open);
       burgers.forEach(function (b) {
@@ -67,12 +109,27 @@
     };
     burgers.forEach(function (b) {
       b.setAttribute('aria-expanded', 'false');
-      b.addEventListener('click', function () { setOpen(!body.classList.contains('header--menu-open')); });
+      b.addEventListener('click', function () { lastBurger = b; setOpen(!isOpen()); });
     });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && body.classList.contains('header--menu-open')) setOpen(false);
+      if (!isOpen()) return;
+      if (e.key === 'Escape') {
+        setOpen(false);
+        if (lastBurger) lastBurger.focus();
+        return;
+      }
+      // While the overlay is open, Tab cycles between the close (burger) button and the menu links
+      // instead of wandering into the page hidden behind it.
+      trapTab(e, [lastBurger && lastBurger.parentNode, menu]);
     });
     var root = $('.header-menu-nav-folder[data-folder="root"]');
+    // Sub-folders arrive nested inside the root folder, where Squarespace's CSS hides them
+    // (.header-menu-nav-folder .header-menu-nav-folder { display: none }), so opening one showed an
+    // empty panel. Move them next to the root folder, where its script used to put them.
+    if (root) {
+      $$('.header-menu-nav-folder', root).forEach(function (f) { root.parentNode.appendChild(f); });
+    }
+    var openerOf = null;
     function resetFolders() {
       $$('.header-menu-nav-folder--active').forEach(function (f) { f.classList.remove('header-menu-nav-folder--active'); });
       if (root) root.classList.remove('header-menu-nav-folder--open');
@@ -82,12 +139,19 @@
         var folder = $('.header-menu-nav-folder[data-folder="' + a.getAttribute('data-folder-id') + '"]');
         if (!folder) return;
         e.preventDefault();
+        openerOf = a;
         folder.classList.add('header-menu-nav-folder--active');
         if (root) root.classList.add('header-menu-nav-folder--open');
+        var first = $('a', folder);
+        if (first) setTimeout(function () { first.focus({ preventScroll: true }); }, 50);
       });
     });
     $$('.header-menu [data-action="back"]').forEach(function (a) {
-      a.addEventListener('click', function (e) { e.preventDefault(); resetFolders(); });
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        resetFolders();
+        if (openerOf) setTimeout(function () { openerOf.focus({ preventScroll: true }); }, 50);
+      });
     });
     window.addEventListener('resize', function () {
       if (window.innerWidth > 1024 && body.classList.contains('header--menu-open')) setOpen(false);
@@ -193,31 +257,165 @@
     });
   }
 
-  /* ---- Banner slideshows / carousels (user items lists) ---- */
+  /* ---- Swipe helper: calls back(-1 | 1) on a horizontal drag/swipe of 40px or more ---- */
+  function onSwipe(el, cb) {
+    var x0 = null, y0 = null;
+    el.addEventListener('pointerdown', function (e) { if (e.button === 0) { x0 = e.clientX; y0 = e.clientY; } });
+    el.addEventListener('pointerup', function (e) {
+      if (x0 === null) return;
+      var dx = e.clientX - x0, dy = e.clientY - y0;
+      x0 = null;
+      if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) cb(dx < 0 ? 1 : -1);
+    });
+    el.addEventListener('pointercancel', function () { x0 = null; });
+  }
+  function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  // Keep links/buttons in hidden slides out of the tab order.
+  function setInert(el, hidden) {
+    el.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    $$('a, button', el).forEach(function (a) { if (hidden) a.setAttribute('tabindex', '-1'); else a.removeAttribute('tabindex'); });
+  }
+
+  /* ---- Banner slideshows / carousels (user items lists). Squarespace's CSS stacks every slide in one
+     grid cell, parked off-screen (translateX(-9999px)), with the list at opacity 0 until its script
+     placed them, so without this both rendered as an empty block with arrows. ---- */
   function slideshows() {
-    $$('.user-items-list-banner-slideshow, .user-items-list-carousel').forEach(function (show) {
-      var slides = $$('.user-items-list-banner-slideshow__slide, .user-items-list-carousel__slide', show);
-      if (slides.length < 2) return;
-      var isBanner = show.classList.contains('user-items-list-banner-slideshow');
-      var i = 0;
-      var go = function (n) {
-        i = (n + slides.length) % slides.length;
-        slides.forEach(function (s, k) {
-          if (isBanner) {
-            s.style.opacity = k === i ? '1' : '0';
-            s.style.visibility = k === i ? 'visible' : 'hidden';
-            s.setAttribute('aria-hidden', k === i ? 'false' : 'true');
+    $$('.user-items-list-banner-slideshow').forEach(function (show) {
+      var list = $('.slides', show);
+      var slides = list ? $$('.slide', list).filter(function (s) { return s.parentNode === list; }) : [];
+      if (!slides.length) return;
+      var i = 0, n = slides.length;
+      var go = function (k, animate) {
+        var prev = i, dir = k > i ? 1 : -1;
+        i = (k + n) % n;
+        if (reducedMotion()) animate = false;
+        slides.forEach(function (s, j) {
+          var active = j === i, leaving = animate && j === prev && prev !== i;
+          s.style.transition = 'none';
+          if (active && animate && prev !== i) {
+            // start just off-screen on the side we're moving towards, then slide in
+            s.style.transform = 'translateX(' + (dir * 100) + '%)';
+            s.getBoundingClientRect();
           }
+          if (active || leaving) s.style.transition = animate ? 'transform .6s cubic-bezier(.4,0,.2,1)' : 'none';
+          s.style.transform = active ? 'translateX(0)' : leaving ? 'translateX(' + (-dir * 100) + '%)' : 'translateX(-9999px)';
+          s.style.pointerEvents = active ? 'auto' : 'none';
+          setInert(s, !active);
         });
-        if (!isBanner) {
-          var track = $('.user-items-list-carousel__slides', show);
-          if (track) track.scrollTo({ left: slides[i].offsetLeft - slides[0].offsetLeft, behavior: 'smooth' });
-        }
-        $$('[class*="__arrow-button--left"], [class*="arrow-button--left"]', show).forEach(function () {});
       };
-      $$('button[class*="arrow-button--left"], button[class*="--prev"]', show).forEach(function (b) { b.addEventListener('click', function () { go(i - 1); }); });
-      $$('button[class*="arrow-button--right"], button[class*="--next"]', show).forEach(function (b) { b.addEventListener('click', function () { go(i + 1); }); });
-      go(0);
+      go(0, false);
+      list.classList.add('slides--initialized');
+      if (n < 2) return;
+      $$('.user-items-list-banner-slideshow__arrow-button--left, .mobile-arrow-button--left', show).forEach(function (b) { b.addEventListener('click', function () { go(i - 1, true); }); });
+      $$('.user-items-list-banner-slideshow__arrow-button--right, .mobile-arrow-button--right', show).forEach(function (b) { b.addEventListener('click', function () { go(i + 1, true); }); });
+      onSwipe($('.slideshow-gutter', show) || show, function (d) { go(i + d, true); });
+    });
+
+    $$('.user-items-list-carousel').forEach(function (show) {
+      var list = $('.user-items-list-carousel__slides', show);
+      var slides = list ? $$('.user-items-list-carousel__slide', list).filter(function (s) { return s.parentNode === list; }) : [];
+      if (!slides.length) return;
+      var n = slides.length, i = 0;
+      var adjacent = show.getAttribute('data-show-adjacent-slides') === 'true';
+      var cols = function () { return Math.min(n, Math.max(1, getComputedStyle(list).gridTemplateColumns.split(' ').filter(Boolean).length)); };
+      var place = function (animate, prevI) {
+        var c = cols(), gap = parseFloat(getComputedStyle(list).columnGap) || 0;
+        var shown = adjacent && n > c ? c + 1 : c;
+        if (reducedMotion()) animate = false;
+        slides.forEach(function (s, j) {
+          var off = ((j - i) % n + n) % n;
+          var was = prevI == null ? off : ((j - prevI) % n + n) % n;
+          // slides that wrap round the end jump instead of sliding across the whole row
+          s.style.transition = animate && Math.abs(off - was) === 1 ? 'transform .5s cubic-bezier(.4,0,.2,1)' : 'none';
+          s.style.transform = 'translateX(calc(' + off + ' * (100% + ' + gap + 'px)))';
+          s.style.visibility = off < shown ? 'visible' : 'hidden';
+          s.style.pointerEvents = off < c ? 'auto' : 'none';
+          setInert(s, off >= c);
+        });
+      };
+      var go = function (k) { var p = i; i = (k + n) % n; place(true, p); };
+      place(false);
+      list.classList.add('user-items-list-carousel__slides--initialized');
+      window.addEventListener('resize', function () { place(false); });
+      $$('button[class*="arrow-button--left"]', show).forEach(function (b) { b.addEventListener('click', function () { go(i - 1); }); });
+      $$('button[class*="arrow-button--right"]', show).forEach(function (b) { b.addEventListener('click', function () { go(i + 1); }); });
+      onSwipe(list, function (d) { go(i + d); });
+    });
+  }
+
+  /* ---- Gallery sections, "reel" layout: one row of images at the reel's height, moved by the
+     arrows. Squarespace positioned every item in JS, so without this the reel was empty. ---- */
+  function galleryReels() {
+    $$('.gallery-reel').forEach(function (reel) {
+      var list = $('.gallery-reel-list', reel);
+      var items = $$('.gallery-reel-item', reel);
+      if (!list || !items.length) return;
+      var props = {};
+      try { props = JSON.parse(reel.getAttribute('data-props') || '{}'); } catch (e) { /* defaults */ }
+      var lefts = [], widths = [], total = 0, offset = 0, anim = null;
+      items.forEach(function (fig) {
+        var img = $('img', fig), src = $('.gallery-reel-item-src', fig);
+        if (src) src.setAttribute('data-visible', 'true');
+        if (img) loadImg(img, !!props.isCropping);
+      });
+      var looping = function () { return total >= list.clientWidth + Math.max.apply(null, widths); };
+      var draw = function () {
+        var w = list.clientWidth, loop = looping();
+        if (!loop) offset = Math.max(0, Math.min(offset, total - w));
+        items.forEach(function (fig, k) {
+          var x = lefts[k] - offset;
+          if (loop) { x = ((x % total) + total) % total; if (x >= w) x -= total; }
+          fig.style.transform = 'translateX(' + Math.round(x) + 'px)';
+          setInert(fig, !(x + widths[k] > 1 && x < w - 1));
+        });
+      };
+      var layout = function () {
+        var h = list.clientHeight;
+        total = 0;
+        items.forEach(function (fig, k) {
+          var img = $('img', fig);
+          var d = ((img && img.getAttribute('data-image-dimensions')) || '1x1').split('x');
+          var ar = (parseFloat(d[0]) / parseFloat(d[1])) || 1;
+          widths[k] = Math.round(h * ar);
+          lefts[k] = total;
+          total += widths[k];
+          fig.style.width = widths[k] + 'px';
+          fig.style.height = h + 'px';
+        });
+        draw();
+      };
+      var current = function () {
+        var o = looping() ? ((offset % total) + total) % total : offset, best = 0;
+        lefts.forEach(function (l, k) { if (l <= o + 1) best = k; });
+        return best;
+      };
+      var move = function (d) {
+        var n = items.length, cur = current(), loop = looping();
+        var o = loop ? ((offset % total) + total) % total : offset;
+        var next = cur + d;
+        if (!loop) next = Math.max(0, Math.min(n - 1, next));
+        var delta = lefts[((next % n) + n) % n] - o;
+        if (loop && d > 0 && delta <= 0) delta += total;
+        if (loop && d < 0 && delta >= 0) delta -= total;
+        var from = offset, to = offset + delta, t0 = null;
+        if (anim) cancelAnimationFrame(anim);
+        if (reducedMotion()) { offset = to; draw(); return; }
+        var step = function (t) {
+          if (t0 === null) t0 = t;
+          var p = Math.min(1, (t - t0) / 500);
+          offset = from + (to - from) * (1 - Math.pow(1 - p, 3));
+          draw();
+          if (p < 1) anim = requestAnimationFrame(step);
+        };
+        anim = requestAnimationFrame(step);
+      };
+      var btns = $$('.gallery-reel-control-btn', reel);
+      if (btns[0]) btns[0].addEventListener('click', function () { move(-1); });
+      if (btns[1]) btns[1].addEventListener('click', function () { move(1); });
+      onSwipe(list, move);
+      layout();
+      if (window.ResizeObserver) new ResizeObserver(layout).observe(list);
+      else window.addEventListener('resize', layout);
     });
   }
 
@@ -242,8 +440,11 @@
       });
       bullets.forEach(function (b, k) { b.addEventListener('click', function () { go(k); }); });
       go(0);
-      var auto = parseInt(g.getAttribute('data-autoplay-duration') || '0', 10);
-      if (g.getAttribute('data-autoplay') === 'true' && auto) setInterval(function () { go(i + 1); }, auto * 1000);
+      // Autoplay settings live in data-props ({autoplayEnabled, slideDurationMs}).
+      var props = {};
+      try { props = JSON.parse(g.getAttribute('data-props') || '{}'); } catch (e) { /* defaults */ }
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (props.autoplayEnabled && items.length > 1 && !reduce) setInterval(function () { go(i + 1); }, props.slideDurationMs || 3000);
     });
   }
 
@@ -376,14 +577,31 @@
   function lightbox() {
     var links = $$('[data-lightbox] .gallery-grid-lightbox-link, .gallery-grid--layout-grid[data-lightbox="true"] img, a[data-lightbox-theme]');
     if (!links.length) return;
-    var overlay, imgEl, list = [], idx = 0;
-    var show = function (n) { idx = (n + list.length) % list.length; imgEl.src = list[idx].src; imgEl.alt = list[idx].alt || ''; };
-    var close = function () { overlay.hidden = true; body.style.overflow = ''; };
+    var overlay, imgEl, list = [], idx = 0, opener = null;
+    var show = function (n) {
+      idx = (n + list.length) % list.length;
+      imgEl.src = list[idx].src;
+      imgEl.alt = list[idx].alt || '';
+      $('.v1-lightbox-prev', overlay).hidden = $('.v1-lightbox-next', overlay).hidden = list.length < 2;
+    };
+    var close = function () {
+      overlay.hidden = true;
+      body.style.overflow = '';
+      if (opener && opener.focus) opener.focus({ preventScroll: true });
+    };
+    var icon = function (d) {
+      return '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="' + d + '"/></svg>';
+    };
     var build = function () {
       overlay = document.createElement('div');
       overlay.className = 'v1-lightbox';
       overlay.hidden = true;
-      overlay.innerHTML = '<button class="v1-lightbox-close" aria-label="Close">×</button><button class="v1-lightbox-prev" aria-label="Previous">‹</button><img alt=""><button class="v1-lightbox-next" aria-label="Next">›</button>';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+      overlay.setAttribute('aria-label', 'Image viewer');
+      overlay.innerHTML = '<button type="button" class="v1-lightbox-close" aria-label="Close">' + icon('M5 5l14 14M19 5 5 19') + '</button>' +
+        '<button type="button" class="v1-lightbox-prev" aria-label="Previous image">' + icon('M15 5l-7 7 7 7') + '</button><img alt="">' +
+        '<button type="button" class="v1-lightbox-next" aria-label="Next image">' + icon('M9 5l7 7-7 7') + '</button>';
       body.appendChild(overlay);
       imgEl = $('img', overlay);
       $('.v1-lightbox-close', overlay).onclick = close;
@@ -395,6 +613,7 @@
         if (e.key === 'Escape') close();
         if (e.key === 'ArrowLeft') show(idx - 1);
         if (e.key === 'ArrowRight') show(idx + 1);
+        trapTab(e, [overlay]);
       });
     };
     links.forEach(function (el) {
@@ -405,9 +624,11 @@
         if (!list.length || !img) return;
         e.preventDefault();
         if (!overlay) build();
+        opener = el.tagName === 'IMG' ? null : el;
         overlay.hidden = false;
         body.style.overflow = 'hidden';
         show(Math.max(0, $$('img', gallery).indexOf(img)));
+        $('.v1-lightbox-close', overlay).focus();
       });
     });
   }
@@ -515,7 +736,7 @@
     dlg.setAttribute('role', 'dialog');
     dlg.setAttribute('aria-modal', 'true');
     dlg.setAttribute('aria-labelledby', 'v1c-heading');
-    dlg.innerHTML = '<div class="v1-cookie-panel"><button type="button" class="v1-cookie-close" aria-label="Close">×</button><h3 id="v1c-heading">Manage Cookies</h3>' +
+    dlg.innerHTML = '<div class="v1-cookie-panel"><button type="button" class="v1-cookie-close" aria-label="Close"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M5 5l14 14M19 5 5 19"/></svg></button><h3 id="v1c-heading">Manage Cookies</h3>' +
       '<div class="v1-cookie-cat"><h4>Necessary</h4><p>Always on</p></div><p>Required to enable core site functionality and to remember user preferences and choices, such as language preferences or customized settings.</p>' +
       cat('analytics', 'Performance and Analytics', 'These cookies provide quantitative measures of website visitors. With the usage of these cookies we are able to count visits and traffic sources to improve the performance of our site.') +
       cat('advertising', 'Advertising', 'These cookies are used by advertising companies to serve ads that are relevant to your interests.') +
@@ -524,10 +745,19 @@
     $$('input[data-key]', dlg).forEach(function (i) {
       i.addEventListener('change', function () { i.previousElementSibling.textContent = i.checked ? 'On' : 'Off'; });
     });
-    var shut = function () { dlg.remove(); };
+    var opener = document.activeElement;
+    var onKey = function (e) {
+      if (e.key === 'Escape') shut();
+      else trapTab(e, [dlg]); // keep focus inside the dialog while it's open
+    };
+    var shut = function () {
+      dlg.remove();
+      document.removeEventListener('keydown', onKey);
+      if (opener && opener.isConnected && opener.focus) opener.focus();
+    };
     $('.v1-cookie-close', dlg).addEventListener('click', shut);
     dlg.addEventListener('click', function (e) { if (e.target === dlg) shut(); });
-    dlg.addEventListener('keydown', function (e) { if (e.key === 'Escape') shut(); });
+    document.addEventListener('keydown', onKey);
     $('.v1-cookie-accept', dlg).addEventListener('click', function () {
       var out = {};
       $$('input[data-key]', dlg).forEach(function (i) { out[i.getAttribute('data-key')] = i.checked; });
@@ -606,6 +836,6 @@
   }
 
   function run(fn) { try { fn(); } catch (e) { if (window.console) console.warn('site.js', fn.name, e); } }
-  [headerHeight, centredHeaderNav, desktopFolders, mobileMenu, accordions, marquees, logoStrips,
-    listItemLinks, slideshows, fullscreenSlideshows, legacyGalleries, galleryStrips, lazyImages, textHighlights, blogLists, lightbox, scrollAnimations, linkTargets, contactRouting, siteSearch, cookieBanner].forEach(run);
+  [footerPlacement, headerHeight, centredHeaderNav, desktopFolders, mobileMenu, accordions, marquees, logoStrips,
+    listItemLinks, slideshows, galleryReels, fullscreenSlideshows, legacyGalleries, galleryStrips, lazyImages, textHighlights, blogLists, lightbox, scrollAnimations, linkTargets, contactRouting, siteSearch, cookieBanner].forEach(run);
 })();

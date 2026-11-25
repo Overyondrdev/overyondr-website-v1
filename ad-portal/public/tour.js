@@ -11,7 +11,7 @@
     viewer: [
       { title: 'Welcome to the Yondr ad library', text: 'Every Yondr display ad, in every size, ready to download and use. Four quick tips.', wide: true },
       { sel: '[data-toolbar]', title: 'Find ads fast', text: 'Search, or filter by version, size, headline and status. Matrix shows the whole set on one screen.' },
-      { sel: '.card', title: 'Open, download, select', text: 'Click an ad for details and comments, ↓ to download it, or tick several (or use Download kit) to get a zip.' },
+      { sel: '.card', title: 'Open, download, select', text: 'Click an ad for details and comments, the download button to download it, or tick several (or use Download kit) to get a zip.' },
       { sel: '[data-help-btn]', title: 'Need anything else?', text: 'Ad copy and specs are on the Copy & specs tab. Help has answers to everything, and this tour.' },
     ],
     editor: [
@@ -94,7 +94,6 @@
     if (i >= steps.length) return end(true);
     at = i;
     var s = steps[i], el = target(), n = steps.length;
-    if (el && !s.wide) el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     card.innerHTML = '';
     var dots = n < 2 ? '' : '<div class="tour-dots" aria-hidden="true">' + steps.map(function (_, k) { return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>';
     card.insertAdjacentHTML('beforeend', (n > 1 ? '<p class="tour-step">' + (i + 1) + ' of ' + n + '</p>' : '') + '<h2 id="tour-title"></h2><p class="tour-text"></p>' + dots +
@@ -107,9 +106,19 @@
     card.querySelector('.tour-skip').onclick = function () { end(false); };
     card.querySelector('.tour-next').onclick = next;
     var back = card.querySelector('.tour-back'); if (back) back.onclick = function () { go(at - 1); };
+    if (el && !s.wide) reveal(el);
     setTimeout(place, 30); setTimeout(place, 400);
     place();
     card.querySelector('.tour-next').focus({ preventScroll: true });
+  }
+  // Scroll so the spotlight and its card both fit on screen (target above, card below). On a phone a centred
+  // ad card left no room, and the tour card covered the very buttons the step is about.
+  function reveal(el) {
+    var smooth = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+    card.classList.remove('center'); card.style.width = Math.min(360, window.innerWidth - 24) + 'px';
+    var r = el.getBoundingClientRect(), vh = window.innerHeight, need = r.height + card.offsetHeight + 40;
+    if (need > vh) { el.scrollIntoView({ block: 'center', behavior: smooth }); return; }
+    window.scrollTo({ top: Math.max(0, window.scrollY + r.top - Math.max(16, (vh - need) / 2)), behavior: smooth });
   }
   function next() { go(at + 1); }
   function end(done) {

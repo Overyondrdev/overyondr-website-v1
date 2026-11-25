@@ -59,6 +59,8 @@
     x: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     prev: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
     next: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
+    back: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.4"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+    replay: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.2"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/></svg>',
     copy: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
   };
   // An icon as a node, for buttons built with children: [svg('pen'), 'Edit text'].
@@ -99,20 +101,50 @@
   function needEditor() { return Promise.all([loadScript('/render.js'), loadScript('/editor.js')]); }
   function canEditText(c) { return !!(c.meta && c.meta.generated && c.meta.headlineId && c.meta.headlineId !== 'other'); }
   function updating(c) { return !!(window.YondrEditor && window.YondrEditor.updating(c.id)); }
-  // Motion ads show their poster (end card) until you hover or focus them: the grid stays light.
+  // Motion ads play in every preview and keep looping while they're on screen. The GIF itself plays twice and stops
+  // on its end card (the ad-network rule), so a preview restarts it from a fresh object URL of the same downloaded
+  // file: no refetch. Off screen they show their poster so the page doesn't decode GIFs nobody sees. They play on
+  // phones too, and even with reduced motion on: seeing the animation is what these previews are for.
+  var gifs = {};
   function posterUrl(c) { return c.posterKey ? '/files/' + c.posterKey + '?v=' + encodeURIComponent(c.updated || c.bytes) : fileUrl(c); }
-  function adImg(c, attrs) {
-    var still = c.kind === 'motion' && c.posterKey;
-    var img = h('img', Object.assign({ src: still ? posterUrl(c) : fileUrl(c), loading: 'lazy', decoding: 'async', alt: (c.kind === 'motion' ? 'Animated ad: ' : 'Ad: ') + c.headlineText }, attrs || {}));
-    if (still) img.dataset.anim = fileUrl(c);
-    return img;
+  function gifBlob(c) {
+    var u = fileUrl(c);
+    return gifs[u] || (gifs[u] = fetch(u).then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.blob(); })
+      .catch(function (e) { delete gifs[u]; throw e; }));
   }
-  function playOnHover(el) {
-    var img = el.querySelector('img[data-anim]');
-    if (!img) return;
-    var still = img.src, on = function () { img.src = img.dataset.anim; }, off = function () { img.src = still; };
-    el.addEventListener('mouseenter', on); el.addEventListener('focus', on);
-    el.addEventListener('mouseleave', off); el.addEventListener('blur', off);
+  function freeUrl(u) { if (u) setTimeout(function () { URL.revokeObjectURL(u); }, 2000); }
+  function play(img) {
+    var c = img._ad;
+    clearTimeout(img._t);
+    gifBlob(c).then(function (b) {
+      if (!img._playing) return;
+      var old = img._url; img._url = URL.createObjectURL(b); img.src = img._url; freeUrl(old);
+      // Both plays, a moment on the end card, then again.
+      img._t = setTimeout(function () { if (img._playing) play(img); }, ((c.duration || 13.6) * 2 + 2.5) * 1000);
+    }).catch(function () { if (img._playing) img.src = fileUrl(c); });
+  }
+  function startMotion(img) { if (img._playing) return; img._playing = true; play(img); }
+  function stopMotion(img) {
+    img._playing = false; clearTimeout(img._t);
+    if (img.dataset.poster) img.src = img.dataset.poster;
+    freeUrl(img._url); img._url = null;
+  }
+  var inView = 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      var img = e.target;
+      if (!img.isConnected) { stopMotion(img); inView.unobserve(img); return; }
+      if (e.isIntersecting) startMotion(img); else stopMotion(img);
+    });
+  }, { rootMargin: '150px' }) : null;
+  function adImg(c, attrs) {
+    var motion = c.kind === 'motion';
+    var img = h('img', Object.assign({ src: motion ? posterUrl(c) : fileUrl(c), loading: 'lazy', decoding: 'async', alt: (motion ? 'Animated ad: ' : 'Ad: ') + c.headlineText }, attrs || {}));
+    if (motion) {
+      img._ad = c;
+      if (c.posterKey) img.dataset.poster = posterUrl(c);
+      if (inView) inView.observe(img); else startMotion(img);
+    }
+    return img;
   }
   function fileUrl(c) { return '/files/' + c.key + '?v=' + encodeURIComponent(c.updated || c.bytes); }
   function byId(id) { for (var i = 0; i < M.ads.length; i++) if (M.ads[i].id === id) return M.ads[i]; return null; }
@@ -221,7 +253,7 @@
         isEditor() ? h('button', { type: 'button', class: 'btn ghost', text: 'Edit copy', onclick: function () { setTab('edit'); } }) : null,
       ]),
     ]));
-    if (hero) el.appendChild(h('figure', { class: 'hero-ad' }, [h('img', { src: fileUrl(hero), width: hero.w, height: hero.h, alt: (hero.kind === 'motion' ? 'Motion ad: ' : 'Ad: ') + hero.headlineText }),
+    if (hero) el.appendChild(h('figure', { class: 'hero-ad' }, [adImg(hero, { width: hero.w, height: hero.h, loading: 'eager' }),
       h('figcaption', { text: hero.sizeName + ' · ' + (hero.kind === 'motion' ? 'motion' : 'still') })]));
     $('[data-ad-count]').textContent = String(live.length);
     $('[data-campaign-count]').textContent = String(D.campaigns.length);
@@ -297,7 +329,6 @@
     var w = Math.min(c.w, 728), scale = w / c.w;
     var frame = h('button', { type: 'button', class: 'frame' + (c.kind === 'motion' ? ' is-motion' : ''), 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } },
       [adImg(c, { width: w, height: Math.round(c.h * scale) })]);
-    playOnHover(frame);
     return h('article', { class: 'card' + (on ? ' picked' : ''), style: 'width:' + (w + 28) + 'px', 'data-id': c.id }, [
       h('button', { type: 'button', class: 'pick', role: 'checkbox', 'aria-checked': String(on), 'aria-label': 'Select ' + label(c), html: on ? ICON.check : '', onclick: function () { togglePick(c.id); } }),
       frame,
@@ -365,7 +396,6 @@
       var k = Math.min(1, 150 / c.w, 110 / c.h);
       var b = h('button', { type: 'button', class: 'mx-cell', 'aria-label': 'Open ' + label(c) + ': ' + c.headlineText, onclick: function () { openDetail(c.id); } },
         [adImg(c, { width: Math.round(c.w * k), height: Math.round(c.h * k) }), h('span', { class: 'dot status-' + c.status, title: ASTATUS[c.status] })]);
-      playOnHover(b);
       return h('td', {}, [b]);
     };
     grid.appendChild(h('div', { class: 'mx-wrap' }, [h('table', { class: 'matrix' }, [
@@ -387,13 +417,13 @@
     bar.hidden = picked.size === 0 || tab !== 'ads';
     if (!picked.size) return;
     var list = M.ads.filter(function (c) { return picked.has(c.id); });
-    var sel = h('select', { class: 'input', 'aria-label': 'Add selected ads to a campaign', style: 'min-height:36px;padding:6px 46px 6px 12px' },
+    var sel = h('select', { class: 'input', 'aria-label': 'Add selected ads to a campaign' },
       [h('option', { value: '', text: 'Add to campaign…' })].concat(D.campaigns.map(function (c) { return h('option', { value: c.id, text: c.name }); }), [h('option', { value: 'new', text: '+ New campaign' })]));
     sel.addEventListener('change', function () {
       if (sel.value === 'new') return campaignForm(null, Array.from(picked));
       if (sel.value) addToCampaign(parseInt(sel.value, 10), Array.from(picked)).then(function () { picked.clear(); renderGrid(); renderSelbar(); });
     });
-    var st = h('select', { class: 'input', 'aria-label': 'Set status of selected ads', style: 'min-height:36px;padding:6px 46px 6px 12px' },
+    var st = h('select', { class: 'input', 'aria-label': 'Set status of selected ads' },
       [h('option', { value: '', text: 'Set status…' })].concat(Object.keys(ASTATUS).map(function (k) { return h('option', { value: k, text: ASTATUS[k] }); })));
     st.addEventListener('change', function () {
       if (!st.value) return;
@@ -405,7 +435,7 @@
       isEditor() ? h('button', { type: 'button', class: 'btn forest sm', onclick: function () { bulkStatus(list, 'approved'); } }, [svg('check'), 'Approve']) : null,
       isEditor() ? sel : null, isEditor() ? st : null,
       h('button', { type: 'button', class: 'linkbtn', text: 'Clear', onclick: function () { picked.clear(); renderGrid(); renderSelbar(); } }),
-    ].forEach(function (k) { bar.appendChild(k); });
+    ].forEach(function (k) { if (k) bar.appendChild(k); });
   }
 
   function bulkStatus(list, v) {
@@ -436,11 +466,12 @@
       }
       var c = queue[i];
       body.appendChild(h('p', { class: 'rq-count', text: (i + 1) + ' of ' + queue.length + ' · ' + label(c) }));
-      body.appendChild(h('div', { class: 'rq-stage' }, [h('img', { src: fileUrl(c), width: c.w, height: c.h, alt: 'Ad: ' + c.headlineText })]));
+      body.appendChild(h('div', { class: 'rq-stage' }, [adImg(c, { width: c.w, height: c.h, loading: 'eager' })]));
       body.appendChild(h('p', { class: 'rq-head', text: c.headlineText }));
-      body.appendChild(h('input', { class: 'input rq-note', placeholder: 'What should change? (optional, sent as a comment with “Needs changes”)', 'aria-label': 'Note for needs changes' }));
+      body.appendChild(h('label', { class: 'rq-field' }, [h('input', { class: 'input rq-note', placeholder: 'What should change? (optional)', 'aria-label': 'Note for needs changes', 'aria-describedby': 'rq-note-hint' }),
+        h('span', { class: 'hint', id: 'rq-note-hint', text: 'Sent as a comment with “Needs changes”.' })]));
       body.appendChild(h('div', { class: 'rq-actions' }, [
-        h('button', { type: 'button', class: 'btn line', text: '← Back', disabled: i === 0, onclick: function () { i--; paint(); } }),
+        h('button', { type: 'button', class: 'btn line', disabled: i === 0, onclick: function () { i--; paint(); } }, [svg('back'), 'Back']),
         h('button', { type: 'button', class: 'btn line', onclick: function () { i++; paint(); } }, ['Skip', svg('arrow')]),
         h('span', { style: 'flex:1' }),
         h('button', { type: 'button', class: 'btn line', html: ICON.pen + ' Needs changes <kbd>N</kbd>', onclick: function () { act('needs_changes'); } }),
@@ -541,9 +572,9 @@
   function renderDetail(c) {
     var dlg = $('[data-detail]'), x = c.stats, zoom = dlg._zoom || 1;
     if (dlg._edit) return renderEdit(c);
-    var img = h('img', { src: fileUrl(c), width: c.w * zoom, height: c.h * zoom, alt: (c.kind === 'motion' ? 'Animated ad: ' : 'Ad: ') + c.headlineText });
+    var img = adImg(c, { width: c.w * zoom, height: c.h * zoom, loading: 'eager' });
     var tools = [h('button', { type: 'button', class: 'btn line sm', 'aria-pressed': String(zoom === 2), text: zoom === 2 ? 'Actual size' : 'Zoom 2×', onclick: function () { dlg._zoom = zoom === 2 ? 1 : 2; renderDetail(c); } })];
-    if (c.kind === 'motion') tools.unshift(h('button', { type: 'button', class: 'btn line sm', text: '↻ Replay', onclick: function () { img.src = fileUrl(c) + '&r=' + Date.now(); } }));
+    if (c.kind === 'motion') tools.unshift(h('button', { type: 'button', class: 'btn line sm', onclick: function () { img._playing = true; play(img); } }, [svg('replay'), 'Replay']));
     var specs = [['File', fileName(c)], ['Size', c.sizeName + ', ' + c.w + ' × ' + c.h + ' px'], ['Format', c.format + (c.kind === 'motion' ? ' (animated)' : '')],
       ['File size', kb(c.bytes) + (c.bytes > LIMIT ? ' — over the 150 KB limit most ad networks set' : ' (limit 150 KB)')]];
     if (c.duration) specs.push(['Animation', c.duration + ' s, plays twice (' + Math.round(c.duration * 2) + ' s), ends on the call to action']);
@@ -804,6 +835,7 @@
   }
 
   function setForm() {
+    var name = h('input', { class: 'input', required: true, maxlength: 120, placeholder: 'e.g. Back to school 2027' });
     var errEl = h('p', { class: 'err', role: 'alert' });
     var form = h('form', { class: 'form', style: 'padding:20px', onsubmit: function (e) {
       e.preventDefault();
@@ -811,12 +843,13 @@
       ['name', 'summary'].forEach(function (k) { body[k] = fd.get(k) || ''; });
       api('sets', { method: 'POST', body: body }).then(function (r) { dlg.close(); toast('Ad set added'); return boot(r.id); }).catch(function (er) { errEl.textContent = er.message; });
     } }, [
-      field('name', 'Name', h('input', { class: 'input', required: true, maxlength: 120, placeholder: 'e.g. Back to school 2027' })),
+      field('name', 'Name', name),
       field('summary', 'What the ads are for', h('textarea', { class: 'input', rows: 2, maxlength: 1000 })),
       errEl,
       h('div', { class: 'foot' }, [h('button', { type: 'button', class: 'btn line', text: 'Cancel', onclick: function () { dlg.close(); } }), h('button', { type: 'submit', class: 'btn forest', text: 'Add ad set' })]),
     ]);
     var dlg = sheet('New ad set', form);
+    name.focus();
   }
 
   // ---------------------------------------------------------------- campaigns tab
@@ -863,7 +896,7 @@
             k.notes ? h('dt', { text: 'Notes' }) : null, k.notes ? h('dd', { style: 'white-space:pre-wrap;font-weight:400', text: k.notes }) : null]),
           ads.length ? h('div', { class: 'thumbs' }, ads.map(function (c) {
             return h('div', { class: 'thumb' }, [
-              h('button', { type: 'button', class: 'tframe', 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } }, [h('img', { src: posterUrl(c), alt: '', loading: 'lazy', decoding: 'async' })]),
+              h('button', { type: 'button', class: 'tframe', 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } }, [adImg(c, { alt: '' })]),
               h('span', { text: c.w + '×' + c.h + ' · ' + (VARIANTS[c.variant] || 'Other') }),
               h('div', { class: 'tools' }, [
                 h('button', { type: 'button', class: 'btn line', html: ICON.dl + ' Download', onclick: function () { downloadOne(c); } }),
@@ -917,7 +950,7 @@
         h('section', { class: 'panel' }, [h('h2', { text: 'Specs' }), h('table', { class: 'spec' }, [h('tbody', {}, rows.map(function (r) { return h('tr', {}, [h('th', { scope: 'row', text: r[0] }), h('td', { text: r[1] })]); }))])]),
         M.files.length ? h('section', { class: 'panel' }, [h('h2', { text: 'Source images' }), h('p', { text: 'The pouch and photos used in these ads, for other formats.' }),
           h('div', { class: 'sources' }, M.files.map(function (s) {
-            return h('a', { href: '/files/' + s.r2_key + '?download', download: s.r2_key.split('/').pop() }, [h('img', { src: '/files/' + s.r2_key, alt: s.alt || '', loading: 'lazy', class: /png$/.test(s.content_type) ? 'contain' : null }), s.name + ' ↓']);
+            return h('a', { href: '/files/' + s.r2_key + '?download', download: s.r2_key.split('/').pop() }, [h('img', { src: '/files/' + s.r2_key, alt: s.alt || '', loading: 'lazy', class: /png$/.test(s.content_type) ? 'contain' : null }), h('span', { class: 'src-name' }, [s.name, svg('dl')])]);
           }))]) : null,
       ]),
     ]));
@@ -964,6 +997,11 @@
     if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1);
   });
   $('[data-upload]').addEventListener('click', function () { if (M) uploadForm(); });
+  // The bell and Help menus open just below their button (the header wraps onto several rows on phones).
+  [['inbox', '[data-bell]'], ['help-menu', '[data-help-btn]']].forEach(function (x) {
+    var menu = document.getElementById(x[0]), btn = $(x[1]);
+    menu.addEventListener('beforetoggle', function (e) { if (e.newState === 'open') menu.style.top = Math.round(btn.getBoundingClientRect().bottom + 8) + 'px'; });
+  });
 
   function route() {
     var m = /^#ad=([a-z0-9-]+)(\/edit)?/.exec(location.hash);

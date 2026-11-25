@@ -75,6 +75,11 @@ mark { background: #e6ff99; color: inherit; border-radius: 3px; padding: 0 1px; 
 .hc-prose p, .hc-prose ul, .hc-prose ol, .hc-prose table { margin: 0 0 16px; }
 .hc-prose ul, .hc-prose ol { padding-left: 22px; }
 .hc-prose li { margin: 6px 0; }
+/* No orphaned last words ("150 / KB") in article text. */
+.hc-prose p, .hc-prose li { text-wrap: pretty; }
+/* Icons named in the text (help.js glyphs()): the library's line icons, sitting on the text baseline. */
+.hc-i { display: inline-flex; vertical-align: -.15em; color: var(--yondr-forest); }
+.hc-i svg { width: 1em; height: 1em; stroke-width: 2.4; }
 .hc-prose li::marker { color: var(--yondr-moss); font-weight: 700; }
 .hc-prose a { color: var(--yondr-forest); font-weight: 600; text-decoration-color: var(--yondr-sage); text-underline-offset: 3px; }
 .hc-prose code { font: 500 .88em/1 ui-monospace, Menlo, monospace; background: var(--yondr-mist); padding: 2px 6px; border-radius: 6px; overflow-wrap: anywhere; }
@@ -84,6 +89,7 @@ mark { background: #e6ff99; color: inherit; border-radius: 3px; padding: 0 1px; 
 .hc-prose .tip { padding: 14px 16px; border-radius: 12px; background: #fbffe9; border-left: 4px solid var(--yondr-lichen); font-size: 15px; }
 .hc-helpful { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 28px 0; padding: 16px 18px; border-radius: 14px; background: var(--yondr-mist); font-weight: 600; color: var(--yondr-forest); }
 .hc-helpful > span { margin-right: auto; }
+.hc-helpful .btn { gap: 6px; padding: 0 12px; }
 .hc-more { display: flex; flex-direction: column; gap: 8px; width: 100%; font-weight: 600; }
 .hc-more .addrow input { flex: 1; }
 .hc-pn { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
