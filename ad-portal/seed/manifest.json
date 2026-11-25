@@ -3,8 +3,8 @@
  "name": "Harvard Study 2026",
  "summary": "Display ads promoting the Harvard CEPR study on phone-free schools and Yondr’s mention in it.",
  "launched": "2026-11-24",
- "studyUrl": "https://cepr.harvard.edu/phone-free-schools",
- "cta": "Read the study",
+ "cta": "Learn More",
+ "source": "Source: Center for Education Policy Research, Harvard University, 2026",
  "longHeadline": "Harvard study: Using a Yondr pouch can add 1–2 extra weeks of learning a year.",
  "headlines": [
   {
@@ -97,7 +97,7 @@
   }
  ],
  "limitBytes": 150000,
- "generated": "2026-11-25T00:14:37Z",
+ "generated": "2026-11-25T01:30:07Z",
  "sources": [
   {
    "file": "source/yondr-pouch.png",
@@ -130,7 +130,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 28909,
+   "bytes": 33906,
    "quality": 95
   },
   {
@@ -147,7 +147,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 34772,
+   "bytes": 41302,
    "quality": 95
   },
   {
@@ -164,7 +164,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 23305,
+   "bytes": 27857,
    "quality": 95
   },
   {
@@ -181,7 +181,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 9153,
+   "bytes": 11636,
    "quality": 95
   },
   {
@@ -198,7 +198,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 52689,
+   "bytes": 62722,
    "quality": 95
   },
   {
@@ -215,7 +215,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 32610,
+   "bytes": 38390,
    "quality": 95
   },
   {
@@ -232,7 +232,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 35015,
+   "bytes": 39907,
    "quality": 95
   },
   {
@@ -249,7 +249,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 42483,
+   "bytes": 48173,
    "quality": 95
   },
   {
@@ -266,7 +266,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 26578,
+   "bytes": 30687,
    "quality": 95
   },
   {
@@ -283,7 +283,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 9314,
+   "bytes": 11030,
    "quality": 95
   },
   {
@@ -300,7 +300,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 67928,
+   "bytes": 78112,
    "quality": 95
   },
   {
@@ -317,7 +317,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 41756,
+   "bytes": 48291,
    "quality": 95
   },
   {
@@ -334,7 +334,7 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 80176,
+   "bytes": 86379,
    "colors": 256,
    "frames": 45,
    "duration": 13.6
@@ -353,9 +353,9 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 118765,
+   "bytes": 101195,
    "colors": 256,
-   "frames": 49,
+   "frames": 45,
    "duration": 13.6
   },
   {
@@ -372,9 +372,9 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 44433,
+   "bytes": 59326,
    "colors": 256,
-   "frames": 47,
+   "frames": 43,
    "duration": 13.6
   },
   {
@@ -391,9 +391,9 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 19148,
+   "bytes": 27269,
    "colors": 256,
-   "frames": 41,
+   "frames": 40,
    "duration": 13.6
   },
   {
@@ -410,9 +410,9 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 117073,
-   "colors": 256,
-   "frames": 50,
+   "bytes": 144712,
+   "colors": 192,
+   "frames": 51,
    "duration": 13.6
   },
   {
@@ -429,9 +429,9 @@
    "desc": "Harvard names Yondr’s phone-free program a meaningful lever against learning loss.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 87178,
+   "bytes": 100447,
    "colors": 256,
-   "frames": 53,
+   "frames": 49,
    "duration": 13.6
   },
   {
@@ -448,7 +448,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 28908,
+   "bytes": 33984,
    "quality": 95
   },
   {
@@ -465,7 +465,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 35137,
+   "bytes": 41459,
    "quality": 95
   },
   {
@@ -482,7 +482,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 23929,
+   "bytes": 27990,
    "quality": 95
   },
   {
@@ -499,7 +499,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 9335,
+   "bytes": 11552,
    "quality": 95
   },
   {
@@ -516,7 +516,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 51135,
+   "bytes": 60721,
    "quality": 95
   },
   {
@@ -533,7 +533,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 32456,
+   "bytes": 38317,
    "quality": 95
   },
   {
@@ -550,7 +550,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 32390,
+   "bytes": 36837,
    "quality": 95
   },
   {
@@ -567,7 +567,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 39569,
+   "bytes": 44611,
    "quality": 95
   },
   {
@@ -584,7 +584,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 24952,
+   "bytes": 28820,
    "quality": 95
   },
   {
@@ -601,7 +601,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 9160,
+   "bytes": 10906,
    "quality": 95
   },
   {
@@ -618,7 +618,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 64546,
+   "bytes": 73653,
    "quality": 95
   },
   {
@@ -635,7 +635,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 38535,
+   "bytes": 44394,
    "quality": 95
   },
   {
@@ -652,7 +652,7 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 75285,
+   "bytes": 85009,
    "colors": 256,
    "frames": 47,
    "duration": 13.6
@@ -671,9 +671,9 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 115117,
+   "bytes": 97751,
    "colors": 256,
-   "frames": 51,
+   "frames": 47,
    "duration": 13.6
   },
   {
@@ -690,9 +690,9 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 44348,
+   "bytes": 58123,
    "colors": 256,
-   "frames": 48,
+   "frames": 44,
    "duration": 13.6
   },
   {
@@ -709,9 +709,9 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 19091,
+   "bytes": 27155,
    "colors": 256,
-   "frames": 44,
+   "frames": 43,
    "duration": 13.6
   },
   {
@@ -728,9 +728,9 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 111918,
-   "colors": 256,
-   "frames": 51,
+   "bytes": 142929,
+   "colors": 224,
+   "frames": 52,
    "duration": 13.6
   },
   {
@@ -747,9 +747,9 @@
    "desc": "Gains began in year one and still appeared three years later.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 87021,
+   "bytes": 97615,
    "colors": 256,
-   "frames": 55,
+   "frames": 51,
    "duration": 13.6
   },
   {
@@ -766,7 +766,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 29803,
+   "bytes": 34822,
    "quality": 95
   },
   {
@@ -783,7 +783,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 35451,
+   "bytes": 41813,
    "quality": 95
   },
   {
@@ -800,7 +800,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 22634,
+   "bytes": 26925,
    "quality": 95
   },
   {
@@ -817,7 +817,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 9242,
+   "bytes": 11245,
    "quality": 95
   },
   {
@@ -834,7 +834,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 53642,
+   "bytes": 63758,
    "quality": 95
   },
   {
@@ -851,7 +851,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 33370,
+   "bytes": 39374,
    "quality": 95
   },
   {
@@ -868,7 +868,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 35863,
+   "bytes": 41070,
    "quality": 95
   },
   {
@@ -885,7 +885,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 43716,
+   "bytes": 49630,
    "quality": 95
   },
   {
@@ -902,7 +902,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 26418,
+   "bytes": 30429,
    "quality": 95
   },
   {
@@ -919,7 +919,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 9067,
+   "bytes": 10639,
    "quality": 95
   },
   {
@@ -936,7 +936,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 68314,
+   "bytes": 78630,
    "quality": 95
   },
   {
@@ -953,7 +953,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 41914,
+   "bytes": 48574,
    "quality": 95
   },
   {
@@ -970,7 +970,7 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 81892,
+   "bytes": 89236,
    "colors": 256,
    "frames": 47,
    "duration": 13.6
@@ -989,9 +989,9 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 113129,
+   "bytes": 102691,
    "colors": 256,
-   "frames": 51,
+   "frames": 47,
    "duration": 13.6
   },
   {
@@ -1008,9 +1008,9 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 44540,
+   "bytes": 59597,
    "colors": 256,
-   "frames": 48,
+   "frames": 44,
    "duration": 13.6
   },
   {
@@ -1027,9 +1027,9 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 19311,
+   "bytes": 26758,
    "colors": 256,
-   "frames": 43,
+   "frames": 42,
    "duration": 13.6
   },
   {
@@ -1046,9 +1046,9 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 118534,
-   "colors": 256,
-   "frames": 53,
+   "bytes": 141314,
+   "colors": 160,
+   "frames": 54,
    "duration": 13.6
   },
   {
@@ -1065,9 +1065,9 @@
    "desc": "Results held across school levels, poverty levels and starting achievement.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 88731,
+   "bytes": 101873,
    "colors": 256,
-   "frames": 54,
+   "frames": 50,
    "duration": 13.6
   },
   {
@@ -1084,7 +1084,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 29688,
+   "bytes": 34906,
    "quality": 95
   },
   {
@@ -1101,7 +1101,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 35464,
+   "bytes": 41827,
    "quality": 95
   },
   {
@@ -1118,7 +1118,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 22558,
+   "bytes": 26881,
    "quality": 95
   },
   {
@@ -1135,7 +1135,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 9454,
+   "bytes": 11405,
    "quality": 95
   },
   {
@@ -1152,7 +1152,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 54113,
+   "bytes": 64680,
    "quality": 95
   },
   {
@@ -1169,7 +1169,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 33110,
+   "bytes": 39103,
    "quality": 95
   },
   {
@@ -1186,7 +1186,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 33406,
+   "bytes": 37995,
    "quality": 95
   },
   {
@@ -1203,7 +1203,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 40196,
+   "bytes": 45318,
    "quality": 95
   },
   {
@@ -1220,7 +1220,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 25133,
+   "bytes": 28894,
    "quality": 95
   },
   {
@@ -1237,7 +1237,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 9175,
+   "bytes": 10907,
    "quality": 95
   },
   {
@@ -1254,7 +1254,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 67195,
+   "bytes": 77324,
    "quality": 95
   },
   {
@@ -1271,7 +1271,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 41880,
+   "bytes": 48310,
    "quality": 95
   },
   {
@@ -1288,7 +1288,7 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 75813,
+   "bytes": 85882,
    "colors": 256,
    "frames": 47,
    "duration": 13.6
@@ -1307,9 +1307,9 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 105561,
+   "bytes": 98960,
    "colors": 256,
-   "frames": 51,
+   "frames": 47,
    "duration": 13.6
   },
   {
@@ -1326,9 +1326,9 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 43231,
+   "bytes": 57857,
    "colors": 256,
-   "frames": 48,
+   "frames": 44,
    "duration": 13.6
   },
   {
@@ -1345,9 +1345,9 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 19405,
+   "bytes": 27136,
    "colors": 256,
-   "frames": 44,
+   "frames": 43,
    "duration": 13.6
   },
   {
@@ -1364,9 +1364,9 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 113957,
-   "colors": 256,
-   "frames": 52,
+   "bytes": 140627,
+   "colors": 160,
+   "frames": 53,
    "duration": 13.6
   },
   {
@@ -1383,9 +1383,9 @@
    "desc": "Harvard researchers named phone storage a cost-effective way to add instruction time.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 88485,
+   "bytes": 99362,
    "colors": 256,
-   "frames": 56,
+   "frames": 52,
    "duration": 13.6
   },
   {
@@ -1402,7 +1402,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 30038,
+   "bytes": 35335,
    "quality": 95
   },
   {
@@ -1419,7 +1419,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 36215,
+   "bytes": 42818,
    "quality": 95
   },
   {
@@ -1436,7 +1436,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 22622,
+   "bytes": 26892,
    "quality": 95
   },
   {
@@ -1453,7 +1453,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 9566,
+   "bytes": 11529,
    "quality": 95
   },
   {
@@ -1470,7 +1470,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 54134,
+   "bytes": 64495,
    "quality": 95
   },
   {
@@ -1487,7 +1487,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "pouch",
    "conceptName": "Pouch",
-   "bytes": 33504,
+   "bytes": 39461,
    "quality": 95
   },
   {
@@ -1504,7 +1504,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 33484,
+   "bytes": 38133,
    "quality": 95
   },
   {
@@ -1521,7 +1521,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 40456,
+   "bytes": 45601,
    "quality": 95
   },
   {
@@ -1538,7 +1538,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 24794,
+   "bytes": 28642,
    "quality": 95
   },
   {
@@ -1555,7 +1555,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 9290,
+   "bytes": 11039,
    "quality": 95
   },
   {
@@ -1572,7 +1572,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 67842,
+   "bytes": 77978,
    "quality": 95
   },
   {
@@ -1589,7 +1589,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "in-use",
    "conceptName": "In use",
-   "bytes": 41890,
+   "bytes": 48391,
    "quality": 95
   },
   {
@@ -1606,7 +1606,7 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 75329,
+   "bytes": 85623,
    "colors": 256,
    "frames": 45,
    "duration": 13.6
@@ -1625,9 +1625,9 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 108810,
+   "bytes": 98845,
    "colors": 256,
-   "frames": 49,
+   "frames": 45,
    "duration": 13.6
   },
   {
@@ -1644,9 +1644,9 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 43898,
+   "bytes": 57248,
    "colors": 256,
-   "frames": 47,
+   "frames": 43,
    "duration": 13.6
   },
   {
@@ -1663,9 +1663,9 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 19019,
+   "bytes": 27180,
    "colors": 256,
-   "frames": 41,
+   "frames": 40,
    "duration": 13.6
   },
   {
@@ -1682,9 +1682,9 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 114610,
-   "colors": 256,
-   "frames": 50,
+   "bytes": 144925,
+   "colors": 192,
+   "frames": 51,
    "duration": 13.6
   },
   {
@@ -1701,12 +1701,10 @@
    "desc": "Fewer students saw large drops in reading in schools using Yondr’s lockable pouches.",
    "concept": "motion",
    "conceptName": "Motion",
-   "bytes": 87426,
+   "bytes": 101237,
    "colors": 256,
-   "frames": 53,
+   "frames": 49,
    "duration": 13.6
   }
- ],
- "releaseUrl": "https://docs.google.com/document/d/1Lk3F_QcvPzGUNIE1z25g8_oDALcozRWsTS2XA69Ctfg/edit",
- "source": "Source: Center for Education Policy Research, Harvard University, 2026"
+ ]
 }
