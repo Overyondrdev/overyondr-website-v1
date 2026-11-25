@@ -100,7 +100,7 @@
   }
   function searchBox(value, big) {
     return '<form class="hc-search' + (big ? ' big' : '') + '" role="search" data-search><label class="visually-hidden" for="hc-q">Search help</label>' + icon('search', 22) +
-      '<input id="hc-q" type="search" placeholder="Search: “download zip”, “edit headline”, “150 KB”…" value="' + esc(value || '') + '" autocomplete="off" data-q />' +
+      '<input id="hc-q" type="search" placeholder="' + (matchMedia('(max-width: 640px)').matches ? 'Search the help center' : 'Search: “download zip”, “edit headline”, “150 KB”…') + '" value="' + esc(value || '') + '" autocomplete="off" data-q />' +
       '<button type="submit" class="btn forest sm">Search</button><div class="hc-live" data-live role="listbox" aria-label="Suggestions"></div></form>';
   }
   function stuck() {
