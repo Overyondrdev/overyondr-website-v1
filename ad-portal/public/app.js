@@ -101,20 +101,50 @@
   function needEditor() { return Promise.all([loadScript('/render.js'), loadScript('/editor.js')]); }
   function canEditText(c) { return !!(c.meta && c.meta.generated && c.meta.headlineId && c.meta.headlineId !== 'other'); }
   function updating(c) { return !!(window.YondrEditor && window.YondrEditor.updating(c.id)); }
-  // Motion ads show their poster (end card) until you hover or focus them: the grid stays light.
+  // Motion ads play in every preview and keep looping while they're on screen. The GIF itself plays twice and stops
+  // on its end card (the ad-network rule), so a preview restarts it from a fresh object URL of the same downloaded
+  // file: no refetch. Off screen they show their poster so the page doesn't decode GIFs nobody sees. They play on
+  // phones too, and even with reduced motion on: seeing the animation is what these previews are for.
+  var gifs = {};
   function posterUrl(c) { return c.posterKey ? '/files/' + c.posterKey + '?v=' + encodeURIComponent(c.updated || c.bytes) : fileUrl(c); }
-  function adImg(c, attrs) {
-    var still = c.kind === 'motion' && c.posterKey;
-    var img = h('img', Object.assign({ src: still ? posterUrl(c) : fileUrl(c), loading: 'lazy', decoding: 'async', alt: (c.kind === 'motion' ? 'Animated ad: ' : 'Ad: ') + c.headlineText }, attrs || {}));
-    if (still) img.dataset.anim = fileUrl(c);
-    return img;
+  function gifBlob(c) {
+    var u = fileUrl(c);
+    return gifs[u] || (gifs[u] = fetch(u).then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.blob(); })
+      .catch(function (e) { delete gifs[u]; throw e; }));
   }
-  function playOnHover(el) {
-    var img = el.querySelector('img[data-anim]');
-    if (!img) return;
-    var still = img.src, on = function () { img.src = img.dataset.anim; }, off = function () { img.src = still; };
-    el.addEventListener('mouseenter', on); el.addEventListener('focus', on);
-    el.addEventListener('mouseleave', off); el.addEventListener('blur', off);
+  function freeUrl(u) { if (u) setTimeout(function () { URL.revokeObjectURL(u); }, 2000); }
+  function play(img) {
+    var c = img._ad;
+    clearTimeout(img._t);
+    gifBlob(c).then(function (b) {
+      if (!img._playing) return;
+      var old = img._url; img._url = URL.createObjectURL(b); img.src = img._url; freeUrl(old);
+      // Both plays, a moment on the end card, then again.
+      img._t = setTimeout(function () { if (img._playing) play(img); }, ((c.duration || 13.6) * 2 + 2.5) * 1000);
+    }).catch(function () { if (img._playing) img.src = fileUrl(c); });
+  }
+  function startMotion(img) { if (img._playing) return; img._playing = true; play(img); }
+  function stopMotion(img) {
+    img._playing = false; clearTimeout(img._t);
+    if (img.dataset.poster) img.src = img.dataset.poster;
+    freeUrl(img._url); img._url = null;
+  }
+  var inView = 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      var img = e.target;
+      if (!img.isConnected) { stopMotion(img); inView.unobserve(img); return; }
+      if (e.isIntersecting) startMotion(img); else stopMotion(img);
+    });
+  }, { rootMargin: '150px' }) : null;
+  function adImg(c, attrs) {
+    var motion = c.kind === 'motion';
+    var img = h('img', Object.assign({ src: motion ? posterUrl(c) : fileUrl(c), loading: 'lazy', decoding: 'async', alt: (motion ? 'Animated ad: ' : 'Ad: ') + c.headlineText }, attrs || {}));
+    if (motion) {
+      img._ad = c;
+      if (c.posterKey) img.dataset.poster = posterUrl(c);
+      if (inView) inView.observe(img); else startMotion(img);
+    }
+    return img;
   }
   function fileUrl(c) { return '/files/' + c.key + '?v=' + encodeURIComponent(c.updated || c.bytes); }
   function byId(id) { for (var i = 0; i < M.ads.length; i++) if (M.ads[i].id === id) return M.ads[i]; return null; }
@@ -223,7 +253,7 @@
         isEditor() ? h('button', { type: 'button', class: 'btn ghost', text: 'Edit copy', onclick: function () { setTab('edit'); } }) : null,
       ]),
     ]));
-    if (hero) el.appendChild(h('figure', { class: 'hero-ad' }, [h('img', { src: fileUrl(hero), width: hero.w, height: hero.h, alt: (hero.kind === 'motion' ? 'Motion ad: ' : 'Ad: ') + hero.headlineText }),
+    if (hero) el.appendChild(h('figure', { class: 'hero-ad' }, [adImg(hero, { width: hero.w, height: hero.h, loading: 'eager' }),
       h('figcaption', { text: hero.sizeName + ' · ' + (hero.kind === 'motion' ? 'motion' : 'still') })]));
     $('[data-ad-count]').textContent = String(live.length);
     $('[data-campaign-count]').textContent = String(D.campaigns.length);
@@ -299,7 +329,6 @@
     var w = Math.min(c.w, 728), scale = w / c.w;
     var frame = h('button', { type: 'button', class: 'frame' + (c.kind === 'motion' ? ' is-motion' : ''), 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } },
       [adImg(c, { width: w, height: Math.round(c.h * scale) })]);
-    playOnHover(frame);
     return h('article', { class: 'card' + (on ? ' picked' : ''), style: 'width:' + (w + 28) + 'px', 'data-id': c.id }, [
       h('button', { type: 'button', class: 'pick', role: 'checkbox', 'aria-checked': String(on), 'aria-label': 'Select ' + label(c), html: on ? ICON.check : '', onclick: function () { togglePick(c.id); } }),
       frame,
@@ -367,7 +396,6 @@
       var k = Math.min(1, 150 / c.w, 110 / c.h);
       var b = h('button', { type: 'button', class: 'mx-cell', 'aria-label': 'Open ' + label(c) + ': ' + c.headlineText, onclick: function () { openDetail(c.id); } },
         [adImg(c, { width: Math.round(c.w * k), height: Math.round(c.h * k) }), h('span', { class: 'dot status-' + c.status, title: ASTATUS[c.status] })]);
-      playOnHover(b);
       return h('td', {}, [b]);
     };
     grid.appendChild(h('div', { class: 'mx-wrap' }, [h('table', { class: 'matrix' }, [
@@ -438,7 +466,7 @@
       }
       var c = queue[i];
       body.appendChild(h('p', { class: 'rq-count', text: (i + 1) + ' of ' + queue.length + ' · ' + label(c) }));
-      body.appendChild(h('div', { class: 'rq-stage' }, [h('img', { src: fileUrl(c), width: c.w, height: c.h, alt: 'Ad: ' + c.headlineText })]));
+      body.appendChild(h('div', { class: 'rq-stage' }, [adImg(c, { width: c.w, height: c.h, loading: 'eager' })]));
       body.appendChild(h('p', { class: 'rq-head', text: c.headlineText }));
       body.appendChild(h('label', { class: 'rq-field' }, [h('input', { class: 'input rq-note', placeholder: 'What should change? (optional)', 'aria-label': 'Note for needs changes', 'aria-describedby': 'rq-note-hint' }),
         h('span', { class: 'hint', id: 'rq-note-hint', text: 'Sent as a comment with “Needs changes”.' })]));
@@ -544,9 +572,9 @@
   function renderDetail(c) {
     var dlg = $('[data-detail]'), x = c.stats, zoom = dlg._zoom || 1;
     if (dlg._edit) return renderEdit(c);
-    var img = h('img', { src: fileUrl(c), width: c.w * zoom, height: c.h * zoom, alt: (c.kind === 'motion' ? 'Animated ad: ' : 'Ad: ') + c.headlineText });
+    var img = adImg(c, { width: c.w * zoom, height: c.h * zoom, loading: 'eager' });
     var tools = [h('button', { type: 'button', class: 'btn line sm', 'aria-pressed': String(zoom === 2), text: zoom === 2 ? 'Actual size' : 'Zoom 2×', onclick: function () { dlg._zoom = zoom === 2 ? 1 : 2; renderDetail(c); } })];
-    if (c.kind === 'motion') tools.unshift(h('button', { type: 'button', class: 'btn line sm', onclick: function () { img.src = fileUrl(c) + '&r=' + Date.now(); } }, [svg('replay'), 'Replay']));
+    if (c.kind === 'motion') tools.unshift(h('button', { type: 'button', class: 'btn line sm', onclick: function () { img._playing = true; play(img); } }, [svg('replay'), 'Replay']));
     var specs = [['File', fileName(c)], ['Size', c.sizeName + ', ' + c.w + ' × ' + c.h + ' px'], ['Format', c.format + (c.kind === 'motion' ? ' (animated)' : '')],
       ['File size', kb(c.bytes) + (c.bytes > LIMIT ? ' — over the 150 KB limit most ad networks set' : ' (limit 150 KB)')]];
     if (c.duration) specs.push(['Animation', c.duration + ' s, plays twice (' + Math.round(c.duration * 2) + ' s), ends on the call to action']);
@@ -868,7 +896,7 @@
             k.notes ? h('dt', { text: 'Notes' }) : null, k.notes ? h('dd', { style: 'white-space:pre-wrap;font-weight:400', text: k.notes }) : null]),
           ads.length ? h('div', { class: 'thumbs' }, ads.map(function (c) {
             return h('div', { class: 'thumb' }, [
-              h('button', { type: 'button', class: 'tframe', 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } }, [h('img', { src: posterUrl(c), alt: '', loading: 'lazy', decoding: 'async' })]),
+              h('button', { type: 'button', class: 'tframe', 'aria-label': 'Open ' + label(c), onclick: function () { openDetail(c.id); } }, [adImg(c, { alt: '' })]),
               h('span', { text: c.w + '×' + c.h + ' · ' + (VARIANTS[c.variant] || 'Other') }),
               h('div', { class: 'tools' }, [
                 h('button', { type: 'button', class: 'btn line', html: ICON.dl + ' Download', onclick: function () { downloadOne(c); } }),

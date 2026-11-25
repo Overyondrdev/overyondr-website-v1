@@ -41,7 +41,9 @@ Owners (`OWNER_EMAILS` in `wrangler.toml`) are always admins and can't be change
 
 ## How things work
 
-**Speed.** Motion ads show a still poster (their end card) in the grid and play on hover, so the grid loads no GIFs.
+**Speed.** Motion ads play in every preview and loop while on screen: each GIF is downloaded once and restarted from a
+fresh object URL (the file itself plays twice, then stops, as ad networks require). Off screen, previews fall back to
+the poster (end card). They play on phones too, and with reduced motion on, since seeing the animation is their purpose.
 Ad URLs carry `?v=<updated_at>` and are cached as `immutable`; replaced files get a new URL. The editor and renderer
 load only for editors (in idle time). One request (`GET /api/sets/<id>`) starts the page: the set, its ads,
 campaigns, the sets list and who you are. Off-screen groups use `content-visibility: auto`.

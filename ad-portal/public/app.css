@@ -504,3 +504,5 @@ dialog.sheet.wide { width: min(980px, calc(100vw - 32px)); }
 .history h3 { margin: 0 0 10px; font: 700 12px/1 var(--yondr-font-text); letter-spacing: .12em; text-transform: uppercase; color: var(--yondr-moss); }
 @media (max-width: 640px) { .tb-search { max-width: none; flex-basis: 100%; } .rq-actions .btn { flex: 1; } }
 @media (prefers-reduced-motion: reduce) { .frame.is-motion::after { transition: none; } }
+/* Motion previews play by themselves: no play badge. */
+.frame.is-motion::after { display: none; }
