@@ -30,6 +30,37 @@ export async function whoIs(env: RoleEnv, email: string): Promise<Who> {
 }
 
 export const can = (who: Who, needed: Role) => RANK[who.role] >= RANK[needed];
+export const rank = (r: string | null | undefined) => (r && r in RANK ? RANK[r as Role] : -1);
+
+// ------------------------------------------------------------------ tour + help center
+export async function tourRole(env: RoleEnv, email: string): Promise<Role | null> {
+  const row = await env.DB.prepare('SELECT tour_role FROM users WHERE email = ?').bind(email).first<{ tour_role: Role | null }>();
+  return row && row.tour_role && ROLES.includes(row.tour_role) ? row.tour_role : null;
+}
+export async function setTourRole(request: Request, env: RoleEnv, me: Who) {
+  const b: any = await request.json().catch(() => ({}));
+  const role: Role = ROLES.includes(b.role) && rank(b.role) <= rank(me.role) ? b.role : me.role;
+  await seen(env, me.email);
+  await env.DB.prepare('UPDATE users SET tour_role = ? WHERE email = ?').bind(role, me.email).run();
+  return json({ ok: true, tourRole: role });
+}
+// Who to ask: admins' emails (owners first).
+export async function helpContacts(env: RoleEnv) {
+  const own = owners(env);
+  const { results } = await env.DB.prepare("SELECT email FROM users WHERE role = 'admin' ORDER BY email").all<{ email: string }>();
+  const admins = [...own, ...results.map((r) => r.email).filter((e) => !own.includes(e))];
+  return json({ admins });
+}
+export async function helpFeedback(request: Request, env: RoleEnv, me: Who) {
+  const b: any = await request.json().catch(() => ({}));
+  const article = String(b.article || '').slice(0, 80);
+  if (!/^[a-z0-9-]+$/.test(article)) return err(400, 'Unknown article.');
+  const helpful = b.helpful === true ? 1 : b.helpful === false ? 0 : null;
+  const comment = String(b.comment || '').trim().slice(0, 2000) || null;
+  if (helpful === null && !comment) return err(400, 'Nothing to send.');
+  await env.DB.prepare('INSERT INTO help_feedback (article, helpful, comment, email, created_at) VALUES (?, ?, ?, ?, ?)').bind(article, helpful, comment, me.email, now()).run();
+  return json({ ok: true });
+}
 
 // Remember who has visited, so admins can find them on the People tab.
 export async function seen(env: RoleEnv, email: string) {
@@ -49,13 +80,14 @@ export async function usersApi(request: Request, env: RoleEnv, me: Who, target?:
   const m = request.method;
   const own = owners(env);
   if (m === 'GET' && !target) {
-    const [users, activity] = await env.DB.batch([
+    const [users, activity, help] = await env.DB.batch([
       env.DB.prepare('SELECT * FROM users ORDER BY CASE role WHEN \'admin\' THEN 0 WHEN \'editor\' THEN 1 ELSE 2 END, COALESCE(last_seen_at, created_at) DESC'),
       env.DB.prepare('SELECT * FROM activity ORDER BY id DESC LIMIT 40'),
+      env.DB.prepare('SELECT * FROM help_feedback ORDER BY id DESC LIMIT 30'),
     ]);
     const list = (users.results as any[]).map((u) => ({ ...u, owner: own.includes(u.email), role: own.includes(u.email) ? 'admin' : u.role }));
     for (const o of own) if (!list.some((u) => u.email === o)) list.unshift({ email: o, role: 'admin', owner: true, added_by: null, last_seen_at: null });
-    return json({ users: list, activity: (activity.results as any[]).map((a) => ({ ...a, detail: JSON.parse(a.detail || '{}') })), defaultRole: defaultRole(env), roles: ROLES });
+    return json({ users: list, activity: (activity.results as any[]).map((a) => ({ ...a, detail: JSON.parse(a.detail || '{}') })), help: help.results, defaultRole: defaultRole(env), roles: ROLES });
   }
   const email = String(target || '').trim().toLowerCase();
   if (!/^[^@\s]+@overyondr\.com$/.test(email)) return err(400, 'Use an @overyondr.com email address.');

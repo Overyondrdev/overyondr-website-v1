@@ -609,6 +609,7 @@
       h('div', { class: 'foot' }, [h('button', { type: 'button', class: 'btn line', text: 'Cancel', onclick: function () { dlg.close(); } }), go]),
     ]);
     var dlg = sheet('Upload ads', form);
+    dlg.querySelector('.sheet-head h2').after(helpLink('upload', 'Uploading ads'));
   }
 
   function setForm() {
@@ -632,7 +633,7 @@
     var p = $('[data-panel="campaigns"]');
     p.innerHTML = '';
     p.appendChild(h('div', { class: 'camp-head' }, [
-      h('h2', { text: 'Campaigns' }),
+      h('h2', { text: 'Campaigns' }), helpLink('campaigns', 'Campaigns'),
       h('a', { class: 'btn line sm', href: '/api/sets/' + M.set.id + '/campaigns.csv', text: 'Export CSV' }),
       isEditor() ? h('button', { type: 'button', class: 'btn forest sm', text: '+ New campaign', onclick: function () { campaignForm(null, Array.from(picked)); } }) : null,
       h('p', { text: 'Log every campaign these ads run in: channel, dates, owner and which ads it uses.' }),
@@ -697,7 +698,7 @@
     };
     var sub = function (t) { return h('h3', { style: 'font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--yondr-moss);margin:18px 0 8px', text: t }); };
     var heads = (C.headlines || []);
-    var copyPanel = heads.length ? h('section', { class: 'panel' }, [h('h2', { text: 'Ad copy' }),
+    var copyPanel = heads.length ? h('section', { class: 'panel' }, [h('div', { style: 'display:flex;align-items:center;gap:10px' }, [h('h2', { text: 'Ad copy' }), helpLink('copy-specs', 'Ad copy and specs')]),
       h('p', { text: 'Text for responsive display, search and social ads. Counts show Google Ads limits.' }),
       sub('Headlines'), h('ul', { class: 'lines' }, heads.map(function (x) { return line(x.text, 30); })),
       C.longHeadline ? sub('Long headline') : null, C.longHeadline ? h('ul', { class: 'lines' }, [line(C.longHeadline, 90)]) : null,
@@ -807,12 +808,38 @@
         renderPicker(id);
         rerender();
         route();
+        startTour();
       });
     }).catch(function (e) { $('[data-grid]').innerHTML = ''; $('[data-grid]').appendChild(h('p', { class: 'notice', text: 'The ad library couldn’t load: ' + e.message })); });
   }
+  // ---------------------------------------------------------------- tour + help
+  var tourStarted = false;
+  function saveTour(r) { return api('me/tour', { method: 'POST', body: { role: r } }).catch(function () {}); }
+  function startTour() {
+    if (tourStarted || !window.YondrTour) return;
+    tourStarted = true;
+    var q = new URLSearchParams(location.search);
+    if (q.has('tour')) { // /?tour=1 (from the help center) replays the tour
+      q.delete('tour'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+      setTimeout(function () { window.YondrTour.start(role, saveTour); }, 500);
+      return;
+    }
+    api('me').then(function (meInfo) { if (!location.hash || location.hash === '#') window.YondrTour.maybe(meInfo, saveTour); }).catch(function () {});
+  }
+  document.querySelector('[data-tour-replay]').addEventListener('click', function () {
+    var menu = document.getElementById('help-menu');
+    if (menu.hidePopover) menu.hidePopover();
+    if (detailDlg.open) detailDlg.close();
+    setTab('ads');
+    window.scrollTo({ top: 0 });
+    setTimeout(function () { window.YondrTour.start(role, saveTour); }, 150);
+  });
+  // A small "?" that opens the matching help article in a new tab (so nothing in progress is lost).
+  function helpLink(id, what) { return h('a', { class: 'helplink', href: '/help#' + id, target: '_blank', rel: 'noopener', title: 'Help: ' + what, 'aria-label': 'Help: ' + what, text: '?' }); }
+
   // Shared with editor.js (the Edit copy tab).
   function editorApi() {
-    return { api: api, toast: toast, refresh: refresh, h: h, model: function () { return M; }, data: function () { return D; }, me: function () { return me; }, setTab: setTab };
+    return { api: api, toast: toast, refresh: refresh, h: h, helpLink: helpLink, model: function () { return M; }, data: function () { return D; }, me: function () { return me; }, setTab: setTab };
   }
 
   // ---------------------------------------------------------------- People tab (admins)
@@ -836,7 +863,7 @@
       ['editor', 'Editor', 'Everything viewers can do, plus edit taglines, headlines, descriptions and the CTA (the ads re-render), upload ads, set status and run dates, approve, and manage campaigns.'],
       ['admin', 'Admin', 'Everything editors can do, plus give people roles here and delete any ad or campaign.'],
     ];
-    p.appendChild(h('div', { class: 'camp-head' }, [h('h2', { text: 'People & permissions' }),
+    p.appendChild(h('div', { class: 'camp-head' }, [h('h2', { text: 'People & permissions' }), helpLink('people', 'People & permissions'),
       h('p', { text: 'Anyone with an @overyondr.com email can sign in and starts as a viewer. Give people editor or admin access here.' })]));
     p.appendChild(h('div', { class: 'roles' }, ROLE_HELP.map(function (x) { return h('div', { class: 'panel role-card' }, [h('span', { class: 'pill role-' + x[0], text: x[1] }), h('p', { text: x[2] })]); })));
     p.appendChild(h('form', { class: 'panel people-add', onsubmit: function (e) {
@@ -866,6 +893,12 @@
       if (a.action === 'ads_rerendered') return person(a.actor) + ' re-rendered ' + d.count + ' ads' + (d.failed ? ' (' + d.failed + ' failed)' : '');
       return person(a.actor) + ' ' + a.action;
     };
+    if (r.help && r.help.length) p.appendChild(h('div', { class: 'panel', style: 'margin-top:20px' }, [h('h3', { text: 'Help center feedback' }),
+      h('p', { class: 'hint', style: 'margin:0 0 10px', text: 'What people said under “Was this helpful?” and “Still stuck?”. Use it to fix confusing articles or features.' }),
+      h('ul', { class: 'fb-list' }, r.help.map(function (f) {
+        return h('li', {}, [h('div', { class: 'by' }, [h('b', { text: person(f.email) }), '· ' + ago(f.created_at), h('span', { class: 'pill' + (f.helpful === 0 ? ' down' : f.helpful === 1 ? ' up' : ''), text: f.helpful === 1 ? 'Helpful' : f.helpful === 0 ? 'Not helpful' : 'Suggestion' }),
+          h('a', { href: '/help#' + f.article, target: '_blank', rel: 'noopener', text: f.article === 'general' ? 'Help center' : f.article })]), f.comment ? h('p', { text: f.comment }) : null]);
+      }))]));
     p.appendChild(h('div', { class: 'panel', style: 'margin-top:20px' }, [h('h3', { text: 'Recent changes' }),
       r.activity.length ? h('ul', { class: 'fb-list' }, r.activity.map(function (a) { return h('li', {}, [h('div', { class: 'by' }, [h('b', { text: say(a) }), '· ' + ago(a.created_at)])]); }))
         : h('p', { style: 'margin:0;color:var(--yondr-moss)', text: 'Nothing yet.' })]));

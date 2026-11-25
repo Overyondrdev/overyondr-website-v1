@@ -307,7 +307,7 @@
         a.variant === 'motion' ? h('button', { type: 'button', class: 'btn line sm', text: '▶ Play', onclick: function () { redraw(true); } }) : null,
         sceneNote, h('span', { class: 'hint', text: 'Text that doesn’t fit shrinks.' })])]),
       h('div', { class: 'side' }, [
-        h('section', {}, [h('h3', { text: 'Where to change it' }), scopeEl,
+        h('section', {}, [h('h3', {}, ['Where to change it ', ctx.helpLink('edit-scope', 'Every ad or only this ad')]), scopeEl,
           hasOwn ? h('div', { class: 'notice', style: 'margin-top:12px' }, ['This ad has its own copy. ',
             h('button', { type: 'button', class: 'linkbtn', text: 'Go back to the shared copy', onclick: function () {
               save({ jobs: [{ ad: a, spec: specFor(a, shared, {}), headline: getPath(shared, a.meta.headlineId + '.text'), desc: getPath(shared, a.meta.headlineId + '.desc'), overrides: {} }] });
@@ -355,7 +355,7 @@
       h('div', { class: 'stagebox' }, [h('div', { class: 'canvas' }, [preview])]),
       h('div', { class: 'side' }, [
         h('section', {}, [h('h3', { text: 'Replace this ad’s file' }),
-          h('p', { style: 'margin:0 0 12px;font-size:14px', text: 'This ad was uploaded as a finished file, so its text can’t be edited here. Upload the corrected version: same size and format. It keeps its comments, campaigns and history.' }),
+          ctx.helpLink('replace-file', 'Replacing a file'), h('p', { style: 'margin:0 0 12px;font-size:14px', text: 'This ad was uploaded as a finished file, so its text can’t be edited here. Upload the corrected version: same size and format. It keeps its comments, campaigns and history.' }),
           inp, h('label', { class: 'drop', for: 'rf-file' }, [h('b', { text: 'Choose the new file' }), h('span', { text: a.format + ', ' + a.w + '×' + a.h })]), errEl]),
       ]),
     ]));
@@ -386,7 +386,7 @@
     }
     if (!saved.headlines.some(function (x) { return x.id === pvs.headline; })) pvs.headline = saved.headlines[0].id;
     var gen = M.ads.filter(function (a) { return a.meta && a.meta.generated; }).length;
-    panel.appendChild(h('div', { class: 'camp-head' }, [h('h2', { text: 'Edit ad copy' }),
+    panel.appendChild(h('div', { class: 'camp-head' }, [h('h2', { text: 'Edit ad copy' }), ctx.helpLink('edit-copy-tab', 'The Edit copy tab'),
       h('p', { text: 'Every shared text in one place (' + gen + ' template ads). To change one ad, or the text on one ad only, open the ad and choose Edit. Saving re-renders the ads that show what you changed and puts them back “In review”.' })]));
 
     var stage = h('div', { class: 'pv-stage' });

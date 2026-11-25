@@ -61,6 +61,19 @@ Keep the tab open until it finishes: a headline change re-renders 18 ads (about 
 The portal is now where copy lives. Before re-rendering offline, run `npm run pull-copy` so `generator/campaign.json`
 matches it (`seed.mjs` only writes the copy the first time, or with `--copy`).
 
+## Tour and help center
+
+- **Tour** (`public/tour.js`): spotlights the real page, one short card per step. First visit: the tour for your role
+  (viewer 7 steps; editors and admins get theirs on top). If your role goes up later, your next visit shows a short
+  "You’re now an editor/admin" tour of just what’s new. What each person has seen is `users.tour_role` (migration
+  `0003`), so it follows them across browsers. Replay: **Help → Take the tour**, or `/?tour=1`.
+- **Help center** at `/help` (`public/help.html`, `help.js`, `help.css`; articles in **`public/help-content.js`**).
+  Instant search and ⌘K / Ctrl K palette, topics, articles with role badges, deep links (`/help#<article>`),
+  “Was this helpful?” and “Still stuck?” (lists admins; suggestions are saved). Feedback lands in `help_feedback` and
+  shows on the People tab. Admin articles are only listed for admins. The library links to articles with small “?”
+  buttons (`helpLink()` in `app.js`).
+- **When a feature changes, update its article in `help-content.js`** (and the tour step in `tour.js` if it moved).
+
 ## Data
 
 - `ad_sets`: a set of ads made together, with its copy (headlines, descriptions, CTA) as JSON.

@@ -16,7 +16,7 @@ routes = [
 # The app's files (public/) are bundled into the script and served by src/static.ts.
 [[rules]]
 type = "Text"
-globs = ["**/*.html", "**/*.css", "**/app.js", "**/render.js", "**/editor.js", "**/*.svg", "**/*.txt"]
+globs = ["**/*.html", "**/*.css", "**/app.js", "**/render.js", "**/editor.js", "**/tour.js", "**/help.js", "**/help-content.js", "**/*.svg", "**/*.txt"]
 fallthrough = false
 
 [[rules]]

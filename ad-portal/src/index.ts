@@ -11,7 +11,7 @@
 
 import { serveStatic } from './static';
 import { accessEmail } from './access';
-import { can, log, seen, usersApi, whoIs, type Who } from './roles';
+import { can, helpContacts, helpFeedback, log, seen, setTourRole, tourRole, usersApi, whoIs, type Who } from './roles';
 
 interface Env {
   AD_ASSETS: R2Bucket;
@@ -403,7 +403,10 @@ async function api(request: Request, env: Env, path: string, email: string): Pro
   // Viewers: read, download, comment. Editors: everything that changes ads, copy or campaigns. Admins: people.
   const editor = (fn: () => Promise<Response>) => (can(who, 'editor') ? fn() : err(403, 'You need editor access for this. Ask an admin.'));
 
-  if (seg[0] === 'me') { await seen(env, email); return json({ email, role: who.role, owner: who.owner }); }
+  if (seg[0] === 'me' && seg[1] === 'tour' && m === 'POST') return setTourRole(request, env, who);
+  if (seg[0] === 'me') { await seen(env, email); return json({ email, role: who.role, owner: who.owner, tourRole: await tourRole(env, email) }); }
+  if (seg[0] === 'help' && seg[1] === 'contacts' && m === 'GET') return helpContacts(env);
+  if (seg[0] === 'help' && seg[1] === 'feedback' && m === 'POST') return helpFeedback(request, env, who);
   if (seg[0] === 'users') return usersApi(request, env, who, seg[1]);
   if (seg[0] === 'sets' && seg.length === 1) return m === 'POST' ? editor(() => createSet(request, env, me)) : listSets(env);
   if (seg[0] === 'sets' && seg[1] && ID.test(seg[1])) {
