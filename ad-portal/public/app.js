@@ -47,6 +47,13 @@
     return el;
   }
   var ICON = {
+    pen: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.2"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4zM13.5 6.5l4 4"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>',
+    arrow: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.2"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.2A8 8 0 1 1 20 12z"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    undo: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.2"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
+    star: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.2"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg>',
     dl: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"/></svg>',
     check: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>',
     x: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
@@ -54,6 +61,8 @@
     next: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
     copy: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
   };
+  // An icon as a node, for buttons built with children: [svg('pen'), 'Edit text'].
+  function svg(n) { var t = document.createElement('template'); t.innerHTML = ICON[n]; return t.content.firstChild; }
   function kb(n) { return Math.round(n / 1000) + ' KB'; }
   function person(email) { if (!email) return 'Someone'; var n = email.split('@')[0].split(/[._-]/)[0]; return n.charAt(0).toUpperCase() + n.slice(1); }
   function ago(iso) {
@@ -279,9 +288,9 @@
   // ---------------------------------------------------------------- grid
   function card(c) {
     var x = c.stats, on = picked.has(c.id), badges = [statusPill(c.status)];
-    if (x.up) badges.push(h('span', { class: 'pill up', title: 'Approved by ' + x.up, text: '✓ ' + x.up }));
-    if (x.down) badges.push(h('span', { class: 'pill down', title: x.down + ' asked for changes', text: '✎ ' + x.down }));
-    if (x.comments) badges.push(h('span', { class: 'pill', title: x.comments + ' comments', text: '💬 ' + x.comments }));
+    if (x.up) badges.push(h('span', { class: 'pill up', title: 'Approved by ' + x.up, }, [svg('check'), String(x.up)]));
+    if (x.down) badges.push(h('span', { class: 'pill down', title: x.down + ' asked for changes', }, [svg('pen'), String(x.down)]));
+    if (x.comments) badges.push(h('span', { class: 'pill', title: x.comments + ' comments', }, [svg('chat'), String(x.comments)]));
     if (x.campaigns.length) badges.push(h('span', { class: 'pill live', text: 'In ' + x.campaigns.length + ' campaign' + (x.campaigns.length > 1 ? 's' : '') }));
     if (c.meta && c.meta.overrides) badges.push(h('span', { class: 'pill', title: 'This ad has its own text, different from the rest of the set', text: 'Own copy' }));
     if (updating(c)) badges.unshift(h('span', { class: 'pill updating', text: 'Updating…' }));
@@ -378,13 +387,13 @@
     bar.hidden = picked.size === 0 || tab !== 'ads';
     if (!picked.size) return;
     var list = M.ads.filter(function (c) { return picked.has(c.id); });
-    var sel = h('select', { class: 'input', 'aria-label': 'Add selected ads to a campaign', style: 'min-height:36px;padding:6px 40px 6px 10px' },
+    var sel = h('select', { class: 'input', 'aria-label': 'Add selected ads to a campaign', style: 'min-height:36px;padding:6px 46px 6px 12px' },
       [h('option', { value: '', text: 'Add to campaign…' })].concat(D.campaigns.map(function (c) { return h('option', { value: c.id, text: c.name }); }), [h('option', { value: 'new', text: '+ New campaign' })]));
     sel.addEventListener('change', function () {
       if (sel.value === 'new') return campaignForm(null, Array.from(picked));
       if (sel.value) addToCampaign(parseInt(sel.value, 10), Array.from(picked)).then(function () { picked.clear(); renderGrid(); renderSelbar(); });
     });
-    var st = h('select', { class: 'input', 'aria-label': 'Set status of selected ads', style: 'min-height:36px;padding:6px 40px 6px 10px' },
+    var st = h('select', { class: 'input', 'aria-label': 'Set status of selected ads', style: 'min-height:36px;padding:6px 46px 6px 12px' },
       [h('option', { value: '', text: 'Set status…' })].concat(Object.keys(ASTATUS).map(function (k) { return h('option', { value: k, text: ASTATUS[k] }); })));
     st.addEventListener('change', function () {
       if (!st.value) return;
@@ -393,7 +402,7 @@
     });
     [h('span', {}, [h('b', { text: String(picked.size) }), ' selected']),
       h('button', { type: 'button', class: 'btn lime sm', html: ICON.dl + ' Download .zip', onclick: function () { downloadZip(list, M.set.id + '-' + list.length + '-ads.zip'); } }),
-      isEditor() ? h('button', { type: 'button', class: 'btn forest sm', text: '✓ Approve', onclick: function () { bulkStatus(list, 'approved'); } }) : null,
+      isEditor() ? h('button', { type: 'button', class: 'btn forest sm', onclick: function () { bulkStatus(list, 'approved'); } }, [svg('check'), 'Approve']) : null,
       isEditor() ? sel : null, isEditor() ? st : null,
       h('button', { type: 'button', class: 'linkbtn', text: 'Clear', onclick: function () { picked.clear(); renderGrid(); renderSelbar(); } }),
     ].forEach(function (k) { bar.appendChild(k); });
@@ -432,10 +441,10 @@
       body.appendChild(h('input', { class: 'input rq-note', placeholder: 'What should change? (optional, sent as a comment with “Needs changes”)', 'aria-label': 'Note for needs changes' }));
       body.appendChild(h('div', { class: 'rq-actions' }, [
         h('button', { type: 'button', class: 'btn line', text: '← Back', disabled: i === 0, onclick: function () { i--; paint(); } }),
-        h('button', { type: 'button', class: 'btn line', text: 'Skip →', onclick: function () { i++; paint(); } }),
+        h('button', { type: 'button', class: 'btn line', onclick: function () { i++; paint(); } }, ['Skip', svg('arrow')]),
         h('span', { style: 'flex:1' }),
-        h('button', { type: 'button', class: 'btn line', html: '✎ Needs changes <kbd>N</kbd>', onclick: function () { act('needs_changes'); } }),
-        h('button', { type: 'button', class: 'btn forest', html: '✓ Approve <kbd>A</kbd>', onclick: function () { act('approved'); } }),
+        h('button', { type: 'button', class: 'btn line', html: ICON.pen + ' Needs changes <kbd>N</kbd>', onclick: function () { act('needs_changes'); } }),
+        h('button', { type: 'button', class: 'btn forest', html: ICON.check + ' Approve <kbd>A</kbd>', onclick: function () { act('approved'); } }),
       ]));
     }
     var key = function (e) {
@@ -569,8 +578,8 @@
     var side = h('div', { class: 'side' }, [
       h('div', { style: 'display:flex;flex-wrap:wrap;gap:10px' }, [
         h('button', { type: 'button', class: 'btn lime', html: ICON.dl + ' Download ' + c.format, onclick: function () { downloadOne(c); } }),
-        isEditor() ? h('button', { type: 'button', class: 'btn forest', text: canText ? '✎ Edit text' : '✎ Replace file', onclick: function () { editHere(c); } })
-          : h('button', { type: 'button', class: 'btn line', text: '✎ Suggest a change', onclick: function () { suggest(c); } }),
+        isEditor() ? h('button', { type: 'button', class: 'btn forest', onclick: function () { editHere(c); } }, [svg('pen'), canText ? 'Edit text' : 'Replace file'])
+          : h('button', { type: 'button', class: 'btn line', onclick: function () { suggest(c); } }, [svg('chat'), 'Suggest a change']),
         h('button', { type: 'button', class: 'btn line', text: 'Copy file name', onclick: function () { copy(fileName(c), 'File name'); } }),
       ]),
       !isEditor() && c.status !== 'approved' ? h('p', { class: 'notice', style: 'margin:0', text: 'Not approved yet. It may still change, so check with an editor before using it in a campaign.' }) : null,
@@ -580,8 +589,8 @@
       isEditor() ? h('section', {}, [h('h3', { text: 'Status & dates' }), edit])
         : h('section', {}, [h('h3', { text: 'Status' }), h('div', { class: 'sub' }, [statusPill(c.status), c.start || c.end ? ' Runs ' + dates(c.start, c.end) : null])]),
       h('section', {}, [h('h3', { text: 'Review' }), isEditor() ? h('div', { class: 'react' }, [
-        h('button', { type: 'button', class: 'btn line sm up', 'aria-pressed': String(x.mine === 1), text: '✓ Approve' + (x.up ? ' · ' + x.up : ''), onclick: function () { review(c, x.mine === 1 ? 0 : 1); } }),
-        h('button', { type: 'button', class: 'btn line sm down', 'aria-pressed': String(x.mine === -1), text: '✎ Needs changes' + (x.down ? ' · ' + x.down : ''), onclick: function () { review(c, x.mine === -1 ? 0 : -1); } }),
+        h('button', { type: 'button', class: 'btn line sm up', 'aria-pressed': String(x.mine === 1), html: ICON.check + ' Approve' + (x.up ? ' · ' + x.up : ''), onclick: function () { review(c, x.mine === 1 ? 0 : 1); } }),
+        h('button', { type: 'button', class: 'btn line sm down', 'aria-pressed': String(x.mine === -1), html: ICON.pen + ' Needs changes' + (x.down ? ' · ' + x.down : ''), onclick: function () { review(c, x.mine === -1 ? 0 : -1); } }),
       ]) : null, h('p', { 'data-reviewers': '', style: 'margin:8px 0 0;font-size:12.5px;color:var(--yondr-moss)' })]),
       usesSection(c),
       commentsSection(c),
@@ -609,7 +618,7 @@
       })) : h('p', { style: 'margin:0;font-size:14px;color:var(--yondr-moss)', text: 'Not used in a campaign yet.' }),
       !isEditor() ? null : h('div', { class: 'addrow', style: 'margin-top:10px' }, [sel,
         h('button', { type: 'button', class: 'btn forest sm', text: 'Add', onclick: function () { if (sel.value) addToCampaign(parseInt(sel.value, 10), [c.id]); } }),
-        h('button', { type: 'button', class: 'btn line sm', text: '+ New campaign', onclick: function () { campaignForm(null, [c.id]); } })]),
+        h('button', { type: 'button', class: 'btn line sm', onclick: function () { campaignForm(null, [c.id]); } }, [svg('plus'), 'New campaign'])]),
     ]);
   }
   // Viewers can't edit, so "Suggest a change" jumps to a copy comment on this ad.
@@ -650,7 +659,7 @@
       var t = FB_TYPES.find(function (x) { return x[0] === i.type; });
       var ad = byId(i.ad_id);
       ul.appendChild(h('li', {}, [h('div', { class: 'by' }, [h('b', { text: person(i.author_email) }), '· ' + ago(i.created_at), h('span', { class: 'pill', text: t ? t[1] : 'Other' }),
-        isEditor() && ad && i.type === 'content' ? h('button', { type: 'button', class: 'linkbtn', style: 'margin-left:auto', text: '✎ Edit text', onclick: function () { editHere(ad); } }) : null]),
+        isEditor() && ad && i.type === 'content' ? h('button', { type: 'button', class: 'linkbtn', style: 'margin-left:auto', onclick: function () { editHere(ad); } }, [svg('pen'), 'Edit text']) : null]),
         h('p', { text: i.body })]));
     });
     var who = $('[data-reviewers]');
@@ -817,13 +826,13 @@
     p.appendChild(h('div', { class: 'camp-head' }, [
       h('h2', { text: 'Campaigns' }), helpLink('campaigns', 'Campaigns'),
       h('a', { class: 'btn line sm', href: '/api/sets/' + M.set.id + '/campaigns.csv', text: 'Export CSV' }),
-      isEditor() ? h('button', { type: 'button', class: 'btn forest sm', text: '+ New campaign', onclick: function () { campaignForm(null, Array.from(picked)); } }) : null,
+      isEditor() ? h('button', { type: 'button', class: 'btn forest sm', onclick: function () { campaignForm(null, Array.from(picked)); } }, [svg('plus'), 'New campaign']) : null,
       h('p', { text: 'Log every campaign these ads run in: channel, dates, owner and which ads it uses.' }),
     ]));
     if (!D.campaigns.length) {
       p.appendChild(h('div', { class: 'empty' }, [h('h3', { text: 'No campaigns yet' }),
         h('p', { text: 'Add the first one, then pick its ads: select ads on the Ads tab and choose “Add to campaign”.' }),
-        isEditor() ? h('button', { type: 'button', class: 'btn forest', style: 'margin-top:14px', text: '+ New campaign', onclick: function () { campaignForm(null, Array.from(picked)); } }) : null]));
+        isEditor() ? h('button', { type: 'button', class: 'btn forest', style: 'margin-top:14px', onclick: function () { campaignForm(null, Array.from(picked)); } }, [svg('plus'), 'New campaign']) : null]));
       return;
     }
     var wrap = h('div', { class: 'camps' });
@@ -838,10 +847,10 @@
         ]),
         h('div', { class: 'camp-body' }, [
           h('div', { style: 'display:flex;flex-wrap:wrap;gap:10px;align-items:center' }, [
-            !isEditor() ? null : h('button', { type: 'button', class: 'btn forest sm', text: '+ Add ads', onclick: function () { setTab('ads'); toast('Select ads, then choose “' + k.name + '” in the bar below'); } }),
+            !isEditor() ? null : h('button', { type: 'button', class: 'btn forest sm', onclick: function () { setTab('ads'); toast('Select ads, then choose “' + k.name + '” in the bar below'); } }, [svg('plus'), 'Add ads']),
             ads.length ? h('button', { type: 'button', class: 'btn lime sm', html: ICON.dl + ' Download ' + ads.length + ' ads (.zip)', onclick: function () { downloadZip(ads, k.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.zip'); } }) : null,
             !isEditor() ? null : h('button', { type: 'button', class: 'btn line sm', text: 'Edit details', onclick: function () { campaignForm(k); } }),
-            !isEditor() ? null : h('select', { class: 'input', 'aria-label': 'Campaign status', style: 'min-height:36px;padding:6px 40px 6px 10px', onchange: function (e) {
+            !isEditor() ? null : h('select', { class: 'input', 'aria-label': 'Campaign status', style: 'min-height:36px;padding:6px 46px 6px 12px', onchange: function (e) {
               api('campaigns/' + k.id, { method: 'PATCH', body: { status: e.target.value } }).then(function () { toast('Status updated'); return refresh(); }).catch(function (er) { toast(er.message); });
             } }, Object.keys(CSTATUS).map(function (s) { return h('option', { value: s, selected: s === k.status, text: 'Status: ' + CSTATUS[s] }); })),
             h('span', { style: 'flex:1' }),
@@ -919,6 +928,9 @@
     tab = t;
     document.querySelectorAll('[data-tab]').forEach(function (b) { var on = b.dataset.tab === t; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
     document.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== t; });
+    // On narrow screens the tab row scrolls: keep the chosen tab fully in view.
+    var tb = document.querySelector('[data-tab="' + t + '"]'), row = tb && tb.parentNode;
+    if (row && row.scrollWidth > row.clientWidth) row.scrollTo({ left: Math.max(0, tb.offsetLeft - row.offsetLeft - 16), behavior: fromHash ? 'auto' : 'smooth' });
     renderSelbar();
     if (t === 'campaigns') renderCampaigns();
     if (t === 'copy') renderCopy();
@@ -981,7 +993,7 @@
       if (d.empty) {
         $('[data-grid]').innerHTML = '';
         $('[data-grid]').appendChild(h('div', { class: 'empty' }, [h('h3', { text: 'No ad sets yet' }), h('p', { text: 'Create a set, then upload its ads.' }),
-          h('button', { type: 'button', class: 'btn forest', style: 'margin-top:14px', text: '+ New ad set', onclick: setForm })]));
+          h('button', { type: 'button', class: 'btn forest', style: 'margin-top:14px', onclick: setForm }, [svg('plus'), 'New ad set'])]));
         return;
       }
       sets = d.sets; id = d.set.id;
@@ -1029,14 +1041,14 @@
     box.appendChild(h('div', { class: 'inbox-head' }, [h('b', { text: 'Notifications' }),
       r.unread ? h('button', { type: 'button', class: 'linkbtn', text: 'Mark all read', onclick: function () { api('notifications/read', { method: 'POST', body: { all: true } }).then(loadInbox); } }) : null]));
     if (!r.items.length) { box.appendChild(h('p', { class: 'inbox-empty', text: 'Nothing yet. Suggestions, comments, reviews and role changes show up here.' })); return; }
-    var ICONS = { suggestion: '✎', comment: '💬', review_needed: '👀', changes_requested: '↺', role: '★' };
+    var ICONS = { suggestion: 'pen', comment: 'chat', review_needed: 'eye', changes_requested: 'undo', role: 'star' };
     box.appendChild(h('ul', { class: 'inbox-list' }, r.items.map(function (n) {
       return h('li', {}, [h('button', { type: 'button', class: n.read_at ? '' : 'unread', onclick: function () {
         if (!n.read_at) api('notifications/read', { method: 'POST', body: { id: n.id } }).then(loadInbox);
         if (box.hidePopover) box.hidePopover();
         var go = function () { if (n.ad_id && byId(n.ad_id)) openDetail(n.ad_id); else if (n.kind === 'review_needed' && isEditor()) { setTab('ads'); setF('status', 'in_review'); } };
         if (n.set_id && M && n.set_id !== M.set.id) boot(n.set_id).then(go); else go();
-      } }, [h('span', { class: 'inbox-ico', 'aria-hidden': 'true', text: ICONS[n.kind] || '•' }), h('span', {}, [n.text, h('small', { text: ago(n.created_at) })])])]);
+      } }, [h('span', { class: 'inbox-ico', 'aria-hidden': 'true' }, [svg(ICONS[n.kind] || 'chat')]), h('span', {}, [n.text, h('small', { text: ago(n.created_at) })])])]);
     })));
   }
 

@@ -117,11 +117,14 @@
         return win.build(spec).then(function (info) {
           if (my !== pending) return;
           var size = spec.size;
-          var scale = Math.min(2, Math.max(0.3, (stage.clientWidth - 24) / size.w), (maxH || 560) / size.h);
+          // Fit the space the stage's parent gives it (not the stage itself, which is sized to the ad below).
+          var box = stage.parentNode, cs = getComputedStyle(box);
+          var room = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 24;
+          var scale = Math.min(2, Math.max(0.3, room / size.w), (maxH || 560) / size.h);
           frame.style.width = size.w + 'px'; frame.style.height = size.h + 'px';
           frame.style.transform = 'scale(' + scale + ')';
           stage.style.height = Math.round(size.h * scale + 24) + 'px';
-          stage.style.width = '';
+          stage.style.width = Math.round(size.w * scale + 24) + 'px';
           cancelAnimationFrame(raf);
           if (spec.view === 'motion' && play) {
             var t0 = performance.now();
@@ -326,7 +329,7 @@
     body.innerHTML = '';
     body.appendChild(h('div', { class: 'detail' }, [
       h('div', { class: 'stagebox' }, [stage, h('div', { class: 'tools' }, [
-        a.variant === 'motion' ? h('button', { type: 'button', class: 'btn line sm', text: '▶ Play', onclick: function () { redraw(true); } }) : null,
+        a.variant === 'motion' ? h('button', { type: 'button', class: 'btn line sm', html: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg> Play', onclick: function () { redraw(true); } }) : null,
         sceneNote, h('span', { class: 'hint', text: 'Text that doesn’t fit shrinks.' })])]),
       h('div', { class: 'side' }, [
         h('section', {}, [h('h3', {}, ['Where to change it ', ctx.helpLink('edit-scope', 'Every ad or only this ad')]), scopeEl,
@@ -417,7 +420,7 @@
     if (!saved.headlines.some(function (x) { return x.id === pvs.headline; })) pvs.headline = saved.headlines[0].id;
     var gen = M.ads.filter(function (a) { return a.meta && a.meta.generated; }).length;
     panel.appendChild(h('div', { class: 'camp-head' }, [h('h2', { text: 'Edit ad copy' }), ctx.helpLink('edit-copy-tab', 'The Edit copy tab'),
-      h('button', { type: 'button', class: 'btn line sm', text: '↺ History', 'aria-expanded': 'false', onclick: function (e) { toggleHistory(e.currentTarget); } }),
+      h('button', { type: 'button', class: 'btn line sm', html: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg> History', 'aria-expanded': 'false', onclick: function (e) { toggleHistory(e.currentTarget); } }),
       h('p', { text: 'Every shared text in one place (' + gen + ' template ads). To change one ad, or the text on one ad only, open the ad and choose Edit. Saving re-renders the ads that show what you changed and puts them back “In review”.' })]));
     var hist = h('div', { class: 'panel history', hidden: true });
     panel.appendChild(hist);
@@ -511,7 +514,7 @@
         pick('view', Object.keys(VIEWS).map(function (k) { return [k, VIEWS[k]]; })),
       ]),
       stage,
-      h('div', { class: 'addrow' }, [h('button', { type: 'button', class: 'btn line sm', text: '▶ Play motion', onclick: function () { pvs.view = 'motion'; syncPickers(); redraw(true); } }),
+      h('div', { class: 'addrow' }, [h('button', { type: 'button', class: 'btn line sm', html: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg> Play motion', onclick: function () { pvs.view = 'motion'; syncPickers(); redraw(true); } }),
         h('span', { class: 'hint', text: 'Updates as you type. Text that doesn’t fit shrinks.' })]),
     ])]);
     panel.appendChild(h('div', { class: 'ed-grid' }, [form, side]));

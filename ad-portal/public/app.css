@@ -103,7 +103,7 @@ main { flex: 1; padding: 8px 0 48px; }
 
 /* ---------------------------------------------------------------- tabs */
 .tabs { display: flex; gap: 4px; margin: 32px 0 0; border-bottom: 2px solid var(--yondr-stone); overflow-x: auto; }
-.tabs button { position: relative; background: none; border: 0; padding: 14px 18px 16px; font: 700 16px/1 var(--yondr-font-text); color: var(--yondr-moss); cursor: pointer; white-space: nowrap; }
+.tabs button { position: relative; display: inline-flex; align-items: center; background: none; border: 0; padding: 14px 18px 16px; font: 700 16px/1 var(--yondr-font-text); color: var(--yondr-moss); cursor: pointer; white-space: nowrap; }
 .tabs button[aria-selected="true"] { color: var(--yondr-forest); }
 .tabs button[aria-selected="true"]::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: -2px; height: 3px; border-radius: 3px; background: var(--yondr-forest); }
 .tabs .count { display: inline-block; margin-left: 6px; padding: 3px 8px; border-radius: 999px; background: var(--yondr-mist); font-size: 12px; color: var(--yondr-forest); }
@@ -124,8 +124,8 @@ main { flex: 1; padding: 8px 0 48px; }
 select.input, input.input, textarea.input { font: 500 14px/1.3 var(--yondr-font-text); color: var(--yondr-ink); background: #fff; border: 1.5px solid var(--yondr-stone);
         border-radius: 10px; padding: 9px 12px; min-height: 38px; width: 100%; }
 /* Custom arrow: the browser's own sits against the rounded border and gets clipped. */
-select.input { width: auto; padding-right: 40px; -webkit-appearance: none; appearance: none; cursor: pointer;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%231C300B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px; }
+select.input { width: auto; padding-right: 46px; -webkit-appearance: none; appearance: none; cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%231C300B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 18px center; background-size: 12px 8px; }
 select.input:disabled { cursor: not-allowed; opacity: .6; }
 .input:focus { outline: none; border-color: var(--yondr-forest); box-shadow: 0 0 0 3px rgb(28 48 11 / .15); }
 .toolbar .spacer { flex: 1; }
@@ -137,16 +137,17 @@ select.input:disabled { cursor: not-allowed; opacity: .6; }
 .group-head h2 { margin: 0; font: 500 28px/1.1 var(--yondr-font-display); color: var(--yondr-forest); letter-spacing: -.01em; }
 .group-head .dim { font-weight: 700; font-size: 14px; color: var(--yondr-moss); }
 .group-head .linkbtn { margin-left: auto; }
-.cards { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.cards { display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch; }
 .card { position: relative; display: flex; flex-direction: column; background: #fff; border: 1.5px solid var(--yondr-mist); border-radius: 14px; padding: 12px; max-width: 100%;
         transition: border-color .2s, box-shadow .2s, transform .25s var(--ease); }
 .card:hover { border-color: var(--yondr-stone); box-shadow: 0 18px 40px -26px rgb(28 48 11 / .5); }
 .card.picked { border-color: var(--yondr-forest); box-shadow: 0 0 0 2px var(--yondr-forest); }
 .card .frame { display: block; padding: 0; border: 0; background: repeating-conic-gradient(#f1f3ec 0 25%, #fff 0 50%) 0 0 / 14px 14px; cursor: zoom-in; border-radius: 4px; max-width: 100%; }
 .card .frame img { display: block; max-width: 100%; height: auto; }
-.card .meta { display: flex; flex-direction: column; gap: 6px; padding: 12px 2px 2px; min-width: 0; }
+.card .meta { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px 2px 2px; min-width: 0; }
 .card .title { margin: 0; font: 600 14px/1.3 var(--yondr-font-text); color: var(--yondr-ink); }
 .card .sub { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--yondr-moss); }
+.pill svg { width: 12px; height: 12px; flex: none; }
 .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font: 700 11.5px/1.2 var(--yondr-font-text); background: var(--yondr-mist); color: var(--yondr-forest); white-space: nowrap; }
 .pill.motion { background: var(--yondr-lichen); }
 .pill.live { background: var(--yondr-forest); color: var(--yondr-lichen); }
@@ -154,7 +155,7 @@ select.input:disabled { cursor: not-allowed; opacity: .6; }
 .pill.paused { background: #fff1c7; color: #6b4b00; }
 .pill.ended { background: var(--yondr-stone); color: var(--yondr-ink); }
 .pill.up { background: #e8f7d2; } .pill.down { background: #fde4d8; color: #7a2e0e; }
-.card .row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.card .row { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 4px; }
 .card .row .spacer { flex: 1; }
 .iconbtn { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; border: 1.5px solid var(--yondr-stone); background: #fff; color: var(--yondr-forest); cursor: pointer; text-decoration: none; }
 .iconbtn:hover { border-color: var(--yondr-forest); background: var(--yondr-mist); }
@@ -185,7 +186,12 @@ dialog.sheet[open] { display: flex; flex-direction: column; animation: pop .25s 
 .detail { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); }
 .stagebox { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 28px; background: var(--yondr-mist); min-height: 320px; }
 .stagebox .canvas { background: repeating-conic-gradient(#e2e7d8 0 25%, #eef1e7 0 50%) 0 0 / 16px 16px; padding: 14px; border-radius: 8px; max-width: 100%; overflow: auto; }
-.stagebox img { display: block; image-rendering: auto; }
+.stagebox img { display: block; image-rendering: auto; width: auto; height: auto; max-width: 100%; }
+/* Side by side: the preview stays in view while the details scroll, and tall ads fit it instead of running off the bottom. */
+@media (min-width: 961px) {
+  .detail .stagebox { position: sticky; top: 0; align-self: start; height: calc(100dvh - 32px - 69px); min-height: 0; }
+  .detail .stagebox img { max-height: calc(100dvh - 260px); }
+}
 .stagebox .tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .side { padding: 22px 24px 28px; display: flex; flex-direction: column; gap: 22px; }
 .side h3 { margin: 0 0 10px; font: 700 12px/1 var(--yondr-font-text); letter-spacing: .12em; text-transform: uppercase; color: var(--yondr-moss); }
@@ -275,7 +281,7 @@ table.spec th { color: var(--yondr-moss); font-weight: 600; white-space: nowrap;
 }
 
 /* ---------------------------------------------------------------- additions for the standalone portal */
-.who select.input { min-height: 36px; padding: 6px 40px 6px 12px; font-weight: 600; max-width: 260px; }
+.who select.input { min-height: 36px; padding: 6px 46px 6px 12px; font-weight: 600; max-width: 260px; }
 .drop { display: grid; place-items: center; gap: 8px; padding: 28px 16px; border: 2px dashed var(--yondr-stone); border-radius: 14px; background: #fff; text-align: center; color: var(--yondr-moss); cursor: pointer; }
 .drop.over, .drop:hover { border-color: var(--yondr-forest); background: var(--yondr-mist); }
 .drop b { color: var(--yondr-forest); font-size: 16px; }
@@ -323,8 +329,9 @@ table.people select.input { min-width: 130px; }
 .ed-head { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; background: var(--yondr-paper); }
 .ed-head > .pill { align-self: flex-start; }
 .ed-preview { position: sticky; top: 16px; }
-.ed-preview .addrow select { min-width: 0; flex: 1; }
-.pv-stage { position: relative; margin: 14px 0; padding: 12px; border-radius: 12px; overflow: hidden;
+.ed-preview .addrow { flex-wrap: wrap; }
+.ed-preview .addrow select { min-width: 0; flex: 1 1 130px; }
+.pv-stage { position: relative; margin: 14px auto; padding: 12px; border-radius: 12px; overflow: hidden;
             background: repeating-conic-gradient(#e2e7d8 0 25%, #eef1e7 0 50%) 0 0 / 16px 16px; min-height: 120px; }
 .pv-frame { position: absolute; left: 12px; top: 12px; border: 0; transform-origin: 0 0; background: transparent; pointer-events: none; }
 .ed-bar { position: sticky; bottom: 0; z-index: 6; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 20px; padding: 14px 18px;
@@ -343,7 +350,7 @@ table.people select.input { min-width: 130px; }
 }
 
 /* ---------------------------------------------------------------- editing an ad in its own window */
-.stagebox .pv-stage { width: 100%; margin: 0; }
+.stagebox .pv-stage { margin: 0 auto; max-width: 100%; }
 .scope { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .scope-opt { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--yondr-stone);
              background: #fff; color: var(--yondr-ink); font: 400 13px/1.35 var(--yondr-font-text); cursor: pointer; }
@@ -454,7 +461,7 @@ dialog.sheet.wide { width: min(980px, calc(100vw - 32px)); }
 .inbox-list button.unread { background: #fbffe9; }
 .inbox-list button.unread::before { content: ''; flex: none; width: 8px; height: 8px; margin-top: 6px; border-radius: 99px; background: #d9622b; }
 .inbox-list small { display: block; margin-top: 2px; font-size: 12px; color: var(--yondr-moss); }
-.inbox-ico { flex: none; width: 22px; text-align: center; }
+.inbox-ico { flex: none; width: 22px; display: inline-flex; justify-content: center; padding-top: 2px; color: var(--yondr-moss); }
 /* Background update card */
 .job-pill { position: fixed; left: 16px; bottom: 16px; z-index: 50; display: flex; align-items: center; gap: 12px; width: min(420px, calc(100vw - 32px)); padding: 14px 16px;
             border-radius: 16px; background: var(--yondr-forest); color: var(--yondr-offwhite); box-shadow: 0 20px 50px -16px rgb(0 0 0 / .5); }
