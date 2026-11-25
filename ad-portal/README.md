@@ -20,8 +20,10 @@ the folder is self-contained and can move to its own repository unchanged.
 ## Sign-in
 
 Cloudflare Access app "overyondrdev.com (Yondr website dev)" covers `*.overyondrdev.com`, so people sign in with an
-`@overyondr.com` email before any request reaches the Worker. The Worker reads `Cf-Access-Authenticated-User-Email`
-for `uploaded_by`, reviews and comments. `workers_dev` and `preview_urls` are off so nothing bypasses Access.
+`@overyondr.com` email before any request reaches the Worker. As a safety net the Worker also checks Access's signed
+token (`Cf-Access-Jwt-Assertion`: Yondr team signature, issuer, expiry; `src/access.ts`) and takes the email from it
+for `uploaded_by`, reviews and comments. Requests without a valid token get a 403, so the portal stays private even if
+the host were ever left out of Access. `workers_dev` and `preview_urls` are off so nothing bypasses Access.
 The R2 bucket stays private (no r2.dev URL, no custom domain): files are only served through the Worker.
 To limit the portal to the marketing team later, add a separate Access app for `ads.overyondrdev.com`.
 
