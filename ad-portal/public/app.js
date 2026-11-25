@@ -59,6 +59,8 @@
     x: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     prev: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>',
     next: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
+    back: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.4"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+    replay: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" stroke-width="2.2"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.6"/><path d="M4 4v4.6h4.6"/></svg>',
     copy: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
   };
   // An icon as a node, for buttons built with children: [svg('pen'), 'Edit text'].
@@ -387,13 +389,13 @@
     bar.hidden = picked.size === 0 || tab !== 'ads';
     if (!picked.size) return;
     var list = M.ads.filter(function (c) { return picked.has(c.id); });
-    var sel = h('select', { class: 'input', 'aria-label': 'Add selected ads to a campaign', style: 'min-height:36px;padding:6px 46px 6px 12px' },
+    var sel = h('select', { class: 'input', 'aria-label': 'Add selected ads to a campaign' },
       [h('option', { value: '', text: 'Add to campaign…' })].concat(D.campaigns.map(function (c) { return h('option', { value: c.id, text: c.name }); }), [h('option', { value: 'new', text: '+ New campaign' })]));
     sel.addEventListener('change', function () {
       if (sel.value === 'new') return campaignForm(null, Array.from(picked));
       if (sel.value) addToCampaign(parseInt(sel.value, 10), Array.from(picked)).then(function () { picked.clear(); renderGrid(); renderSelbar(); });
     });
-    var st = h('select', { class: 'input', 'aria-label': 'Set status of selected ads', style: 'min-height:36px;padding:6px 46px 6px 12px' },
+    var st = h('select', { class: 'input', 'aria-label': 'Set status of selected ads' },
       [h('option', { value: '', text: 'Set status…' })].concat(Object.keys(ASTATUS).map(function (k) { return h('option', { value: k, text: ASTATUS[k] }); })));
     st.addEventListener('change', function () {
       if (!st.value) return;
@@ -405,7 +407,7 @@
       isEditor() ? h('button', { type: 'button', class: 'btn forest sm', onclick: function () { bulkStatus(list, 'approved'); } }, [svg('check'), 'Approve']) : null,
       isEditor() ? sel : null, isEditor() ? st : null,
       h('button', { type: 'button', class: 'linkbtn', text: 'Clear', onclick: function () { picked.clear(); renderGrid(); renderSelbar(); } }),
-    ].forEach(function (k) { bar.appendChild(k); });
+    ].forEach(function (k) { if (k) bar.appendChild(k); });
   }
 
   function bulkStatus(list, v) {
@@ -438,9 +440,10 @@
       body.appendChild(h('p', { class: 'rq-count', text: (i + 1) + ' of ' + queue.length + ' · ' + label(c) }));
       body.appendChild(h('div', { class: 'rq-stage' }, [h('img', { src: fileUrl(c), width: c.w, height: c.h, alt: 'Ad: ' + c.headlineText })]));
       body.appendChild(h('p', { class: 'rq-head', text: c.headlineText }));
-      body.appendChild(h('input', { class: 'input rq-note', placeholder: 'What should change? (optional, sent as a comment with “Needs changes”)', 'aria-label': 'Note for needs changes' }));
+      body.appendChild(h('label', { class: 'rq-field' }, [h('input', { class: 'input rq-note', placeholder: 'What should change? (optional)', 'aria-label': 'Note for needs changes', 'aria-describedby': 'rq-note-hint' }),
+        h('span', { class: 'hint', id: 'rq-note-hint', text: 'Sent as a comment with “Needs changes”.' })]));
       body.appendChild(h('div', { class: 'rq-actions' }, [
-        h('button', { type: 'button', class: 'btn line', text: '← Back', disabled: i === 0, onclick: function () { i--; paint(); } }),
+        h('button', { type: 'button', class: 'btn line', disabled: i === 0, onclick: function () { i--; paint(); } }, [svg('back'), 'Back']),
         h('button', { type: 'button', class: 'btn line', onclick: function () { i++; paint(); } }, ['Skip', svg('arrow')]),
         h('span', { style: 'flex:1' }),
         h('button', { type: 'button', class: 'btn line', html: ICON.pen + ' Needs changes <kbd>N</kbd>', onclick: function () { act('needs_changes'); } }),
@@ -543,7 +546,7 @@
     if (dlg._edit) return renderEdit(c);
     var img = h('img', { src: fileUrl(c), width: c.w * zoom, height: c.h * zoom, alt: (c.kind === 'motion' ? 'Animated ad: ' : 'Ad: ') + c.headlineText });
     var tools = [h('button', { type: 'button', class: 'btn line sm', 'aria-pressed': String(zoom === 2), text: zoom === 2 ? 'Actual size' : 'Zoom 2×', onclick: function () { dlg._zoom = zoom === 2 ? 1 : 2; renderDetail(c); } })];
-    if (c.kind === 'motion') tools.unshift(h('button', { type: 'button', class: 'btn line sm', text: '↻ Replay', onclick: function () { img.src = fileUrl(c) + '&r=' + Date.now(); } }));
+    if (c.kind === 'motion') tools.unshift(h('button', { type: 'button', class: 'btn line sm', onclick: function () { img.src = fileUrl(c) + '&r=' + Date.now(); } }, [svg('replay'), 'Replay']));
     var specs = [['File', fileName(c)], ['Size', c.sizeName + ', ' + c.w + ' × ' + c.h + ' px'], ['Format', c.format + (c.kind === 'motion' ? ' (animated)' : '')],
       ['File size', kb(c.bytes) + (c.bytes > LIMIT ? ' — over the 150 KB limit most ad networks set' : ' (limit 150 KB)')]];
     if (c.duration) specs.push(['Animation', c.duration + ' s, plays twice (' + Math.round(c.duration * 2) + ' s), ends on the call to action']);
@@ -804,6 +807,7 @@
   }
 
   function setForm() {
+    var name = h('input', { class: 'input', required: true, maxlength: 120, placeholder: 'e.g. Back to school 2027' });
     var errEl = h('p', { class: 'err', role: 'alert' });
     var form = h('form', { class: 'form', style: 'padding:20px', onsubmit: function (e) {
       e.preventDefault();
@@ -811,12 +815,13 @@
       ['name', 'summary'].forEach(function (k) { body[k] = fd.get(k) || ''; });
       api('sets', { method: 'POST', body: body }).then(function (r) { dlg.close(); toast('Ad set added'); return boot(r.id); }).catch(function (er) { errEl.textContent = er.message; });
     } }, [
-      field('name', 'Name', h('input', { class: 'input', required: true, maxlength: 120, placeholder: 'e.g. Back to school 2027' })),
+      field('name', 'Name', name),
       field('summary', 'What the ads are for', h('textarea', { class: 'input', rows: 2, maxlength: 1000 })),
       errEl,
       h('div', { class: 'foot' }, [h('button', { type: 'button', class: 'btn line', text: 'Cancel', onclick: function () { dlg.close(); } }), h('button', { type: 'submit', class: 'btn forest', text: 'Add ad set' })]),
     ]);
     var dlg = sheet('New ad set', form);
+    name.focus();
   }
 
   // ---------------------------------------------------------------- campaigns tab
@@ -917,7 +922,7 @@
         h('section', { class: 'panel' }, [h('h2', { text: 'Specs' }), h('table', { class: 'spec' }, [h('tbody', {}, rows.map(function (r) { return h('tr', {}, [h('th', { scope: 'row', text: r[0] }), h('td', { text: r[1] })]); }))])]),
         M.files.length ? h('section', { class: 'panel' }, [h('h2', { text: 'Source images' }), h('p', { text: 'The pouch and photos used in these ads, for other formats.' }),
           h('div', { class: 'sources' }, M.files.map(function (s) {
-            return h('a', { href: '/files/' + s.r2_key + '?download', download: s.r2_key.split('/').pop() }, [h('img', { src: '/files/' + s.r2_key, alt: s.alt || '', loading: 'lazy', class: /png$/.test(s.content_type) ? 'contain' : null }), s.name + ' ↓']);
+            return h('a', { href: '/files/' + s.r2_key + '?download', download: s.r2_key.split('/').pop() }, [h('img', { src: '/files/' + s.r2_key, alt: s.alt || '', loading: 'lazy', class: /png$/.test(s.content_type) ? 'contain' : null }), h('span', { class: 'src-name' }, [s.name, svg('dl')])]);
           }))]) : null,
       ]),
     ]));
@@ -964,6 +969,11 @@
     if (e.key === 'ArrowRight') step(1); else if (e.key === 'ArrowLeft') step(-1);
   });
   $('[data-upload]').addEventListener('click', function () { if (M) uploadForm(); });
+  // The bell and Help menus open just below their button (the header wraps onto several rows on phones).
+  [['inbox', '[data-bell]'], ['help-menu', '[data-help-btn]']].forEach(function (x) {
+    var menu = document.getElementById(x[0]), btn = $(x[1]);
+    menu.addEventListener('beforetoggle', function (e) { if (e.newState === 'open') menu.style.top = Math.round(btn.getBoundingClientRect().bottom + 8) + 'px'; });
+  });
 
   function route() {
     var m = /^#ad=([a-z0-9-]+)(\/edit)?/.exec(location.hash);
