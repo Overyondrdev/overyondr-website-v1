@@ -10,7 +10,7 @@ the folder is self-contained and can move to its own repository unchanged.
 | What | Where |
 | --- | --- |
 | Worker (API, file serving, uploads) | `src/index.ts` |
-| App (no framework, no dependencies) | `public/index.html`, `public/app.js`, `public/app.css`, `public/brand/` |
+| App (no framework, no dependencies) | `public/index.html`, `public/app.js`, `public/app.css`, `public/brand/`, bundled into the script and served by `src/static.ts` |
 | D1 schema (`yondr-ad-portal-db`) | `migrations/0001_init.sql` |
 | Ad files (`yondr-ad-portal-assets`, private R2 bucket) | served by the Worker at `/files/<key>`, keys `sets/<set>/…` |
 | Harvard study ads (generated) | `seed/` (90 ads + source images + `manifest.json`) |
@@ -57,6 +57,10 @@ npm run migrate:remote                                  # once per new migration
 npx wrangler -c wrangler.toml deploy                    # also attaches ads.overyondrdev.com (creates its DNS record)
 npm run seed:remote -- --by you@overyondr.com           # first time, or after re-rendering the ads
 ```
+
+The app's files are bundled into the Worker script (`[[rules]]` in `wrangler.toml`) rather than uploaded as Workers
+static assets, so a deploy is a single script upload with an ordinary API token. If you add a file to `public/`,
+add it to `src/static.ts`.
 
 Then open https://ads.overyondrdev.com: the Access sign-in comes first. Re-seeding is safe: it replaces files and keeps
 each ad's status, title, dates, reviews and comments.

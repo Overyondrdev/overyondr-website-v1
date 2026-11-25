@@ -1,15 +1,19 @@
 // yondr-ad-portal: the Yondr ad library at https://ads.overyondrdev.com
 //
 // Cloudflare Access (app "overyondrdev.com (Yondr website dev)", *.overyondrdev.com) signs people in at the edge,
-// before requests reach this Worker. The Worker reads who it is from Cf-Access-Authenticated-User-Email.
-//   /            static app (public/: index.html, app.js, app.css, brand files)
+// before requests reach this Worker. The Worker verifies Access's signed token (src/access.ts) for who it is, and
+// refuses requests without one, so the portal stays private even if the host were ever left out of Access.
+//   /            the app (public/: index.html, app.js, app.css, brand files), bundled into the script (src/static.ts)
 //   /files/<key> ad files from R2 (AD_ASSETS); the bucket itself is private
 //   /api/*       JSON API over D1 (DB): ad sets, ads, uploads, reviews, comments, campaigns, downloads
+
+import { serveStatic } from './static';
+import { accessEmail } from './access';
 
 interface Env {
   AD_ASSETS: R2Bucket;
   DB: D1Database;
-  ASSETS: Fetcher;
+  ACCESS_TEAM_DOMAIN: string; // Yondr's Cloudflare Access team, which signs the sign-in tokens
   DEV_EMAIL?: string; // local development only (.dev.vars); never set in production
 }
 
@@ -32,10 +36,6 @@ const slug = (s: unknown) => clip(s, 80).toLowerCase().replace(/[^a-z0-9]+/g, '-
 const url = (s: unknown) => { try { const u = new URL(clip(s, 1000)); return /^https?:$/.test(u.protocol) ? u.href : null; } catch { return null; } };
 const parse = (s: string | null) => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
 
-function who(request: Request, env: Env): string | null {
-  const email = request.headers.get('Cf-Access-Authenticated-User-Email') || env.DEV_EMAIL || '';
-  return email ? email.toLowerCase() : null;
-}
 
 // ------------------------------------------------------------------ image size from the file header
 function dimensions(b: Uint8Array, type: string): { width: number; height: number } | null {
@@ -298,12 +298,10 @@ async function campaignsCsv(env: Env, setId: string) {
 }
 
 // ------------------------------------------------------------------ router
-async function api(request: Request, env: Env, path: string): Promise<Response> {
-  const email = who(request, env);
+async function api(request: Request, env: Env, path: string, email: string): Promise<Response> {
   const m = request.method;
   const seg = path.split('/').filter(Boolean).map(decodeURIComponent);
-  if (m !== 'GET' && !email) return err(401, 'Please sign in.');
-  const me = email as string;
+  const me = email;
 
   if (seg[0] === 'me') return json({ email });
   if (seg[0] === 'sets' && seg.length === 1) return m === 'POST' ? createSet(request, env, me) : listSets(env);
@@ -331,8 +329,13 @@ async function api(request: Request, env: Env, path: string): Promise<Response> 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    const email = await accessEmail(request, env);
+    if (!email) {
+      return new Response('Sign-in required. Open https://ads.overyondrdev.com and sign in with your @overyondr.com email.', {
+        status: 403, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+    }
     try {
-      if (url.pathname.startsWith('/api/')) return await api(request, env, url.pathname.slice(5));
+      if (url.pathname.startsWith('/api/')) return await api(request, env, url.pathname.slice(5), email);
       if (url.pathname.startsWith('/files/')) {
         const key = decodeURIComponent(url.pathname.slice(7));
         if (!/^sets\/[a-z0-9-]+\/[a-z0-9./_-]+$/.test(key) || key.includes('..')) return new Response('Not found', { status: 404 });
@@ -342,6 +345,7 @@ export default {
       console.error(e);
       return err(500, 'Something went wrong. Please try again.');
     }
-    return env.ASSETS.fetch(request);
+    if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
+    return serveStatic(url.pathname);
   },
 } satisfies ExportedHandler<Env>;
