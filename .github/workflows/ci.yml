@@ -31,5 +31,25 @@ jobs:
       # Internal broken-link check. Fails until every nav page is migrated; made blocking at parity sign-off.
       - run: npm run check:links
         continue-on-error: true
+
+  # The ad portal (ads.overyondrdev.com) is its own Worker in ad-portal/. Type check, script syntax and a dry-run bundle.
+  ad-portal:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ad-portal
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: ad-portal/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: for f in public/*.js; do node --check "$f"; done
+      - run: npx wrangler -c wrangler.toml deploy --dry-run --outdir dist
+
 # Deploys are handled by Cloudflare Workers Builds (Git integration), not by Actions,
 # so no Cloudflare secrets are stored in GitHub.

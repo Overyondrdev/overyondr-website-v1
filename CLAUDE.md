@@ -20,6 +20,10 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
 - overyondr.com still points to Squarespace. Do NOT add overyondr.com routes to `wrangler.jsonc`;
   that happens only at cutover, after sign-off. The Worker already serves V1 for any non-dev host.
 - Dev hosts are `noindex` via `public/_headers`. Keep it that way.
+- `ads.overyondrdev.com` (ad library) is a separate Worker, `yondr-ad-portal`, in `ad-portal/` with its own
+  `wrangler.toml`, R2 bucket and D1 database. It is not part of this site's build or deploy; see `ad-portal/README.md`.
+  CI checks it in the `ad-portal` job of `.github/workflows/ci.yml`; when changing portal features, update its help
+  articles in `ad-portal/public/help-content.js`.
 
 ## Feedback tool
 Yondr staff leave feedback on any dev page through a widget; the team reviews it at **overyondrdev.com/admin**.

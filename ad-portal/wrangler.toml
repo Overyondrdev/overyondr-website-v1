@@ -1,0 +1,45 @@
+# yondr-ad-portal: the Yondr ad library at https://ads.overyondrdev.com (its own Worker, separate from
+# overyondr-website-v1). Cloudflare Access app "overyondrdev.com (Yondr website dev)" covers *.overyondrdev.com.
+name = "yondr-ad-portal"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+account_id = "3fac6c19097c5692e17198cffa818085"
+
+# No public *.workers.dev or preview URLs: they would bypass the Access login.
+workers_dev = false
+preview_urls = false
+
+routes = [
+  { pattern = "ads.overyondrdev.com", custom_domain = true }
+]
+
+# The app's files (public/) are bundled into the script and served by src/static.ts.
+[[rules]]
+type = "Text"
+globs = ["**/*.html", "**/*.css", "**/app.js", "**/render.js", "**/editor.js", "**/tour.js", "**/help.js", "**/help-content.js", "**/*.svg", "**/*.txt"]
+fallthrough = false
+
+[[rules]]
+type = "Data"
+globs = ["**/*.woff2"]
+fallthrough = false
+
+# Cloudflare Access team whose signed tokens the Worker checks (src/access.ts).
+[vars]
+ACCESS_TEAM_DOMAIN = "overyondr.cloudflareaccess.com"
+# Roles (src/roles.ts). Owners are always admins; everyone else who signs in starts as DEFAULT_ROLE.
+OWNER_EMAILS = "chad@overyondr.com"
+DEFAULT_ROLE = "viewer"
+
+[observability]
+enabled = true
+
+[[r2_buckets]]
+binding = "AD_ASSETS"
+bucket_name = "yondr-ad-portal-assets"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yondr-ad-portal-db"
+database_id = "dfdcc2cc-4505-4ff7-944a-1fcd52abb04d"
+migrations_dir = "migrations"
