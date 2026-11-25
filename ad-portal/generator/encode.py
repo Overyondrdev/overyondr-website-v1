@@ -11,7 +11,7 @@ import sys
 import tempfile
 from datetime import datetime, timezone
 
-from PIL import Image
+from PIL import Image, ImageFilter
 
 LIMIT = 150_000          # bytes; ad networks cap display ads at 150 KB
 TARGET = 145_000         # leave a margin
@@ -24,8 +24,17 @@ os.makedirs(os.path.join(out, 'still'), exist_ok=True)
 os.makedirs(os.path.join(out, 'motion'), exist_ok=True)
 
 
-def jpeg(png, dest):
+def sharp(png, w, h, percent=70):
+    """Frames are rendered at 2x: downsample with Lanczos, then a light unsharp mask, for crisp photos at 1x.
+    Motion uses a lighter sharpen (sharpening adds detail, and GIF bytes, to every frame)."""
     im = Image.open(png).convert('RGB')
+    if im.size != (w, h):
+        im = im.resize((w, h), Image.LANCZOS, reducing_gap=3.0).filter(ImageFilter.UnsharpMask(radius=0.7, percent=percent, threshold=2))
+    return im
+
+
+def jpeg(png, dest, w, h):
+    im = sharp(png, w, h)
     for q in range(95, 40, -3):
         buf = io.BytesIO()
         im.save(buf, 'JPEG', quality=q, subsampling=0 if q >= 70 else 2, optimize=True)
@@ -35,17 +44,20 @@ def jpeg(png, dest):
     return {'bytes': buf.tell(), 'quality': q}
 
 
-def gif(frames, fps, dest):
+def gif(frames, fps, dest, w, h):
     # Merge runs of identical frames into one frame with a longer delay.
     step = 1 / fps
     uniq = []
     prev = None
     for f in frames:
-        data = Image.open(f).convert('RGB').tobytes()
+        im = sharp(f, w, h, percent=45)
+        data = im.tobytes()
         if data == prev:
             uniq[-1][1] += step
         else:
-            uniq.append([f, step])
+            out1x = f[:-4] + '.1x.png'
+            im.save(out1x)
+            uniq.append([out1x, step])
             prev = data
     uniq[-1][1] += 0  # the last frame holds until the loop restarts
     with tempfile.TemporaryDirectory() as tmp:
@@ -54,7 +66,7 @@ def gif(frames, fps, dest):
             for f, d in uniq:
                 fh.write(f"file '{f}'\nduration {d:.3f}\n")
             fh.write(f"file '{uniq[-1][0]}'\n")  # concat demuxer needs the last file repeated
-        ladders = [(256, 'sierra2_4a'), (192, 'sierra2_4a'), (128, 'bayer:bayer_scale=4'), (96, 'bayer:bayer_scale=3'), (64, 'bayer:bayer_scale=2')]
+        ladders = [(256, 'sierra2_4a'), (224, 'sierra2_4a'), (192, 'sierra2_4a'), (160, 'sierra2_4a'), (128, 'sierra2_4a'), (96, 'bayer:bayer_scale=3')]
         for colors, dither in ladders:
             vf = (f"split[a][b];[a]palettegen=max_colors={colors}:stats_mode=full:reserve_transparent=0[p];"
                   f"[b][p]paletteuse=dither={dither}:diff_mode=rectangle")
@@ -78,11 +90,11 @@ for j in jobs:
     s, h = sizes[j['size']], heads[j['headline']]
     if j['kind'] == 'still':
         rel = f"still/{j['name']}.jpg"
-        info = jpeg(j['png'], os.path.join(out, rel))
+        info = jpeg(j['png'], os.path.join(out, rel), s['w'], s['h'])
         fmt = 'JPEG'
     else:
         rel = f"motion/{j['name']}.gif"
-        info = gif(j['frames'], j['fps'], os.path.join(out, rel))
+        info = gif(j['frames'], j['fps'], os.path.join(out, rel), s['w'], s['h'])
         fmt = 'GIF'
     if info['bytes'] > LIMIT:
         over.append(f"{rel} is {info['bytes']} bytes, over the {LIMIT} byte limit")

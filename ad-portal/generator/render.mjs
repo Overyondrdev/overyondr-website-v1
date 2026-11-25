@@ -27,6 +27,7 @@ const sizes = c.sizes.filter((s) => !arg('size') || s.id === arg('size'));
 const heads = c.headlines.filter((h) => !arg('headline') || h.id === arg('headline'));
 const views = ['pouch', 'in-use', 'motion'].filter((v) => !arg('view') || v === arg('view'));
 const FPS = 10;
+const SCALE = 2;
 
 const work = join(tmpdir(), 'yondr-ads-' + c.id);
 rmSync(work, { recursive: true, force: true });
@@ -35,7 +36,9 @@ mkdirSync(work, { recursive: true });
 const browser = await chromium.launch();
 const jobs = [];
 for (const size of sizes) {
-  const page = await browser.newPage({ viewport: { width: size.w, height: size.h }, deviceScaleFactor: 1 });
+  // Rendered at 2x, then encode.py downsamples with Lanczos and a light sharpen: photos come out much crisper
+  // than the browser's own 1x downscale.
+  const page = await browser.newPage({ viewport: { width: size.w, height: size.h }, deviceScaleFactor: SCALE });
   for (const h of heads) {
     for (const view of views) {
       await page.goto(pathToFileURL(join(here, 'ad.html')).href);

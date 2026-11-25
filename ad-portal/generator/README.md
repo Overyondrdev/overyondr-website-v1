@@ -31,4 +31,8 @@ Motion is built from masked reveals (text never moves; a mask uncovers it) and a
 between the last two scenes. That keeps each GIF frame small, so the large sizes fit under 150 KB at full colour.
 If a file goes over 150 KB, `encode.py` fails the run.
 
+Everything is rendered at 2× and downsampled with Lanczos plus a light unsharp mask (lighter for motion), which keeps
+the photos crisp: the browser's own 1× downscale of the 2000 px photos is noticeably soft. The largest motion ads then
+use fewer than 256 colours to stay under 150 KB (`colors` in the run output).
+
 336×280 is the 300×250 layout scaled 1.12×, so the two share one set of CSS rules in `ad.html`.
