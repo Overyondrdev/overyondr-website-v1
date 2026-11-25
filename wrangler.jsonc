@@ -28,13 +28,14 @@
   // No public *.workers.dev or preview URLs: they would bypass the Cloudflare Access login.
   "workers_dev": false,
   "preview_urls": false,
-  // Dev domains. overyondrdev.com = portal, v1. = migrated site, v2. = redesign placeholder.
+  // Dev domains. overyondrdev.com = portal, v1. = migrated site, v2. = redesign, ads. = ad library.
   // All are behind Cloudflare Access (one-time code to @overyondr.com email addresses).
   // The production domains (overyondr.com, www) are added only at cutover, after sign-off.
   "routes": [
     { "pattern": "overyondrdev.com", "custom_domain": true },
     { "pattern": "www.overyondrdev.com", "custom_domain": true },
     { "pattern": "v1.overyondrdev.com", "custom_domain": true },
-    { "pattern": "v2.overyondrdev.com", "custom_domain": true }
+    { "pattern": "v2.overyondrdev.com", "custom_domain": true },
+    { "pattern": "ads.overyondrdev.com", "custom_domain": true }
   ]
 }

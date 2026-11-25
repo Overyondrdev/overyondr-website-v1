@@ -6,6 +6,7 @@ import { currentUser, roleOf } from './auth.js';
 const TYPES = ['bug', 'design', 'content', 'idea', 'question', 'praise', 'other'];
 const PRIORITIES = ['low', 'normal', 'high', 'critical'];
 const STATUSES = ['new', 'reviewing', 'agreed', 'planned', 'done', 'wont_do'];
+export const SITES = ['v1', 'v2', 'portal', 'ads'];  // ads = the ad library at ads.overyondrdev.com
 const MAX_SHOTS = 6;
 const MAX_SHOT_BYTES = 8 * 1024 * 1024;
 
@@ -47,7 +48,7 @@ async function createFeedback(req, env, user) {
   if (!b || !clip(b.message, 10000).trim()) return err(400, 'Please describe your feedback.');
   const type = TYPES.includes(b.type) ? b.type : 'other';
   const priority = PRIORITIES.includes(b.priority) ? b.priority : 'normal';
-  const site = ['v1', 'v2', 'portal'].includes(b.site) ? b.site : 'v1';
+  const site = SITES.includes(b.site) ? b.site : 'v1';
   const ts = now();
   const res = await env.DB.prepare(`INSERT INTO feedback (created_at, updated_at, author_email, site, url, path, page_title, type, priority,
       status, title, message, tags, context) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, '[]', ?) RETURNING id`)
@@ -76,7 +77,7 @@ async function listFeedback(url, env, user, isAdmin) {
   const where = [];
   const args = [];
   if (scope === 'mine') { where.push('f.author_email = ?'); args.push(user.email); }
-  for (const [key, col, allowed] of [['status', 'status', STATUSES], ['type', 'type', TYPES], ['priority', 'priority', PRIORITIES], ['site', 'site', ['v1', 'v2', 'portal']]]) {
+  for (const [key, col, allowed] of [['status', 'status', STATUSES], ['type', 'type', TYPES], ['priority', 'priority', PRIORITIES], ['site', 'site', SITES]]) {
     const vals = (q.get(key) || '').split(',').filter((v) => allowed.includes(v));
     if (vals.length) { where.push(`f.${col} IN (${vals.map(() => '?').join(',')})`); args.push(...vals); }
   }

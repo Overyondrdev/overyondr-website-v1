@@ -7,7 +7,7 @@
   var STATUS = { new: 'New', reviewing: 'In review', agreed: 'Agreed', planned: 'Planned', done: 'Done', wont_do: 'Won’t do' };
   var STATUS_COLORS = { new: '#c9d3b3', reviewing: '#f3c84b', agreed: '#8fcb63', planned: '#7aa2f0', done: '#1c300b', wont_do: '#bdbdbd' };
   var PRIORITY = { low: 'Low', normal: 'Normal', high: 'High', critical: 'Critical' };
-  var SITES = { v1: 'V1', v2: 'V2', portal: 'Both / general' };
+  var SITES = { v1: 'V1', v2: 'V2', portal: 'Both / general', ads: 'Ad library' };
 
   var S = {
     me: null, view: (location.hash.replace('#', '') || 'overview'), items: [], stats: null, summary: null, admins: [],

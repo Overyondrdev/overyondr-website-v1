@@ -6,6 +6,9 @@ https://overyondrdev.com/*
 https://www.overyondrdev.com/*
   X-Robots-Tag: noindex
 
+https://ads.overyondrdev.com/*
+  X-Robots-Tag: noindex
+
 https://:worker.:subdomain.workers.dev/*
   X-Robots-Tag: noindex
 

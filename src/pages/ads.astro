@@ -1,0 +1,68 @@
+---
+// Ad library — served at https://ads.overyondrdev.com/ by the Worker (that host only).
+// Ads are static files in public/__ads/<set>/ (made by scripts/ads/render.mjs) listed in manifest.json.
+// App code: public/__ads/library.js. Campaigns, reactions, downloads and per-ad feedback: src/worker/ads/api.js.
+import Portal from '../layouts/Portal.astro';
+import manifest from '../../public/__ads/harvard-study-2026/manifest.json';
+
+const set = manifest.id;
+const total = manifest.creatives.length;
+const stills = manifest.creatives.filter((c) => c.kind === 'still').length;
+const motions = total - stills;
+const largest = Math.max(...manifest.creatives.map((c) => c.bytes));
+const hero = manifest.creatives.find((c) => c.kind === 'motion' && c.size === '300x600' && c.headline === 'h1');
+---
+<Portal title="Ad library · Yondr" description="Yondr display ads: view, download, give feedback and track where they run." section="Ad library" tour={false}>
+  <link slot="head" rel="stylesheet" href="/__ads/library.css" />
+
+  <section class="statement dark hero" aria-labelledby="lib-title">
+    <div class="hero-copy">
+      <p class="eyebrow">Ad library · {manifest.name}</p>
+      <h1 id="lib-title">Harvard study ads, <em>ready to run.</em></h1>
+      <p class="lede">{manifest.summary} Every ad comes in six standard sizes, as a still and as motion. Preview them here, download what you need, tell us what to change and log the campaigns you run them in.</p>
+      <ul class="facts" aria-label="About this ad set">
+        <li><b>{total}</b> ads</li>
+        <li><b>6</b> standard sizes</li>
+        <li><b>{stills}</b> JPEG stills · <b>{motions}</b> GIF motion</li>
+        <li>All under <b>150 KB</b> <span class="muted">(largest {Math.round(largest / 1000)} KB)</span></li>
+      </ul>
+      <div class="actions">
+        <button type="button" class="btn lime" data-download-all>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"/></svg>
+          Download all ({total})
+        </button>
+        <a class="btn ghost" href={manifest.studyUrl} target="_blank" rel="noopener">Read the study ↗</a>
+        <a class="btn ghost" href="https://docs.google.com/document/d/1Lk3F_QcvPzGUNIE1z25g8_oDALcozRWsTS2XA69Ctfg/edit" target="_blank" rel="noopener">Press release ↗</a>
+      </div>
+    </div>
+    {hero && (
+      <figure class="hero-ad">
+        <img src={`/__ads/${set}/${hero.file}`} width={hero.w} height={hero.h} alt={`Motion ad, ${hero.sizeName} ${hero.w}×${hero.h}: ${hero.headlineText}`} />
+        <figcaption>Half Page · motion</figcaption>
+      </figure>
+    )}
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="Ad library">
+    <button role="tab" id="tab-ads" aria-controls="panel-ads" aria-selected="true" data-tab="ads">Ads <span class="count">{total}</span></button>
+    <button role="tab" id="tab-campaigns" aria-controls="panel-campaigns" aria-selected="false" tabindex="-1" data-tab="campaigns">Campaigns <span class="count" data-campaign-count>0</span></button>
+    <button role="tab" id="tab-copy" aria-controls="panel-copy" aria-selected="false" tabindex="-1" data-tab="copy">Copy &amp; specs</button>
+  </div>
+
+  <div class="notice" data-notice hidden></div>
+
+  <section id="panel-ads" role="tabpanel" aria-labelledby="tab-ads" data-panel="ads">
+    <div class="toolbar" data-toolbar></div>
+    <div data-grid aria-live="polite"><p class="loading">Loading ads…</p></div>
+  </section>
+  <section id="panel-campaigns" role="tabpanel" aria-labelledby="tab-campaigns" data-panel="campaigns" hidden></section>
+  <section id="panel-copy" role="tabpanel" aria-labelledby="tab-copy" data-panel="copy" hidden></section>
+
+  <div class="selbar" data-selbar hidden></div>
+  <dialog class="sheet" data-detail aria-labelledby="detail-title"></dialog>
+  <dialog class="sheet small" data-campaign-form aria-labelledby="cf-title"></dialog>
+  <div class="toast" role="status" aria-live="polite" data-toast></div>
+
+  <script is:inline define:vars={{ set }}>window.YONDR_AD_SET = set;</script>
+  <script src="/__ads/library.js" defer></script>
+</Portal>
