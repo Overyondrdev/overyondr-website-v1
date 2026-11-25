@@ -27,7 +27,8 @@ async function certs(team: string): Promise<Jwk[]> {
 
 // Returns the signed-in email, or null when the request didn't come through Access.
 export async function accessEmail(request: Request, env: AccessEnv): Promise<string | null> {
-  if (env.DEV_EMAIL) return env.DEV_EMAIL.toLowerCase(); // local development only (.dev.vars)
+  // Local development only (.dev.vars): sign in as DEV_EMAIL, or as X-Dev-Email to try other roles. Never set in production.
+  if (env.DEV_EMAIL) return (request.headers.get('X-Dev-Email') || env.DEV_EMAIL).toLowerCase();
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
   if (!token || !env.ACCESS_TEAM_DOMAIN) return null;
   try {

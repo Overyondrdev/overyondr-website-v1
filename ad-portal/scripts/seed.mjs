@@ -6,6 +6,8 @@
 //   add --skip-files to only rewrite the D1 records
 //
 // Safe to re-run: files are replaced, and records keep their status, title, dates, reviews and comments.
+// The set's copy is only written the first time, or with --copy: after that the portal is where copy is edited
+// (run scripts/pull-copy.mjs first to bring those edits into generator/campaign.json before re-rendering offline).
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -39,13 +41,19 @@ if (!has('skip-files')) {
 
 const q = (v) => (v == null ? 'NULL' : typeof v === 'number' ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
 const ts = m.generated || new Date().toISOString();
-const copy = { headlines: c.headlines.map(({ id, text, desc }) => ({ id, text, desc })), longHeadline: c.longHeadline, cta: c.cta,
-  stat: c.stat, source: c.source, sizes: c.sizes, concepts: c.concepts };
+// The set's copy is everything the ad template needs (public/render.js re-renders ads from it after edits in the portal).
+const src = (file) => '/files/' + key(file);
+const sourceFor = (name) => (m.sources || []).find((x) => x.file.includes(name))?.file;
+const copy = {
+  eyebrow: c.eyebrow, cta: c.cta, ctaShort: c.ctaShort, source: c.source, sourceShort: c.sourceShort, longHeadline: c.longHeadline, stat: c.stat,
+  headlines: c.headlines, sizes: c.sizes, concepts: c.concepts,
+  photos: Object.fromEntries(Object.entries(c.photos).map(([k, p]) => [k, { src: src(sourceFor('in-use-' + k)), alt: p.alt }])),
+  pouch: { src: src(sourceFor('yondr-pouch.png')), alt: c.pouch.alt },
+};
 const sql = [
   `INSERT INTO ad_sets (id, name, summary, study_url, release_url, copy, created_by, created_at, updated_at)
    VALUES (${[m.id, m.name, m.summary, null, null, JSON.stringify(copy), by, ts, ts].map(q).join(', ')})
-   ON CONFLICT(id) DO UPDATE SET name = excluded.name, summary = excluded.summary, study_url = excluded.study_url,
-     release_url = excluded.release_url, copy = excluded.copy, updated_at = excluded.updated_at;`,
+   ON CONFLICT(id) DO UPDATE SET name = excluded.name, summary = excluded.summary${has('copy') ? ', copy = excluded.copy' : ''}, updated_at = excluded.updated_at;`,
   ...m.creatives.map((x) => {
     const meta = { headlineId: x.headline, desc: x.desc, size: x.size, sizeName: x.sizeName, duration: x.duration, frames: x.frames, generated: true };
     const title = `${x.headlineText} · ${x.conceptName} · ${x.w}×${x.h}`;

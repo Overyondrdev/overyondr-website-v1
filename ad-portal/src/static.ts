@@ -12,6 +12,11 @@ import inter600 from '../public/brand/fonts/inter-tight-latin-600-normal.woff2';
 import inter700 from '../public/brand/fonts/inter-tight-latin-700-normal.woff2';
 import oflFraunces from '../public/brand/fonts/OFL-Fraunces.txt';
 import oflInter from '../public/brand/fonts/OFL-InterTight.txt';
+import renderJs from '../public/render.js';
+import editorJs from '../public/editor.js';
+import adTemplate from '../generator/ad.html';
+import tplFraunces from '../generator/fonts/fraunces-soft.woff2';
+import tplInstrument from '../generator/fonts/instrument-sans.woff2';
 
 type File = { body: string | ArrayBuffer; type: string; cache: string };
 const page = 'no-cache';           // HTML, CSS and JS change with each deploy
@@ -22,6 +27,12 @@ export const STATIC: Record<string, File> = {
   '/': { body: indexHtml, type: 'text/html; charset=utf-8', cache: page },
   '/app.css': { body: appCss, type: 'text/css; charset=utf-8', cache: page },
   '/app.js': { body: appJs, type: 'text/javascript; charset=utf-8', cache: page },
+  '/render.js': { body: renderJs, type: 'text/javascript; charset=utf-8', cache: page },
+  '/editor.js': { body: editorJs, type: 'text/javascript; charset=utf-8', cache: page },
+  // The ad template (same file as the offline generator) and its fonts, for re-rendering ads in the browser.
+  '/render/ad.html': { body: adTemplate, type: 'text/html; charset=utf-8', cache: page },
+  '/render/fonts/fraunces-soft.woff2': { body: tplFraunces, type: 'font/woff2', cache: year },
+  '/render/fonts/instrument-sans.woff2': { body: tplInstrument, type: 'font/woff2', cache: year },
   '/brand/yondr-dark-green.svg': { body: logoGreen, type: 'image/svg+xml', cache: day },
   '/brand/yondr-off-white.svg': { body: logoWhite, type: 'image/svg+xml', cache: day },
   '/brand/fonts/fraunces-latin-400-normal.woff2': { body: fraunces400, type: 'font/woff2', cache: year },

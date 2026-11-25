@@ -29,6 +29,7 @@
           Upload ads
         </button>
         <span class="email" data-email title="Signed in"></span>
+        <span class="pill role" data-role hidden></span>
         <a href="/cdn-cgi/access/logout">Sign out</a>
       </div>
     </div>
@@ -47,6 +48,8 @@
       <button role="tab" id="tab-ads" aria-controls="panel-ads" aria-selected="true" data-tab="ads">Ads <span class="count" data-ad-count>0</span></button>
       <button role="tab" id="tab-campaigns" aria-controls="panel-campaigns" aria-selected="false" tabindex="-1" data-tab="campaigns">Campaigns <span class="count" data-campaign-count>0</span></button>
       <button role="tab" id="tab-copy" aria-controls="panel-copy" aria-selected="false" tabindex="-1" data-tab="copy">Copy &amp; specs</button>
+      <button role="tab" id="tab-edit" aria-controls="panel-edit" aria-selected="false" tabindex="-1" data-tab="edit" hidden>Edit copy</button>
+      <button role="tab" id="tab-people" aria-controls="panel-people" aria-selected="false" tabindex="-1" data-tab="people" hidden>People</button>
     </div>
 
     <div class="notice" data-notice hidden></div>
@@ -57,6 +60,8 @@
     </section>
     <section id="panel-campaigns" role="tabpanel" aria-labelledby="tab-campaigns" data-panel="campaigns" hidden></section>
     <section id="panel-copy" role="tabpanel" aria-labelledby="tab-copy" data-panel="copy" hidden></section>
+    <section id="panel-edit" role="tabpanel" aria-labelledby="tab-edit" data-panel="edit" hidden></section>
+    <section id="panel-people" role="tabpanel" aria-labelledby="tab-people" data-panel="people" hidden></section>
   </div></main>
 
   <footer class="site-foot">
@@ -71,6 +76,8 @@
   <dialog class="sheet" data-detail aria-labelledby="detail-title"></dialog>
   <dialog class="sheet small" data-form aria-labelledby="form-title"></dialog>
   <div class="toast" role="status" aria-live="polite" data-toast></div>
+  <script src="/render.js" defer></script>
+  <script src="/editor.js" defer></script>
   <script src="/app.js" defer></script>
 </body>
 </html>

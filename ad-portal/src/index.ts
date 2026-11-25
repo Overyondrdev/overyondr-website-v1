@@ -5,15 +5,20 @@
 // refuses requests without one, so the portal stays private even if the host were ever left out of Access.
 //   /            the app (public/: index.html, app.js, app.css, brand files), bundled into the script (src/static.ts)
 //   /files/<key> ad files from R2 (AD_ASSETS); the bucket itself is private
-//   /api/*       JSON API over D1 (DB): ad sets, ads, uploads, reviews, comments, campaigns, downloads
+//   /api/*       JSON API over D1 (DB): ad sets, ads, uploads, copy edits, reviews, comments, campaigns, downloads, people
+//   /render/*    the ad template (generator/ad.html + fonts) the portal uses to re-render ads after copy edits
+// Who can do what: src/roles.ts (viewer / editor / admin).
 
 import { serveStatic } from './static';
 import { accessEmail } from './access';
+import { can, log, seen, usersApi, whoIs, type Who } from './roles';
 
 interface Env {
   AD_ASSETS: R2Bucket;
   DB: D1Database;
   ACCESS_TEAM_DOMAIN: string; // Yondr's Cloudflare Access team, which signs the sign-in tokens
+  OWNER_EMAILS?: string; // always admins (comma-separated)
+  DEFAULT_ROLE?: string; // role for everyone else who signs in (viewer)
   DEV_EMAIL?: string; // local development only (.dev.vars); never set in production
 }
 
@@ -88,7 +93,8 @@ async function listSets(env: Env) {
   return json({ sets: results });
 }
 
-async function getSet(env: Env, id: string, email: string | null) {
+async function getSet(env: Env, id: string, who: Who) {
+  const email = who.email;
   const set = await env.DB.prepare('SELECT * FROM ad_sets WHERE id = ?').bind(id).first<Record<string, any>>();
   if (!set) return err(404, 'Ad set not found.');
   const [ads, files, campaigns, links, reviews, mine, comments, downloads] = await env.DB.batch([
@@ -110,7 +116,7 @@ async function getSet(env: Env, id: string, email: string | null) {
   for (const r of comments.results as any[]) at(r.ad_id).comments = r.n;
   for (const r of downloads.results as any[]) at(r.ad_id).downloads = r.n;
   return json({
-    me: { email },
+    me: { email, role: who.role, owner: who.owner },
     set: { ...set, copy: parse(set.copy) },
     ads: (ads.results as any[]).map((a) => ({ ...a, meta: parse(a.meta), stats: at(a.id) })),
     files: files.results,
@@ -176,10 +182,11 @@ async function updateAd(request: Request, env: Env, id: string) {
   return json({ ok: true });
 }
 
-async function deleteAd(env: Env, id: string, email: string) {
+async function deleteAd(env: Env, id: string, who: Who) {
+  const email = who.email;
   const ad = await env.DB.prepare('SELECT * FROM ads WHERE id = ?').bind(id).first<Record<string, any>>();
   if (!ad) return err(404, 'Ad not found.');
-  if (ad.uploaded_by !== email) return err(403, 'Only the person who uploaded this ad can delete it. You can archive it instead.');
+  if (ad.uploaded_by !== email && !can(who, 'admin')) return err(403, 'Only the person who uploaded this ad, or an admin, can delete it. You can archive it instead.');
   await env.DB.batch(['campaign_ads', 'reviews', 'comments', 'downloads'].map((t) => env.DB.prepare(`DELETE FROM ${t} WHERE ad_id = ?`).bind(id))
     .concat([env.DB.prepare('DELETE FROM ads WHERE id = ?').bind(id)]));
   await env.AD_ASSETS.delete(ad.r2_key);
@@ -263,7 +270,8 @@ async function createCampaign(request: Request, env: Env, setId: string, email: 
   return json({ id: row?.id }, 201);
 }
 
-async function campaignRoute(request: Request, env: Env, id: number, sub: string | undefined, email: string) {
+async function campaignRoute(request: Request, env: Env, id: number, sub: string | undefined, who: Who) {
+  const email = who.email;
   const c = await env.DB.prepare('SELECT * FROM campaigns WHERE id = ?').bind(id).first<Record<string, any>>();
   if (!c) return err(404, 'Campaign not found.');
   const m = request.method;
@@ -280,7 +288,7 @@ async function campaignRoute(request: Request, env: Env, id: number, sub: string
     return json({ ok: true });
   }
   if (!sub && m === 'DELETE') {
-    if (c.created_by !== email) return err(403, 'Only the person who added this campaign can delete it.');
+    if (c.created_by !== email && !can(who, 'admin')) return err(403, 'Only the person who added this campaign, or an admin, can delete it.');
     await env.DB.batch([env.DB.prepare('DELETE FROM campaign_ads WHERE campaign_id = ?').bind(id), env.DB.prepare('DELETE FROM campaigns WHERE id = ?').bind(id)]);
     return json({ ok: true });
   }
@@ -297,30 +305,118 @@ async function campaignsCsv(env: Env, setId: string) {
   return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="${setId}-campaigns-${now().slice(0, 10)}.csv"` } });
 }
 
+// ------------------------------------------------------------------ copy edits (editors)
+// The set's copy drives the ad template. The portal saves the new copy, re-renders the affected ads in the
+// editor's browser (public/render.js) and uploads each new file with replaceFile().
+const LIMITS: Record<string, number> = { eyebrow: 40, cta: 24, ctaShort: 14, source: 140, sourceShort: 60, longHeadline: 120 };
+async function updateCopy(request: Request, env: Env, setId: string, who: Who) {
+  const set = await env.DB.prepare('SELECT copy FROM ad_sets WHERE id = ?').bind(setId).first<{ copy: string }>();
+  if (!set) return err(404, 'Ad set not found.');
+  const cur = parse(set.copy);
+  const b: any = await request.json().catch(() => ({}));
+  const next = { ...cur };
+  const changed: string[] = [];
+  for (const [k, n] of Object.entries(LIMITS)) {
+    if (!(k in b)) continue;
+    const v = clip(b[k], n);
+    if (!v && k !== 'longHeadline') return err(400, 'The ' + k + ' can’t be empty.');
+    if (v !== cur[k]) { next[k] = v; changed.push(k); }
+  }
+  if (b.stat && typeof b.stat === 'object') {
+    const stat = { ...(cur.stat || {}) };
+    for (const [k, n] of [['big', 8], ['unit', 60], ['note', 60]] as [string, number][]) {
+      if (!(k in b.stat)) continue;
+      const v = clip(b.stat[k], n);
+      if (!v) return err(400, 'The stat can’t be empty.');
+      if (v !== stat[k]) { stat[k] = v; changed.push('stat.' + k); }
+    }
+    next.stat = stat;
+  }
+  if (Array.isArray(b.headlines)) {
+    next.headlines = (cur.headlines || []).map((h: any) => {
+      const e = b.headlines.find((x: any) => x && x.id === h.id);
+      if (!e) return h;
+      const text = 'text' in e ? clip(e.text, 60) : h.text;
+      const desc = 'desc' in e ? clip(e.desc, 140) : h.desc;
+      if (!text) throw new Error('A headline can’t be empty.');
+      if (text !== h.text) changed.push(h.id + '.text');
+      if (desc !== h.desc) changed.push(h.id + '.desc');
+      return { ...h, text, desc };
+    });
+  }
+  if (!changed.length) return json({ copy: cur, changed });
+  await env.DB.prepare('UPDATE ad_sets SET copy = ?, updated_at = ? WHERE id = ?').bind(JSON.stringify(next), now(), setId).run();
+  await log(env, who.email, 'copy_updated', setId, { changed, before: Object.fromEntries(changed.map((k) => [k, pick(cur, k)])), after: Object.fromEntries(changed.map((k) => [k, pick(next, k)])) });
+  return json({ copy: next, changed });
+}
+function pick(copy: any, path: string) {
+  const [a, b] = path.split('.');
+  if (/^h\d+$/.test(a)) return (copy.headlines || []).find((h: any) => h.id === a)?.[b];
+  return b ? copy[a]?.[b] : copy[a];
+}
+
+// A re-rendered file for an existing ad: same key, size and type; the ad goes back to "In review".
+async function replaceFile(request: Request, env: Env, id: string, who: Who) {
+  const ad = await env.DB.prepare('SELECT * FROM ads WHERE id = ?').bind(id).first<Record<string, any>>();
+  if (!ad) return err(404, 'Ad not found.');
+  const form = await request.formData().catch(() => null);
+  const f = form?.get('file');
+  if (!form || !f || typeof f === 'string') return err(400, 'No file.');
+  if (f.type !== ad.content_type) return err(400, 'The new file must be a ' + ad.format + ', like the old one.');
+  const bytes = new Uint8Array(await f.arrayBuffer());
+  const dims = dimensions(bytes, f.type);
+  if (!dims || dims.width !== ad.width || dims.height !== ad.height) return err(400, `The new file must be ${ad.width}×${ad.height}.`);
+  const extra = parse(String(form.get('meta') || '{}'));
+  const meta = { ...parse(ad.meta), ...pickMeta(extra), rerenderedBy: who.email, rerenderedAt: now() };
+  await env.AD_ASSETS.put(ad.r2_key, bytes, { httpMetadata: { contentType: f.type }, customMetadata: { uploadedBy: who.email } });
+  await env.DB.prepare('UPDATE ads SET bytes = ?, headline = COALESCE(?, headline), title = COALESCE(?, title), meta = ?, status = ?, updated_at = ? WHERE id = ?')
+    .bind(bytes.length, clip(form.get('headline'), 200) || null, clip(form.get('title'), 200) || null, JSON.stringify(meta), 'in_review', now(), id).run();
+  return json({ ok: true, bytes: bytes.length });
+}
+function pickMeta(m: any) {
+  const out: Record<string, unknown> = {};
+  if (typeof m.desc === 'string') out.desc = m.desc.slice(0, 300);
+  for (const k of ['duration', 'frames', 'colors', 'quality']) if (typeof m[k] === 'number') out[k] = m[k];
+  return out;
+}
+
+async function logRerender(request: Request, env: Env, setId: string, who: Who) {
+  const b: any = await request.json().catch(() => ({}));
+  await log(env, who.email, 'ads_rerendered', setId, { count: Number(b.count) || 0, failed: Number(b.failed) || 0, changed: Array.isArray(b.changed) ? b.changed.slice(0, 40) : [] });
+  return json({ ok: true });
+}
+
 // ------------------------------------------------------------------ router
 async function api(request: Request, env: Env, path: string, email: string): Promise<Response> {
   const m = request.method;
   const seg = path.split('/').filter(Boolean).map(decodeURIComponent);
+  const who = await whoIs(env, email);
   const me = email;
+  // Viewers: read, download, comment. Editors: everything that changes ads, copy or campaigns. Admins: people.
+  const editor = (fn: () => Promise<Response>) => (can(who, 'editor') ? fn() : err(403, 'You need editor access for this. Ask an admin.'));
 
-  if (seg[0] === 'me') return json({ email });
-  if (seg[0] === 'sets' && seg.length === 1) return m === 'POST' ? createSet(request, env, me) : listSets(env);
+  if (seg[0] === 'me') { await seen(env, email); return json({ email, role: who.role, owner: who.owner }); }
+  if (seg[0] === 'users') return usersApi(request, env, who, seg[1]);
+  if (seg[0] === 'sets' && seg.length === 1) return m === 'POST' ? editor(() => createSet(request, env, me)) : listSets(env);
   if (seg[0] === 'sets' && seg[1] && ID.test(seg[1])) {
-    if (seg.length === 2 && m === 'GET') return getSet(env, seg[1], email);
-    if (seg[2] === 'ads' && m === 'POST') return upload(request, env, seg[1], me);
-    if (seg[2] === 'campaigns' && m === 'POST') return createCampaign(request, env, seg[1], me);
+    if (seg.length === 2 && m === 'GET') return getSet(env, seg[1], who);
+    if (seg[2] === 'ads' && m === 'POST') return editor(() => upload(request, env, seg[1], me));
+    if (seg[2] === 'copy' && m === 'PUT') return editor(() => updateCopy(request, env, seg[1], who).catch((e) => err(400, e.message)));
+    if (seg[2] === 'rerendered' && m === 'POST') return editor(() => logRerender(request, env, seg[1], who));
+    if (seg[2] === 'campaigns' && m === 'POST') return editor(() => createCampaign(request, env, seg[1], me));
     if (seg[2] === 'campaigns.csv' && m === 'GET') return campaignsCsv(env, seg[1]);
   }
   if (seg[0] === 'ads' && seg[1] && ID.test(seg[1])) {
-    if (seg.length === 2 && m === 'PATCH') return updateAd(request, env, seg[1]);
-    if (seg.length === 2 && m === 'DELETE') return deleteAd(env, seg[1], me);
-    if (seg[2] === 'review' && m === 'POST') return review(request, env, seg[1], me);
+    if (seg.length === 2 && m === 'PATCH') return editor(() => updateAd(request, env, seg[1]));
+    if (seg.length === 2 && m === 'DELETE') return editor(() => deleteAd(env, seg[1], who));
+    if (seg[2] === 'file' && m === 'PUT') return editor(() => replaceFile(request, env, seg[1], who));
+    if (seg[2] === 'review' && m === 'POST') return editor(() => review(request, env, seg[1], me));
     if (seg[2] === 'comments' && m === 'GET') return comments(env, seg[1]);
     if (seg[2] === 'comments' && m === 'POST') return addComment(request, env, seg[1], me);
   }
   if (seg[0] === 'campaigns' && seg[1]) {
     const id = parseInt(seg[1], 10);
-    if (id) return campaignRoute(request, env, id, seg[2], me);
+    if (id) return editor(() => campaignRoute(request, env, id, seg[2], who));
   }
   if (seg[0] === 'downloads' && m === 'POST') return downloads(request, env, me);
   return err(404, 'Not found');

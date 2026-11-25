@@ -17,6 +17,10 @@
   var D = null;            // current set: { set, ads, files, campaigns, me }
   var M = null;            // view model built from D
   var me = null;
+  var role = 'viewer';      // viewer | editor | admin (src/roles.ts); the API enforces it, the UI just hides what you can't do
+  var ROLE_NAMES = { viewer: 'Viewer', editor: 'Editor', admin: 'Admin' };
+  function isEditor() { return role === 'editor' || role === 'admin'; }
+  function isAdmin() { return role === 'admin'; }
   var picked = new Set();
   var f = load('filters', { show: 'all', sizes: [], headline: 'all', status: 'active', group: 'size' });
   var tab = 'ads';
@@ -73,7 +77,7 @@
     });
   }
   // ?v= changes when a file is replaced (same key, new bytes), so browsers never show a stale copy.
-  function fileUrl(c) { return '/files/' + c.key + '?v=' + c.bytes; }
+  function fileUrl(c) { return '/files/' + c.key + '?v=' + encodeURIComponent(c.updated || c.bytes); }
   function byId(id) { for (var i = 0; i < M.ads.length; i++) if (M.ads[i].id === id) return M.ads[i]; return null; }
   function campaign(id) { for (var i = 0; i < D.campaigns.length; i++) if (D.campaigns[i].id === id) return D.campaigns[i]; return null; }
   function label(c) { return c.sizeName + ' ' + c.w + '×' + c.h + ' · ' + (VARIANTS[c.variant] || 'Other'); }
@@ -91,7 +95,7 @@
         id: a.id, key: a.r2_key, title: a.title, status: a.status, variant: a.variant, kind: a.kind, format: a.format,
         w: a.width, h: a.height, size: size, sizeName: STANDARD[size] || 'Custom size', bytes: a.bytes,
         headline: m.headlineId || 'other', headlineText: a.headline || a.title, desc: m.desc || '', duration: m.duration,
-        start: a.campaign_start, end: a.campaign_end, uploadedBy: a.uploaded_by, created: a.created_at, stats: a.stats,
+        start: a.campaign_start, end: a.campaign_end, uploadedBy: a.uploaded_by, created: a.created_at, updated: a.updated_at, stats: a.stats, meta: m,
       };
     });
     var order = (copyData.sizes || []).map(function (s) { return s.id; });
@@ -176,7 +180,8 @@
       ]),
       h('div', { class: 'actions' }, [
         live.length ? h('button', { type: 'button', class: 'btn lime', html: ICON.dl + ' Download all (' + live.length + ')', onclick: function () { downloadZip(live, s.id + '-all-ads.zip'); } }) : null,
-        h('button', { type: 'button', class: 'btn ghost', text: 'Upload ads', onclick: uploadForm }),
+        isEditor() ? h('button', { type: 'button', class: 'btn ghost', text: 'Upload ads', onclick: uploadForm }) : null,
+        isEditor() ? h('button', { type: 'button', class: 'btn ghost', text: 'Edit copy', onclick: function () { setTab('edit'); } }) : null,
       ]),
     ]));
     if (hero) el.appendChild(h('figure', { class: 'hero-ad' }, [h('img', { src: fileUrl(hero), width: hero.w, height: hero.h, alt: (hero.kind === 'motion' ? 'Motion ad: ' : 'Ad: ') + hero.headlineText }),
@@ -307,7 +312,7 @@
     });
     [h('span', {}, [h('b', { text: String(picked.size) }), ' selected']),
       h('button', { type: 'button', class: 'btn lime sm', html: ICON.dl + ' Download .zip', onclick: function () { downloadZip(list, M.set.id + '-' + list.length + '-ads.zip'); } }),
-      sel, st,
+      isEditor() ? sel : null, isEditor() ? st : null,
       h('button', { type: 'button', class: 'linkbtn', text: 'Clear', onclick: function () { picked.clear(); renderGrid(); renderSelbar(); } }),
     ].forEach(function (k) { bar.appendChild(k); });
   }
@@ -357,7 +362,7 @@
       h('label', {}, ['Until', end]),
       h('div', { class: 'full', style: 'display:flex;gap:10px;align-items:center;flex-wrap:wrap' }, [saveBtn,
         h('span', { style: 'font-size:12.5px;color:var(--yondr-moss)', text: 'Archived ads are hidden from the library but kept.' }),
-        me && c.uploadedBy === me ? h('button', { type: 'button', class: 'linkbtn danger', style: 'margin-left:auto', text: 'Delete ad', onclick: function () {
+        me && (c.uploadedBy === me || isAdmin()) ? h('button', { type: 'button', class: 'linkbtn danger', style: 'margin-left:auto', text: 'Delete ad', onclick: function () {
           if (!confirm('Delete this ad for everyone? Its file, reviews and comments are removed. To keep it, archive it instead.')) return;
           api('ads/' + c.id, { method: 'DELETE' }).then(function () { dlg.close(); toast('Ad deleted'); return refresh(); }).catch(function (er) { toast(er.message); });
         } }) : null]),
@@ -369,11 +374,12 @@
         h('button', { type: 'button', class: 'btn line', text: 'Copy file name', onclick: function () { copy(fileName(c), 'File name'); } }),
       ]),
       h('section', {}, [h('h3', { text: 'Details' }), h('dl', { class: 'specs' }, specs.reduce(function (a, s) { return a.concat([h('dt', { text: s[0] }), h('dd', { text: s[1] })]); }, []))]),
-      h('section', {}, [h('h3', { text: 'Status & dates' }), edit]),
-      h('section', {}, [h('h3', { text: 'Review' }), h('div', { class: 'react' }, [
+      isEditor() ? h('section', {}, [h('h3', { text: 'Status & dates' }), edit])
+        : h('section', {}, [h('h3', { text: 'Status' }), h('div', { class: 'sub' }, [statusPill(c.status), c.start || c.end ? ' Runs ' + dates(c.start, c.end) : null])]),
+      h('section', {}, [h('h3', { text: 'Review' }), isEditor() ? h('div', { class: 'react' }, [
         h('button', { type: 'button', class: 'btn line sm up', 'aria-pressed': String(x.mine === 1), text: '✓ Approve' + (x.up ? ' · ' + x.up : ''), onclick: function () { review(c, x.mine === 1 ? 0 : 1); } }),
         h('button', { type: 'button', class: 'btn line sm down', 'aria-pressed': String(x.mine === -1), text: '✎ Needs changes' + (x.down ? ' · ' + x.down : ''), onclick: function () { review(c, x.mine === -1 ? 0 : -1); } }),
-      ]), h('p', { 'data-reviewers': '', style: 'margin:8px 0 0;font-size:12.5px;color:var(--yondr-moss)' })]),
+      ]) : null, h('p', { 'data-reviewers': '', style: 'margin:8px 0 0;font-size:12.5px;color:var(--yondr-moss)' })]),
       usesSection(c),
       commentsSection(c),
     ]);
@@ -396,9 +402,9 @@
       h('h3', { text: 'Campaigns' }),
       used.length ? h('ul', { class: 'uses' }, used.map(function (k) {
         return h('li', {}, [h('span', { class: 'pill ' + k.status, text: CSTATUS[k.status] }), h('span', { class: 'name', text: k.name }),
-          h('button', { type: 'button', class: 'iconbtn', title: 'Remove from campaign', 'aria-label': 'Remove from ' + k.name, html: ICON.x, onclick: function () { removeFromCampaign(k.id, [c.id]); } })]);
+          !isEditor() ? null : h('button', { type: 'button', class: 'iconbtn', title: 'Remove from campaign', 'aria-label': 'Remove from ' + k.name, html: ICON.x, onclick: function () { removeFromCampaign(k.id, [c.id]); } })]);
       })) : h('p', { style: 'margin:0;font-size:14px;color:var(--yondr-moss)', text: 'Not used in a campaign yet.' }),
-      h('div', { class: 'addrow', style: 'margin-top:10px' }, [sel,
+      !isEditor() ? null : h('div', { class: 'addrow', style: 'margin-top:10px' }, [sel,
         h('button', { type: 'button', class: 'btn forest sm', text: 'Add', onclick: function () { if (sel.value) addToCampaign(parseInt(sel.value, 10), [c.id]); } }),
         h('button', { type: 'button', class: 'btn line sm', text: '+ New campaign', onclick: function () { campaignForm(null, [c.id]); } })]),
     ]);
@@ -589,13 +595,13 @@
     p.appendChild(h('div', { class: 'camp-head' }, [
       h('h2', { text: 'Campaigns' }),
       h('a', { class: 'btn line sm', href: '/api/sets/' + M.set.id + '/campaigns.csv', text: 'Export CSV' }),
-      h('button', { type: 'button', class: 'btn forest sm', text: '+ New campaign', onclick: function () { campaignForm(null, Array.from(picked)); } }),
+      isEditor() ? h('button', { type: 'button', class: 'btn forest sm', text: '+ New campaign', onclick: function () { campaignForm(null, Array.from(picked)); } }) : null,
       h('p', { text: 'Log every campaign these ads run in: channel, dates, owner and which ads it uses.' }),
     ]));
     if (!D.campaigns.length) {
       p.appendChild(h('div', { class: 'empty' }, [h('h3', { text: 'No campaigns yet' }),
         h('p', { text: 'Add the first one, then pick its ads: select ads on the Ads tab and choose “Add to campaign”.' }),
-        h('button', { type: 'button', class: 'btn forest', style: 'margin-top:14px', text: '+ New campaign', onclick: function () { campaignForm(null, Array.from(picked)); } })]));
+        isEditor() ? h('button', { type: 'button', class: 'btn forest', style: 'margin-top:14px', text: '+ New campaign', onclick: function () { campaignForm(null, Array.from(picked)); } }) : null]));
       return;
     }
     var wrap = h('div', { class: 'camps' });
@@ -610,14 +616,14 @@
         ]),
         h('div', { class: 'camp-body' }, [
           h('div', { style: 'display:flex;flex-wrap:wrap;gap:10px;align-items:center' }, [
-            h('button', { type: 'button', class: 'btn forest sm', text: '+ Add ads', onclick: function () { setTab('ads'); toast('Select ads, then choose “' + k.name + '” in the bar below'); } }),
+            !isEditor() ? null : h('button', { type: 'button', class: 'btn forest sm', text: '+ Add ads', onclick: function () { setTab('ads'); toast('Select ads, then choose “' + k.name + '” in the bar below'); } }),
             ads.length ? h('button', { type: 'button', class: 'btn lime sm', html: ICON.dl + ' Download ' + ads.length + ' ads (.zip)', onclick: function () { downloadZip(ads, k.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.zip'); } }) : null,
-            h('button', { type: 'button', class: 'btn line sm', text: 'Edit details', onclick: function () { campaignForm(k); } }),
-            h('select', { class: 'input', 'aria-label': 'Campaign status', style: 'min-height:36px;padding:6px 30px 6px 10px', onchange: function (e) {
+            !isEditor() ? null : h('button', { type: 'button', class: 'btn line sm', text: 'Edit details', onclick: function () { campaignForm(k); } }),
+            !isEditor() ? null : h('select', { class: 'input', 'aria-label': 'Campaign status', style: 'min-height:36px;padding:6px 30px 6px 10px', onchange: function (e) {
               api('campaigns/' + k.id, { method: 'PATCH', body: { status: e.target.value } }).then(function () { toast('Status updated'); return refresh(); }).catch(function (er) { toast(er.message); });
             } }, Object.keys(CSTATUS).map(function (s) { return h('option', { value: s, selected: s === k.status, text: 'Status: ' + CSTATUS[s] }); })),
             h('span', { style: 'flex:1' }),
-            me && k.created_by === me ? h('button', { type: 'button', class: 'linkbtn danger', text: 'Delete campaign', onclick: function () {
+            me && (k.created_by === me || isAdmin()) ? h('button', { type: 'button', class: 'linkbtn danger', text: 'Delete campaign', onclick: function () {
               if (!confirm('Delete “' + k.name + '”? The ads stay in the library.')) return;
               api('campaigns/' + k.id, { method: 'DELETE' }).then(function () { toast('Campaign deleted'); return refresh(); }).catch(function (er) { toast(er.message); });
             } }) : null,
@@ -630,7 +636,7 @@
               h('span', { text: c.w + '×' + c.h + ' · ' + (VARIANTS[c.variant] || 'Other') }),
               h('div', { class: 'tools' }, [
                 h('button', { type: 'button', class: 'btn line', html: ICON.dl + ' Download', onclick: function () { downloadOne(c); } }),
-                h('button', { type: 'button', class: 'btn line', text: 'Remove', 'aria-label': 'Remove ' + label(c) + ' from ' + k.name, onclick: function () { removeFromCampaign(k.id, [c.id]); } })]),
+                !isEditor() ? null : h('button', { type: 'button', class: 'btn line', text: 'Remove', 'aria-label': 'Remove ' + label(c) + ' from ' + k.name, onclick: function () { removeFromCampaign(k.id, [c.id]); } })]),
             ]);
           })) : h('p', { style: 'margin:0;color:var(--yondr-moss)', text: 'No ads in this campaign yet. Use “Add ads”.' }),
         ]),
@@ -694,6 +700,8 @@
     renderSelbar();
     if (t === 'campaigns') renderCampaigns();
     if (t === 'copy') renderCopy();
+    if (t === 'edit') window.YondrEditor.render($('[data-panel="edit"]'), editorApi());
+    if (t === 'people') renderPeople();
     if (!fromHash) history.replaceState(null, '', t === 'ads' ? location.pathname + location.search : '#' + t);
   }
   document.querySelectorAll('[data-tab]').forEach(function (b, i, all) {
@@ -701,7 +709,8 @@
     b.addEventListener('keydown', function (e) {
       var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
       if (!d) return;
-      var n = all[(i + d + all.length) % all.length]; n.focus(); setTab(n.dataset.tab);
+      var vis = Array.prototype.filter.call(all, function (x) { return !x.hidden; }), j = vis.indexOf(b);
+      var n = vis[(j + d + vis.length) % vis.length]; n.focus(); setTab(n.dataset.tab);
     });
   });
   var detailDlg = $('[data-detail]');
@@ -718,13 +727,13 @@
     var m = /^#ad=([a-z0-9-]+)/.exec(location.hash);
     if (m) { setTab('ads', true); openDetail(m[1], true); return; }
     var t = location.hash.slice(1);
-    if (t === 'campaigns' || t === 'copy') setTab(t, true);
+    if (t === 'campaigns' || t === 'copy' || (t === 'edit' && isEditor()) || (t === 'people' && isAdmin())) setTab(t, true);
   }
   function renderPicker(current) {
     var sel = $('[data-set-picker]');
     sel.innerHTML = '';
     sets.forEach(function (s) { sel.appendChild(h('option', { value: s.id, selected: s.id === current, text: s.name + ' (' + s.ad_count + ')' })); });
-    sel.appendChild(h('option', { value: '__new', text: '+ New ad set…' }));
+    if (isEditor()) sel.appendChild(h('option', { value: '__new', text: '+ New ad set…' }));
     sel.hidden = false;
     sel.onchange = function () { if (sel.value === '__new') { sel.value = current; setForm(); } else boot(sel.value); };
   }
@@ -743,14 +752,79 @@
       if (sets.length > 1 || q) history.replaceState(null, '', '?set=' + id + location.hash);
       picked.clear();
       return api('sets/' + encodeURIComponent(id)).then(function (d) {
-        D = d; me = d.me.email; M = model(d);
+        D = d; me = d.me.email; role = d.me.role || 'viewer'; M = model(d);
         $('[data-email]').textContent = me || '';
-        $('[data-upload]').hidden = false;
+        var rb = $('[data-role]'); rb.textContent = (d.me.owner ? 'Owner' : ROLE_NAMES[role]); rb.hidden = false;
+        rb.title = { viewer: 'You can view, download and comment', editor: 'You can also edit copy, upload, review and manage campaigns', admin: 'You can also manage people' }[role];
+        $('[data-upload]').hidden = !isEditor();
+        $('[data-tab="edit"]').hidden = !isEditor();
+        $('[data-tab="people"]').hidden = !isAdmin();
         renderPicker(id);
         rerender();
         route();
       });
     }).catch(function (e) { $('[data-grid]').innerHTML = ''; $('[data-grid]').appendChild(h('p', { class: 'notice', text: 'The ad library couldn’t load: ' + e.message })); });
   }
+  // Shared with editor.js (the Edit copy tab).
+  function editorApi() {
+    return { api: api, toast: toast, refresh: refresh, h: h, model: function () { return M; }, data: function () { return D; }, me: function () { return me; }, setTab: setTab };
+  }
+
+  // ---------------------------------------------------------------- People tab (admins)
+  function renderPeople() {
+    var p = $('[data-panel="people"]');
+    p.innerHTML = '';
+    p.appendChild(h('p', { class: 'loading', text: 'Loading people…' }));
+    api('users').then(function (r) { paintPeople(p, r); }).catch(function (e) { p.innerHTML = ''; p.appendChild(h('p', { class: 'notice', text: e.message })); });
+  }
+  function paintPeople(p, r) {
+    p.innerHTML = '';
+    var setRole = function (email, value) {
+      return (value === r.defaultRole ? api('users/' + encodeURIComponent(email), { method: 'DELETE' }) : api('users/' + encodeURIComponent(email), { method: 'PUT', body: { role: value } }))
+        .then(function (res) { toast(person(email) + ' is now ' + ROLE_NAMES[value].toLowerCase()); paintPeople(p, res); }).catch(function (e) { toast(e.message); renderPeople(); });
+    };
+    var email = h('input', { class: 'input', type: 'email', placeholder: 'name@overyondr.com', 'aria-label': 'Email address', required: true });
+    var roleSel = h('select', { class: 'input', 'aria-label': 'Role' }, ['editor', 'admin', 'viewer'].map(function (k) { return h('option', { value: k, text: ROLE_NAMES[k] }); }));
+    var errEl = h('p', { class: 'err', role: 'alert' });
+    var ROLE_HELP = [
+      ['viewer', 'Viewer', 'Browse every ad, download them (one or a zip) and comment. Everyone who signs in starts here.'],
+      ['editor', 'Editor', 'Everything viewers can do, plus edit taglines, headlines, descriptions and the CTA (the ads re-render), upload ads, set status and run dates, approve, and manage campaigns.'],
+      ['admin', 'Admin', 'Everything editors can do, plus give people roles here and delete any ad or campaign.'],
+    ];
+    p.appendChild(h('div', { class: 'camp-head' }, [h('h2', { text: 'People & permissions' }),
+      h('p', { text: 'Anyone with an @overyondr.com email can sign in and starts as a viewer. Give people editor or admin access here.' })]));
+    p.appendChild(h('div', { class: 'roles' }, ROLE_HELP.map(function (x) { return h('div', { class: 'panel role-card' }, [h('span', { class: 'pill role-' + x[0], text: x[1] }), h('p', { text: x[2] })]); })));
+    p.appendChild(h('form', { class: 'panel people-add', onsubmit: function (e) {
+      e.preventDefault(); errEl.textContent = '';
+      var v = email.value.trim().toLowerCase();
+      if (!/^[^@\s]+@overyondr\.com$/.test(v)) { errEl.textContent = 'Use an @overyondr.com email address.'; return; }
+      setRole(v, roleSel.value).then(function () { email.value = ''; });
+    } }, [h('h3', { text: 'Give someone access' }), h('div', { class: 'addrow' }, [email, roleSel, h('button', { type: 'submit', class: 'btn forest sm', text: 'Save' })]), errEl]));
+    var rows = r.users.map(function (u) {
+      var sel = h('select', { class: 'input', 'aria-label': 'Role for ' + u.email, disabled: u.owner || u.email === me, onchange: function (e) { setRole(u.email, e.target.value); } },
+        r.roles.map(function (k) { return h('option', { value: k, selected: k === u.role, text: ROLE_NAMES[k] }); }));
+      return h('tr', {}, [
+        h('td', {}, [h('b', { text: person(u.email) }), h('br'), h('span', { class: 'muted-ink', text: u.email })]),
+        h('td', {}, [u.owner ? h('span', { class: 'pill role-admin', text: 'Owner' }) : sel, u.email === me && !u.owner ? h('span', { class: 'muted-ink', text: ' (you)' }) : null]),
+        h('td', { text: u.last_seen_at ? ago(u.last_seen_at) : 'Not yet' }),
+        h('td', { text: u.owner ? 'Set in configuration' : u.added_by ? person(u.added_by) : 'Signed in' }),
+      ]);
+    });
+    p.appendChild(h('div', { class: 'panel', style: 'margin-top:20px;overflow-x:auto' }, [h('table', { class: 'spec people' }, [
+      h('thead', {}, [h('tr', {}, ['Person', 'Role', 'Last visit', 'Role set by'].map(function (t) { return h('th', { scope: 'col', text: t }); }))]),
+      h('tbody', {}, rows)])]));
+    var say = function (a) {
+      var d = a.detail || {};
+      if (a.action === 'role_set') return person(a.actor) + ' made ' + person(a.target) + ' ' + (ROLE_NAMES[d.role] || d.role).toLowerCase();
+      if (a.action === 'role_removed') return person(a.actor) + ' set ' + person(a.target) + ' back to viewer';
+      if (a.action === 'copy_updated') return person(a.actor) + ' edited the copy (' + (d.changed || []).length + ' change' + ((d.changed || []).length === 1 ? '' : 's') + ')';
+      if (a.action === 'ads_rerendered') return person(a.actor) + ' re-rendered ' + d.count + ' ads' + (d.failed ? ' (' + d.failed + ' failed)' : '');
+      return person(a.actor) + ' ' + a.action;
+    };
+    p.appendChild(h('div', { class: 'panel', style: 'margin-top:20px' }, [h('h3', { text: 'Recent changes' }),
+      r.activity.length ? h('ul', { class: 'fb-list' }, r.activity.map(function (a) { return h('li', {}, [h('div', { class: 'by' }, [h('b', { text: say(a) }), '· ' + ago(a.created_at)])]); }))
+        : h('p', { style: 'margin:0;color:var(--yondr-moss)', text: 'Nothing yet.' })]));
+  }
+
   boot();
 })();

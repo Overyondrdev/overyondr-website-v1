@@ -9,7 +9,8 @@ the folder is self-contained and can move to its own repository unchanged.
 
 | What | Where |
 | --- | --- |
-| Worker (API, file serving, uploads) | `src/index.ts` |
+| Worker (API, file serving, uploads) | `src/index.ts`; roles in `src/roles.ts`; Access check in `src/access.ts` |
+| Browser renderer for copy edits | `public/render.js` (JPEG + GIF encoder), `public/editor.js` (Edit copy tab); template served at `/render/ad.html` |
 | App (no framework, no dependencies) | `public/index.html`, `public/app.js`, `public/app.css`, `public/brand/`, bundled into the script and served by `src/static.ts` |
 | D1 schema (`yondr-ad-portal-db`) | `migrations/0001_init.sql` |
 | Ad files (`yondr-ad-portal-assets`, private R2 bucket) | served by the Worker at `/files/<key>`, keys `sets/<set>/…` |
@@ -27,6 +28,29 @@ the host were ever left out of Access. `workers_dev` and `preview_urls` are off 
 The R2 bucket stays private (no r2.dev URL, no custom domain): files are only served through the Worker.
 To limit the portal to the marketing team later, add a separate Access app for `ads.overyondrdev.com`.
 
+## Roles
+
+| Role | Can |
+| --- | --- |
+| Viewer | Browse ads, download them (one or a zip), comment. Everyone who signs in starts here (`DEFAULT_ROLE`). |
+| Editor | + Edit copy and CTA (re-renders the ads), upload ads, set status and run dates, approve / needs changes, manage campaigns, add ad sets. |
+| Admin | + Give people roles on the **People** tab, delete any ad or campaign. |
+
+Owners (`OWNER_EMAILS` in `wrangler.toml`) are always admins and can't be changed from the portal. Roles live in the
+`users` table; changes are logged in `activity` and shown on the People tab. The API enforces every role check.
+
+## Editing copy
+
+Editors change the tagline, buttons, stat, source lines, headlines and descriptions on the **Edit copy** tab, with a
+live preview. Saving works out which ads show the changed text, re-renders them **in the editor's browser** from the
+same template the offline generator uses (`generator/ad.html`; drawn at 2×, downsampled and sharpened, JPEG under
+150 KB, GIF with a built-in encoder under 150 KB), uploads them over the old files and sets them back to In review.
+Keep the tab open until it finishes: a headline change re-renders 18 ads (about 2 minutes), the main button about 75
+(about 10 minutes). Use Chrome, Edge or Firefox. If you stop part-way, nothing is saved.
+
+The portal is now where copy lives. Before re-rendering offline, run `npm run pull-copy` so `generator/campaign.json`
+matches it (`seed.mjs` only writes the copy the first time, or with `--copy`).
+
 ## Data
 
 - `ad_sets`: a set of ads made together, with its copy (headlines, descriptions, CTA) as JSON.
@@ -34,8 +58,9 @@ To limit the portal to the marketing team later, add a separate Access app for `
   status (in review / approved / needs changes / archived), campaign start/end dates, uploaded by, timestamps.
 - `set_files`: supporting files (pouch cut-out, photos). `campaigns` + `campaign_ads`: where ads run.
 - `reviews` (approve / needs changes, one per person per ad), `comments`, `downloads`.
+- `users` (role per email, last visit) and `activity` (role changes, copy edits, re-renders): migration `0002_roles.sql`.
 
-Deleting an ad (only its uploader can) removes its R2 file too; anyone can archive instead.
+Deleting an ad (its uploader or an admin) removes its R2 file too; editors can archive instead.
 There is no click-through URL in the portal: the ads team sets it in each ad platform.
 
 ## Develop
@@ -43,7 +68,8 @@ There is no click-through URL in the portal: the ads team sets it in each ad pla
 ```sh
 cd ad-portal
 npm install
-echo 'DEV_EMAIL="you@overyondr.com"' > .dev.vars      # stands in for the Access header locally (git-ignored)
+echo 'DEV_EMAIL="you@overyondr.com"' > .dev.vars      # stands in for the Access sign-in locally (git-ignored)
+                                                       # send an X-Dev-Email header to try other people's roles
 npm run migrate:local
 npm run seed:local -- --by you@overyondr.com           # ~3 minutes: uploads 93 files to local R2
 npm run dev                                            # http://localhost:8787

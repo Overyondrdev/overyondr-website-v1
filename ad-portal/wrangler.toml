@@ -16,7 +16,7 @@ routes = [
 # The app's files (public/) are bundled into the script and served by src/static.ts.
 [[rules]]
 type = "Text"
-globs = ["**/*.html", "**/*.css", "**/app.js", "**/*.svg", "**/*.txt"]
+globs = ["**/*.html", "**/*.css", "**/app.js", "**/render.js", "**/editor.js", "**/*.svg", "**/*.txt"]
 fallthrough = false
 
 [[rules]]
@@ -27,6 +27,9 @@ fallthrough = false
 # Cloudflare Access team whose signed tokens the Worker checks (src/access.ts).
 [vars]
 ACCESS_TEAM_DOMAIN = "overyondr.cloudflareaccess.com"
+# Roles (src/roles.ts). Owners are always admins; everyone else who signs in starts as DEFAULT_ROLE.
+OWNER_EMAILS = "chad@overyondr.com"
+DEFAULT_ROLE = "viewer"
 
 [observability]
 enabled = true

@@ -12,7 +12,8 @@
     "seed:local": "node scripts/seed.mjs --local",
     "seed:remote": "node scripts/seed.mjs --remote",
     "render": "node generator/render.mjs",
-    "deploy": "wrangler -c wrangler.toml deploy"
+    "deploy": "wrangler -c wrangler.toml deploy",
+    "pull-copy": "node scripts/pull-copy.mjs --remote"
   },
   "devDependencies": {
     "wrangler": "^4.166.0"
