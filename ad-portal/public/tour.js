@@ -6,46 +6,37 @@
 (function () {
   'use strict';
   var RANK = { viewer: 0, editor: 1, admin: 2 };
+  // Kept short on purpose: one step per main idea. Everything else is in the help center.
   var STEPS = {
     viewer: [
-      { title: 'Welcome to the Yondr ad library', text: 'Every approved Yondr display ad lives here, in every size, ready to download and use. This 1-minute tour shows you around.', wide: true },
-      { sel: '[data-toolbar]', title: 'Find the right ad fast', text: 'Filter by version (pouch, in use, motion), size, headline and status. Your filters are remembered next time.' },
-      { sel: '.card', title: 'Every ad, at real size', text: 'Click an ad for its details: full size, replay for motion, file info, comments. The ↓ button downloads it straight away.' },
-      { sel: '.card .pick', title: 'Grab several at once', text: 'Tick ads to select them, then download them together as a zip. “Download all” at the top gets the whole set.', pad: 6 },
-      { sel: '[data-tab="copy"]', title: 'Copy for every platform', text: 'Headlines, descriptions and the CTA ready to paste, with Google Ads character counts, plus specs and the source images.' },
-      { sel: '[data-tab="campaigns"]', title: 'See where ads run', text: 'Campaigns show which ads are live where, and when.' },
-      { sel: '[data-help-btn]', title: 'Questions? Ask Help', text: 'The help center answers everything, and you can replay this tour from here. To change an ad, open it and choose “Suggest a change”.' },
+      { title: 'Welcome to the Yondr ad library', text: 'Every Yondr display ad, in every size, ready to download and use. Four quick tips.', wide: true },
+      { sel: '[data-toolbar]', title: 'Find ads fast', text: 'Filter by version, size, headline and status.' },
+      { sel: '.card', title: 'Open, download, select', text: 'Click an ad for details and comments, ↓ to download it, or tick several to get a zip.' },
+      { sel: '[data-help-btn]', title: 'Need anything else?', text: 'Ad copy and specs are on the Copy & specs tab. Help has answers to everything, and this tour.' },
     ],
     editor: [
-      { sel: '.card .btn.forest', title: 'Edit any ad in place', text: 'Click Edit on an ad to change its headline, tagline, button and more, with a live preview. Change it on every ad that shares the text, or only on this one.', pad: 6 },
-      { sel: '[data-tab="edit"]', title: 'Set-wide copy changes', text: 'Edit copy shows every shared text at once. Saving re-renders the affected ads in your browser; keep the tab open until it’s done.' },
-      { sel: '[data-upload]', title: 'Upload finished ads', text: 'Add JPEG, GIF, PNG or WebP ads. Size and animation are read from each file, and anything over 150 KB is flagged.' },
-      { sel: '[data-tab="campaigns"]', title: 'Run campaigns', text: 'Create campaigns, add ads to them and set their status. In an ad’s details you can also approve it, set its status and its run dates.' },
+      { sel: '.card .btn.forest', title: 'Edit any ad', text: 'Click Edit to change an ad’s text with a live preview. Use Edit copy for set-wide changes and Upload ads to add new ones.', pad: 6 },
     ],
     admin: [
-      { sel: '[data-tab="people"]', title: 'People & permissions', text: 'Give people viewer, editor or admin access, see who has visited, and follow recent changes and help-center feedback.' },
-      { sel: '[data-help-btn]', title: 'You’re the go-to', text: 'Admins are listed in the help center as the people to ask. Admins can also delete any ad or campaign.' },
+      { sel: '[data-tab="people"]', title: 'Give people access', text: 'On People, make someone a viewer, editor or admin.' },
     ],
   };
-  var NEW_INTRO = {
-    editor: { title: 'You’re now an editor', text: 'You can now edit ad copy, upload ads, set statuses and run campaigns. Here’s what’s new.', wide: true },
-    admin: { title: 'You’re now an admin', text: 'You can now manage who can do what in the ad library. Here’s what’s new.', wide: true },
-  };
+  var NEW_TITLE = { editor: 'You’re now an editor', admin: 'You’re now an admin' };
 
   var root, hole, card, steps = [], at = 0, onEnd = null, lastFocus = null;
 
   function stepsFor(role) {
-    var list = STEPS.viewer.slice();
-    if (RANK[role] >= 1) list = list.slice(0, -1).concat(STEPS.editor, list.slice(-1));
+    var list = STEPS.viewer.slice(0, -1);
+    if (RANK[role] >= 1) list = list.concat(STEPS.editor);
     if (RANK[role] >= 2) list = list.concat(STEPS.admin);
-    return list;
+    return list.concat(STEPS.viewer.slice(-1));
   }
-  // New features between the role the tour was last shown for and the current role.
+  // Promoted since the last tour: just the new feature(s), titled "You're now an editor/admin".
   function newSteps(from, to) {
-    var list = [NEW_INTRO[to]];
+    var list = [];
     if (RANK[from] < 1 && RANK[to] >= 1) list = list.concat(STEPS.editor);
     if (RANK[to] >= 2) list = list.concat(STEPS.admin);
-    return list;
+    return list.map(function (s, i) { return i === 0 ? Object.assign({}, s, { title: NEW_TITLE[to] }) : s; });
   }
 
   function visible(el) {
@@ -105,14 +96,14 @@
     var s = steps[i], el = target(), n = steps.length;
     if (el && !s.wide) el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     card.innerHTML = '';
-    var dots = '<div class="tour-dots" aria-hidden="true">' + steps.map(function (_, k) { return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>';
-    card.insertAdjacentHTML('beforeend', '<p class="tour-step">' + (i + 1) + ' of ' + n + '</p><h2 id="tour-title"></h2><p class="tour-text"></p>' + dots +
+    var dots = n < 2 ? '' : '<div class="tour-dots" aria-hidden="true">' + steps.map(function (_, k) { return '<i' + (k === i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>';
+    card.insertAdjacentHTML('beforeend', (n > 1 ? '<p class="tour-step">' + (i + 1) + ' of ' + n + '</p>' : '') + '<h2 id="tour-title"></h2><p class="tour-text"></p>' + dots +
       '<div class="tour-actions"><button type="button" class="tour-skip"></button><span></span>' + (i > 0 ? '<button type="button" class="tour-back">Back</button>' : '') +
       '<button type="button" class="tour-next"></button></div>');
     card.querySelector('#tour-title').textContent = s.title;
     card.querySelector('.tour-text').textContent = s.text;
     card.querySelector('.tour-skip').textContent = i === n - 1 ? '' : 'Skip tour';
-    card.querySelector('.tour-next').textContent = i === n - 1 ? 'Done' : i === 0 ? 'Show me around' : 'Next';
+    card.querySelector('.tour-next').textContent = i === n - 1 ? (n === 1 ? 'Got it' : 'Done') : i === 0 && s.wide ? 'Show me' : 'Next';
     card.querySelector('.tour-skip').onclick = function () { end(false); };
     card.querySelector('.tour-next').onclick = next;
     var back = card.querySelector('.tour-back'); if (back) back.onclick = function () { go(at - 1); };

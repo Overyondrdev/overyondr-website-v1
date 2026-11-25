@@ -64,8 +64,8 @@ matches it (`seed.mjs` only writes the copy the first time, or with `--copy`).
 ## Tour and help center
 
 - **Tour** (`public/tour.js`): spotlights the real page, one short card per step. First visit: the tour for your role
-  (viewer 7 steps; editors and admins get theirs on top). If your role goes up later, your next visit shows a short
-  "You’re now an editor/admin" tour of just what’s new. What each person has seen is `users.tour_role` (migration
+  (viewer 4 steps, editor 5, admin 6). If your role goes up later, your next visit shows one step, “You’re now an
+  editor/admin”, on the new feature. What each person has seen is `users.tour_role` (migration
   `0003`), so it follows them across browsers. Replay: **Help → Take the tour**, or `/?tour=1`.
 - **Help center** at `/help` (`public/help.html`, `help.js`, `help.css`; articles in **`public/help-content.js`**).
   Instant search and ⌘K / Ctrl K palette, topics, articles with role badges, deep links (`/help#<article>`),
