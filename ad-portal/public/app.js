@@ -378,13 +378,13 @@
     bar.hidden = picked.size === 0 || tab !== 'ads';
     if (!picked.size) return;
     var list = M.ads.filter(function (c) { return picked.has(c.id); });
-    var sel = h('select', { class: 'input', 'aria-label': 'Add selected ads to a campaign', style: 'min-height:36px;padding:6px 30px 6px 10px' },
+    var sel = h('select', { class: 'input', 'aria-label': 'Add selected ads to a campaign', style: 'min-height:36px;padding:6px 40px 6px 10px' },
       [h('option', { value: '', text: 'Add to campaign…' })].concat(D.campaigns.map(function (c) { return h('option', { value: c.id, text: c.name }); }), [h('option', { value: 'new', text: '+ New campaign' })]));
     sel.addEventListener('change', function () {
       if (sel.value === 'new') return campaignForm(null, Array.from(picked));
       if (sel.value) addToCampaign(parseInt(sel.value, 10), Array.from(picked)).then(function () { picked.clear(); renderGrid(); renderSelbar(); });
     });
-    var st = h('select', { class: 'input', 'aria-label': 'Set status of selected ads', style: 'min-height:36px;padding:6px 30px 6px 10px' },
+    var st = h('select', { class: 'input', 'aria-label': 'Set status of selected ads', style: 'min-height:36px;padding:6px 40px 6px 10px' },
       [h('option', { value: '', text: 'Set status…' })].concat(Object.keys(ASTATUS).map(function (k) { return h('option', { value: k, text: ASTATUS[k] }); })));
     st.addEventListener('change', function () {
       if (!st.value) return;
@@ -841,7 +841,7 @@
             !isEditor() ? null : h('button', { type: 'button', class: 'btn forest sm', text: '+ Add ads', onclick: function () { setTab('ads'); toast('Select ads, then choose “' + k.name + '” in the bar below'); } }),
             ads.length ? h('button', { type: 'button', class: 'btn lime sm', html: ICON.dl + ' Download ' + ads.length + ' ads (.zip)', onclick: function () { downloadZip(ads, k.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.zip'); } }) : null,
             !isEditor() ? null : h('button', { type: 'button', class: 'btn line sm', text: 'Edit details', onclick: function () { campaignForm(k); } }),
-            !isEditor() ? null : h('select', { class: 'input', 'aria-label': 'Campaign status', style: 'min-height:36px;padding:6px 30px 6px 10px', onchange: function (e) {
+            !isEditor() ? null : h('select', { class: 'input', 'aria-label': 'Campaign status', style: 'min-height:36px;padding:6px 40px 6px 10px', onchange: function (e) {
               api('campaigns/' + k.id, { method: 'PATCH', body: { status: e.target.value } }).then(function () { toast('Status updated'); return refresh(); }).catch(function (er) { toast(er.message); });
             } }, Object.keys(CSTATUS).map(function (s) { return h('option', { value: s, selected: s === k.status, text: 'Status: ' + CSTATUS[s] }); })),
             h('span', { style: 'flex:1' }),
