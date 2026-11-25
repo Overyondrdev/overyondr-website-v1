@@ -17,8 +17,10 @@ Needs the Zero Trust **Pay-as-you-go** or **Enterprise** plan (templates aren't 
    on a phone too.
 
 Rules from Cloudflare: no JavaScript, keep exactly one `<cf-access-authbox>`, keep `message.text` visible (it explains
-sign-in problems), HTTPS-only external assets. The logo is inline SVG and fonts come from Google Fonts with Georgia/Arial
-fallbacks, because overyondrdev.com's own files are behind Access and can't load before sign-in.
+sign-in problems), HTTPS-only external assets. No `<link>` or `<svg>` (the editor rejects them): fonts are
+`@font-face` rules pointing at Google's font files, and the logo is an `<img>` from the public R2 bucket
+`yondr-brand-public` (`https://pub-3b315bec28984b5c8320e77f4b7ab91b.r2.dev/yondr-off-white.svg`), because
+overyondrdev.com's own files are behind Access and can't load before sign-in. That bucket holds only public brand files.
 
 ## On the Free plan (partial)
 
