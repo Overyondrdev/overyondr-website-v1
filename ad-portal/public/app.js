@@ -86,6 +86,8 @@
       headers: opts.body && !isForm ? { 'content-type': 'application/json' } : {},
       body: opts.body ? (isForm ? opts.body : JSON.stringify(opts.body)) : undefined,
     }).then(function (r) {
+      // Session expired: reload, which goes through the Yondr sign-in and comes back.
+      if (r.status === 401) { location.reload(); throw new Error('Signing you in again…'); }
       return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'Something went wrong (' + r.status + ').'); return j; });
     });
   }

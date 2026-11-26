@@ -150,7 +150,7 @@
       navEl,
       h('div', { class: 'spacer' }),
       h('div', { class: 'me' }, [h('span', { class: 'who-label', text: 'Signed in as' }), h('b', { text: S.me.email, title: S.me.email }), h('div', { style: 'margin-top:8px;display:flex;gap:12px' }, [
-        h('a', { href: 'https://overyondrdev.com/', html: 'Preview ' + ICONS.ext }), h('a', { href: '/cdn-cgi/access/logout', text: 'Sign out' }),
+        h('a', { href: 'https://overyondrdev.com/', html: 'Preview ' + ICONS.ext }), h('a', { href: 'https://auth.overyondrdev.com/logout?return=https%3A%2F%2Foveryondrdev.com%2Fadmin', text: 'Sign out' }),
       ])]),
     ]);
     mainEl = h('main', { class: 'main', id: 'main' });

@@ -1,0 +1,26 @@
+// yondr-auth: Google sign-in for every *.overyondrdev.com site (https://auth.overyondrdev.com). See README.md.
+// Secrets (dashboard → Settings → Variables and Secrets, or `npx wrangler secret put <NAME>`), never committed:
+//   GOOGLE_CLIENT_ID      OAuth client ID from Google Cloud (Web application)
+//   GOOGLE_CLIENT_SECRET  its client secret
+//   SESSION_PRIVATE_JWK   ES256 private key (JSON JWK) that signs sessions; sites hold the matching public key
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "yondr-auth",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-20",
+  "account_id": "3fac6c19097c5692e17198cffa818085",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "auth.overyondrdev.com", "custom_domain": true }],
+  "vars": {
+    // Only verified Google Workspace accounts of these domains can sign in (hd claim and email both checked).
+    "ALLOWED_EMAIL_DOMAINS": "overyondr.com",
+    // Google Workspace organization (primary domain) whose accounts may sign in: Google's `hd` claim. Usually the same
+    // as above; if overyondr.com is a secondary domain of your Workspace, put the primary domain here.
+    "ALLOWED_WORKSPACE_DOMAINS": "overyondr.com",
+    // The session cookie is shared by this domain and all its subdomains; sign-in only returns to these hosts.
+    "SITE_DOMAIN": "overyondrdev.com",
+    "SESSION_HOURS": "12",
+  },
+  "observability": { "enabled": true },
+}

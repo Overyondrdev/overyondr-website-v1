@@ -1,0 +1,265 @@
+// yondr-auth: one Google sign-in for every *.overyondrdev.com site, at https://auth.overyondrdev.com.
+// Replaces Cloudflare Access logins (which cost a Zero Trust seat per person) with Google OAuth/OpenID Connect.
+//
+//   /login?return=<url>   start Google sign-in (Authorization Code flow with PKCE, state and nonce)
+//   /callback             Google returns here: the ID token is verified and the person must be a verified
+//                         @overyondr.com Google Workspace account (hd claim + email domain)
+//   /logout?return=<url>  end the session on every overyondrdev.com site
+//   /.well-known/jwks.json  the public key sites use to check sessions (also set as YONDR_AUTH_PUBLIC_JWK)
+//
+// The session is an ES256-signed token in a cookie for .overyondrdev.com (HttpOnly, Secure, SameSite=Lax), checked
+// by each site with src/session.js. Secrets: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SESSION_PRIVATE_JWK.
+
+import { decode, randomString, sha256b64u, signES256, verifySignature } from './jwt.js';
+import { AUTH_ORIGIN, SESSION_AUDIENCE, SESSION_COOKIE, SESSION_ISSUER } from './session.js';
+
+const FLOW_COOKIE = 'yondr_auth_flow';
+const GOOGLE_AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_TOKEN = 'https://oauth2.googleapis.com/token';
+const GOOGLE_CERTS = 'https://www.googleapis.com/oauth2/v3/certs';
+const GOOGLE_ISSUERS = ['https://accounts.google.com', 'accounts.google.com'];
+
+let googleKeys = null;
+let googleKeysAt = 0;
+
+const domains = (env) =>
+  String(env.ALLOWED_EMAIL_DOMAINS || 'overyondr.com')
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+// The Google Workspace organization(s) whose accounts may sign in (Google's `hd` claim). Defaults to the email domains.
+const workspaces = (env) =>
+  String(env.ALLOWED_WORKSPACE_DOMAINS || env.ALLOWED_EMAIL_DOMAINS || 'overyondr.com')
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+const siteDomain = (env) => String(env.SITE_DOMAIN || 'overyondrdev.com').toLowerCase();
+
+/** Only send people back to https pages on overyondrdev.com (no open redirects). */
+export function safeReturn(value, env) {
+  const fallback = `https://${siteDomain(env)}/`;
+  try {
+    const u = new URL(value || fallback);
+    const d = siteDomain(env);
+    if (u.protocol !== 'https:' || u.username || u.password) return fallback;
+    if (u.hostname !== d && !u.hostname.endsWith('.' + d)) return fallback;
+    if (u.hostname === new URL(AUTH_ORIGIN).hostname && /^\/(login|callback)/.test(u.pathname)) return fallback;
+    return u.toString();
+  } catch {
+    return fallback;
+  }
+}
+
+function cookie(name, value, { maxAge, path = '/', domain } = {}) {
+  return [`${name}=${value}`, `Path=${path}`, domain ? `Domain=${domain}` : '', 'HttpOnly', 'Secure', 'SameSite=Lax', `Max-Age=${maxAge}`]
+    .filter(Boolean)
+    .join('; ');
+}
+function readCookie(request, name) {
+  const m = (request.headers.get('cookie') || '').match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+  return m ? m[1] : null;
+}
+const privateKey = (env) => JSON.parse(env.SESSION_PRIVATE_JWK);
+function publicJwk(env) {
+  const { kty, crv, x, y, kid } = privateKey(env);
+  return { kty, crv, x, y, kid, alg: 'ES256', use: 'sig' };
+}
+
+async function googleCerts(force = false) {
+  if (!force && googleKeys && Date.now() - googleKeysAt < 3600_000) return googleKeys;
+  const res = await fetch(GOOGLE_CERTS);
+  if (!res.ok) throw new Error('google certs ' + res.status);
+  googleKeys = (await res.json()).keys || [];
+  googleKeysAt = Date.now();
+  return googleKeys;
+}
+
+/** Check Google's ID token: signature, issuer, audience, expiry, nonce, verified Yondr Workspace email. */
+export async function checkIdToken(idToken, { clientId, nonce, allowed, workspaces: hds = allowed, keys }) {
+  let claims = await verifySignature(idToken, keys || (await googleCerts()), 'RS256');
+  if (!claims && !keys) claims = await verifySignature(idToken, await googleCerts(true), 'RS256'); // keys rotated
+  if (!claims) return { error: 'signature' };
+  const now = Date.now() / 1000;
+  if (!GOOGLE_ISSUERS.includes(claims.iss)) return { error: 'issuer' };
+  const aud = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
+  if (!aud.includes(clientId)) return { error: 'audience' };
+  if (!claims.exp || claims.exp < now - 60) return { error: 'expired' };
+  if (!nonce || claims.nonce !== nonce) return { error: 'nonce' };
+  const email = String(claims.email || '').toLowerCase();
+  const domain = email.slice(email.lastIndexOf('@') + 1);
+  // Both checks: hd is set only for Google Workspace accounts of that organization, and the email must match.
+  if (claims.email_verified !== true || !hds.includes(String(claims.hd || '').toLowerCase()) || !allowed.includes(domain)) {
+    return { error: 'domain', email, hd: claims.hd || null };
+  }
+  return { email, name: claims.name || null, sub: claims.sub };
+}
+
+// ---------------------------------------------------------------- pages
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+function page(title, body, status = 200, headers = {}) {
+  return new Response(
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>${esc(title)} · Yondr</title>
+<style>
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#1C300B;color:#F4F9D1;font:16px/1.5 'Inter Tight',Arial,sans-serif;padding:24px}
+main{max-width:440px;width:100%;text-align:center}
+.brand{font:600 12px/1 Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#9DAE7E;margin:0 0 18px}
+h1{font:500 30px/1.15 Georgia,serif;margin:0 0 12px}
+p{margin:0 0 18px;color:#E7ECDF}
+a.btn{display:inline-flex;align-items:center;gap:10px;background:#DAFF6B;color:#1C300B;font-weight:700;text-decoration:none;padding:14px 24px;border-radius:999px}
+a.btn:focus-visible{outline:3px solid #F4F9D1;outline-offset:3px}
+a.link{color:#DAFF6B}
+.small{font-size:14px;color:#9DAE7E}
+</style></head><body><main><p class="brand">Yondr · overyondrdev.com</p>${body}</main></body></html>`,
+    {
+      status,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+        'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        'x-frame-options': 'DENY',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'no-referrer',
+        'x-robots-tag': 'noindex, nofollow',
+        ...headers,
+      },
+    },
+  );
+}
+const signInLink = (ret, label = 'Sign in with Google', extra = '') =>
+  `<a class="btn" href="/login?return=${encodeURIComponent(ret)}${extra}">${esc(label)}</a>`;
+
+function redirect(location, cookies = []) {
+  const h = new Headers({ location, 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' });
+  for (const c of cookies) h.append('set-cookie', c);
+  return new Response(null, { status: 302, headers: h });
+}
+
+// ---------------------------------------------------------------- flow
+async function login(request, env, url) {
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.SESSION_PRIVATE_JWK) {
+    return page('Sign-in not set up', '<h1>Sign-in isn’t set up yet</h1><p>Ask a web admin to finish the Google sign-in setup.</p>', 503);
+  }
+  const ret = safeReturn(url.searchParams.get('return'), env);
+  const state = randomString(24);
+  const nonce = randomString(24);
+  const verifier = randomString(48);
+  const now = Math.floor(Date.now() / 1000);
+  const flow = await signES256({ typ: 'flow', state, nonce, v: verifier, r: ret, iat: now, exp: now + 600 }, privateKey(env));
+  const g = new URL(GOOGLE_AUTH);
+  g.search = new URLSearchParams({
+    client_id: env.GOOGLE_CLIENT_ID,
+    redirect_uri: `${AUTH_ORIGIN}/callback`,
+    response_type: 'code',
+    scope: 'openid email profile',
+    state,
+    nonce,
+    code_challenge: await sha256b64u(verifier),
+    code_challenge_method: 'S256',
+    hd: workspaces(env)[0],
+    ...(url.searchParams.get('switch') ? { prompt: 'select_account' } : {}),
+  }).toString();
+  return redirect(g.toString(), [cookie(FLOW_COOKIE, flow, { maxAge: 600, path: '/callback' })]);
+}
+
+async function callback(request, env, url) {
+  const clearFlow = cookie(FLOW_COOKIE, '', { maxAge: 0, path: '/callback' });
+  const flowToken = readCookie(request, FLOW_COOKIE);
+  const flow = flowToken ? await verifySignature(flowToken, [publicJwk(env)], 'ES256') : null;
+  const home = `https://${siteDomain(env)}/`;
+  if (!flow || flow.typ !== 'flow' || flow.exp < Date.now() / 1000) {
+    return page('Try again', `<h1>Let’s try that again</h1><p>The sign-in took too long or was started in another tab.</p>${signInLink(home)}`, 400, { 'set-cookie': clearFlow });
+  }
+  if (url.searchParams.get('error')) {
+    return page('Sign-in cancelled', `<h1>Sign-in cancelled</h1><p>Sign in with your Yondr Google account to continue.</p>${signInLink(flow.r)}`, 400, { 'set-cookie': clearFlow });
+  }
+  if (url.searchParams.get('state') !== flow.state || !url.searchParams.get('code')) {
+    return page('Try again', `<h1>Let’s try that again</h1><p>Something didn’t match. Please sign in again.</p>${signInLink(flow.r)}`, 400, { 'set-cookie': clearFlow });
+  }
+  const tokenRes = await fetch(GOOGLE_TOKEN, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code: url.searchParams.get('code'),
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: `${AUTH_ORIGIN}/callback`,
+      grant_type: 'authorization_code',
+      code_verifier: flow.v,
+    }),
+  });
+  const tokens = await tokenRes.json().catch(() => ({}));
+  if (!tokenRes.ok || !tokens.id_token) {
+    console.error('google token', tokenRes.status, tokens.error);
+    return page('Try again', `<h1>Google didn’t finish signing you in</h1><p>Please try again.</p>${signInLink(flow.r)}`, 502, { 'set-cookie': clearFlow });
+  }
+  const who = await checkIdToken(tokens.id_token, { clientId: env.GOOGLE_CLIENT_ID, nonce: flow.nonce, allowed: domains(env), workspaces: workspaces(env) });
+  if (who.error) {
+    // Logged without the person's name; `hd` shows which Workspace an account belongs to, if a setting needs fixing.
+    console.warn('sign-in refused', who.error, who.email ? who.email.replace(/^[^@]*/, '***') : '', 'hd=' + (who.hd || 'none'));
+    const msg =
+      who.error === 'domain'
+        ? `<h1>Use your Yondr account</h1><p>${who.email ? `You signed in as <strong>${esc(who.email)}</strong>. ` : ''}Only @${esc(domains(env)[0])} Google accounts can use Yondr’s overyondrdev.com sites.</p>${signInLink(flow.r, 'Use another account', '&switch=1')}`
+        : `<h1>Let’s try that again</h1><p>We couldn’t confirm your sign-in.</p>${signInLink(flow.r)}`;
+    return page('Not signed in', msg, 403, { 'set-cookie': clearFlow });
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const hours = Math.min(Math.max(Number(env.SESSION_HOURS) || 12, 1), 24 * 7);
+  const session = await signES256(
+    { typ: 'session', iss: SESSION_ISSUER, aud: SESSION_AUDIENCE, sub: who.sub, email: who.email, name: who.name, iat: now, nbf: now - 30, exp: now + hours * 3600 },
+    privateKey(env),
+  );
+  console.log('signed in', who.email.replace(/^[^@]*/, '***'));
+  return redirect(flow.r, [clearFlow, cookie(SESSION_COOKIE, session, { maxAge: hours * 3600, domain: siteDomain(env) })]);
+}
+
+function logout(env, url) {
+  const ret = safeReturn(url.searchParams.get('return'), env);
+  return page(
+    'Signed out',
+    `<h1>You’re signed out</h1><p>You’ve been signed out of Yondr’s overyondrdev.com sites.</p>${signInLink(ret, 'Sign in again')}`,
+    200,
+    { 'set-cookie': cookie(SESSION_COOKIE, '', { maxAge: 0, domain: siteDomain(env) }) },
+  );
+}
+
+async function home(request, env) {
+  const { verifySession } = await import('./session.js');
+  const user = env.SESSION_PRIVATE_JWK
+    ? await verifySession(readCookie(request, SESSION_COOKIE), { ...env, YONDR_AUTH_PUBLIC_JWK: JSON.stringify(publicJwk(env)) })
+    : null;
+  const site = `https://${siteDomain(env)}/`;
+  return user
+    ? page('Signed in', `<h1>You’re signed in</h1><p>as <strong>${esc(user.email)}</strong></p><a class="btn" href="${site}">Go to overyondrdev.com</a><p class="small" style="margin-top:18px"><a class="link" href="/logout">Sign out</a></p>`)
+    : page('Sign in', `<h1>Sign in</h1><p>Use your Yondr Google account.</p>${signInLink(site)}`);
+}
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    try {
+      if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
+      switch (url.pathname) {
+        case '/':
+          return await home(request, env);
+        case '/login':
+          return await login(request, env, url);
+        case '/callback':
+          return await callback(request, env, url);
+        case '/logout':
+          return logout(env, url);
+        case '/.well-known/jwks.json':
+          return new Response(JSON.stringify({ keys: env.SESSION_PRIVATE_JWK ? [publicJwk(env)] : [] }), {
+            headers: { 'content-type': 'application/json', 'cache-control': 'public, max-age=300' },
+          });
+        default:
+          return page('Not found', '<h1>Not found</h1>', 404);
+      }
+    } catch (e) {
+      console.error('auth error', url.pathname, e);
+      return page('Something went wrong', `<h1>Something went wrong</h1><p>Please try again in a moment.</p>`, 500);
+    }
+  },
+};
+
+export { decode };

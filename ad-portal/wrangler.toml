@@ -27,6 +27,9 @@ fallthrough = false
 # Cloudflare Access team whose signed tokens the Worker checks (src/access.ts).
 [vars]
 ACCESS_TEAM_DOMAIN = "overyondr.cloudflareaccess.com"
+# Public key of the Yondr Google sign-in (auth.overyondrdev.com) that signs the shared session cookie. Safe to commit.
+YONDR_AUTH_PUBLIC_JWK = '{"kty":"EC","crv":"P-256","x":"BpCjLJMykOsJbtPTm63rdbw2BzRUTNTz3jj9LWqK6AM","y":"RyW0y7Dki1BQ6GnYdD-4FPovGYfoaMmDgr21lNU7xXQ","kid":"yondr-2026-11-26-a3a7e6"}'
+ALLOWED_EMAIL_DOMAINS = "overyondr.com"
 # Roles (src/roles.ts). Owners are always admins; everyone else who signs in starts as DEFAULT_ROLE.
 OWNER_EMAILS = "chad@overyondr.com"
 DEFAULT_ROLE = "viewer"
