@@ -31,9 +31,8 @@ Every web host on overyondrdev.com is one of these Workers, and each checks the 
 
 - **Workers: Paid** ($5/month, 10 million requests a month included). Enough for several hundred people; nothing to do.
 - **Zero Trust: Standard** ($7 per seat per month) with **1 seat bought and 25 in use** ("25 of 1 available seats").
-  That is why people were blocked. Part E removes the 25 users and then moves Zero Trust to the **Free** plan, so no
-  seats are billed at all. Free still runs the Bypass applications this cutover uses, and allows up to 50 Access users
-  if Access is ever used again.
+  That is why people were blocked. Keep this plan. After the cutover nobody signs in through Access, so Part E brings
+  seat use down to **0 of 1** and it stays there.
 
 ## Part A: Google sign-in client (Google Cloud; needs an overyondr.com Google account, ideally a Workspace admin)
 
@@ -124,14 +123,9 @@ you saw.
     **1 month** → **Save**. This catches anyone who still signs in through an Access-protected page in future.
 16. Zero Trust **Overview**: **You should see** 0 seats in use (Cloudflare can take a few minutes to update it). Don't
     continue until it does.
-17. **Move Zero Trust to the Free plan.** Zero Trust → **Settings** → **Cloudflare One plan** (or Account → Plan) →
-    **Change plan** (or Manage) → choose **Free** → confirm. If the page asks to reduce seats first, set purchased seats
-    to the lowest it allows, save, then choose Free.
-    **You should see** the plan shown as **Free** and no seat count to pay for. If Free isn't offered, stop and tell
-    Chad; don't buy or change anything else.
-18. Ask Chad to check **dash.cloudflare.com → Manage account → Billing → Invoices** (and Subscriptions) for any
-    Zero Trust charge above one seat this month. If there is one, he can contact Cloudflare billing support from the
-    same page: the extra users were blocked from signing in and have been removed.
+17. Ask Chad to glance at **dash.cloudflare.com → Manage account → Billing → Invoices** for any Zero Trust charge
+    above one seat this month. If there is one, Cloudflare billing support (same page) can review it: the extra users
+    were blocked from signing in and have been removed.
 
 ## Part F: Report back
 
@@ -142,5 +136,5 @@ Tell Chad:
 - Plans from Part 0 (Workers plan; Zero Trust plan and seats purchased).
 - Bypass applied to which applications and hostnames (steps 7, 10, 11, 11b).
 - Step 12: which sites opened; step 13: non-Yondr account blocked?
-- Seats before → after; seat expiration set; Zero Trust plan now Free (step 17); any extra charge seen (step 18).
+- Seats before → after; seat expiration set; seats shown as 0 of 1; any extra charge seen (step 17).
 - Anything that looked different from these instructions.
