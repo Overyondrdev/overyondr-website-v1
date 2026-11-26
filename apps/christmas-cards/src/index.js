@@ -70,9 +70,13 @@ export default {
     else if (url.pathname.startsWith('/api/signin/')) res = await handleSignin(request, env, url.pathname.slice(12));
     else if (url.pathname.startsWith('/api/')) res = await handleApi(request, env, url.pathname.slice(5));
     else if (PROTECTED.has(url.pathname) && !(await currentUser(request, env))) {
-      // Not signed in: show the sign-in page, then come back here.
+      // Straight to the Yondr sign-in page (auth.overyondrdev.com) via /auth, which then starts the cards session.
       const next = url.pathname === '/' ? '' : '?next=' + encodeURIComponent(url.pathname);
-      return withHeaders(Response.redirect(new URL('/signin' + next, url), 302));
+      return withHeaders(Response.redirect(new URL('/auth' + next, url), 302));
+    } else if (url.pathname === '/signin' && !url.searchParams.get('error')) {
+      // The old sign-in page now hands over to the Yondr sign-in page (kept only to show sign-in errors).
+      const next = url.searchParams.get('next');
+      return withHeaders(Response.redirect(new URL('/auth' + (next && /^\/[a-z]*$/.test(next) ? '?next=' + encodeURIComponent(next) : ''), url), 302));
     } else if (url.pathname === '/signin' && (await currentUser(request, env))) {
       const next = url.searchParams.get('next');
       return Response.redirect(new URL(next && /^\/[a-z]*$/.test(next) ? next : '/', url), 302);
