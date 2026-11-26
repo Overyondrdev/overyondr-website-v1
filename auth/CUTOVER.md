@@ -6,7 +6,7 @@ seats. Do the parts **in order**. After each step, check the **You should see** 
 stop, take a screenshot and ask Chad.
 
 **Never:**
-- switch anything to Bypass before Part C says you may;
+- switch anything to Bypass before step 8 has worked;
 - delete an Access application (set it to Bypass instead, so it can be undone);
 - type, read out or paste a client secret into chat. Hand the keyboard to Chad when a secret is entered;
 - change anything for hosts other than the ones named here.
@@ -27,15 +27,12 @@ Every web host on overyondrdev.com is one of these Workers, and each checks the 
 
 ---
 
-## Part 0: Check the plans (read only, 2 minutes)
+## Part 0: Plans (checked 26 November 2026)
 
-1. `https://dash.cloudflare.com/3fac6c19097c5692e17198cffa818085/workers/plans` (Workers & Pages → **Plans**).
-   **You should see** **Workers Paid**. If it says **Free**, tell Chad before anything else: with several hundred
-   people, every page and image is a Worker request and the Free plan's 100,000 requests a day will run out (pages then
-   fail). Workers Paid includes 10 million requests a month.
-2. `https://one.dash.cloudflare.com/` → **Settings** → **Cloudflare One plan** (or Account → Plan). Note the plan name
-   and the number of seats **purchased**. Tell Chad: on a paid Zero Trust plan you are billed for the seats purchased
-   (not the seats used), so after Part E he should lower the purchased seats or move to the Free plan.
+- **Workers: Paid** ($5/month, 10 million requests a month included). Enough for several hundred people; nothing to do.
+- **Zero Trust: Standard** ($7 per seat per month) with **1 seat bought and 25 in use** ("25 of 1 available seats").
+  That is why people were blocked. Keep this plan. After the cutover nobody signs in through Access, so Part E brings
+  seat use down to **0 of 1** and it stays there.
 
 ## Part A: Google sign-in client (Google Cloud; needs an overyondr.com Google account, ideally a Workspace admin)
 
@@ -81,11 +78,10 @@ Every web host on overyondrdev.com is one of these Workers, and each checks the 
    Worker log line "sign-in refused … hd=…" shows the right value). If Google says the app is blocked by the
    administrator, a Workspace admin must allow it: admin.google.com → Security → Access and data control → API controls
    → App access control → find `Yondr (overyondrdev.com)` → **Trusted**.
-9. **Stop here and ask Chad** to confirm that the website change is live (pull request
-   `Overyondrdev/overyondr-website-v1#26` merged and deployed). Don't continue until he says yes: until then the
-   website relies on Access and would become public.
+9. The website change is live (pull request `Overyondrdev/overyondr-website-v1#26`, merged and deployed on
+   26 November 2026), so every site checks the Google sign-in itself. Continue to Part D once step 8 worked.
 
-## Part D: Switch the sites to the Google sign-in in Access (only after step 9 is confirmed)
+## Part D: Switch the sites to the Google sign-in in Access (only after step 8 worked)
 
 10. Zero Trust → Access → **Applications** → **Add an application** → **Self-hosted**.
     - Name `Yondr sites (Google sign-in)`.
@@ -125,7 +121,11 @@ you saw.
     **You should see** every user as **Inactive**.
 15. Zero Trust → **Settings** → **Admin controls** (or Account) → **Remove inactive users from seats** → **Edit** →
     **1 month** → **Save**. This catches anyone who still signs in through an Access-protected page in future.
-16. Zero Trust **Overview**: **You should see** 0 seats in use (Cloudflare can take a few minutes to update it).
+16. Zero Trust **Overview**: **You should see** 0 seats in use (Cloudflare can take a few minutes to update it). Don't
+    continue until it does.
+17. Ask Chad to glance at **dash.cloudflare.com → Manage account → Billing → Invoices** for any Zero Trust charge
+    above one seat this month. If there is one, Cloudflare billing support (same page) can review it: the extra users
+    were blocked from signing in and have been removed.
 
 ## Part F: Report back
 
@@ -136,5 +136,5 @@ Tell Chad:
 - Plans from Part 0 (Workers plan; Zero Trust plan and seats purchased).
 - Bypass applied to which applications and hostnames (steps 7, 10, 11, 11b).
 - Step 12: which sites opened; step 13: non-Yondr account blocked?
-- Seats before → after; seat expiration set.
+- Seats before → after; seat expiration set; seats shown as 0 of 1; any extra charge seen (step 17).
 - Anything that looked different from these instructions.
