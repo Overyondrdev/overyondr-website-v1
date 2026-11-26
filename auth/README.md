@@ -33,7 +33,7 @@ It replaces Cloudflare Access logins, which cost a Zero Trust seat for every per
 2. **Cloudflare** → Workers & Pages → `yondr-auth` → Settings → Variables and Secrets → add as **Secret**:
    `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. (`SESSION_PRIVATE_JWK` is already set.)
 3. **Cloudflare Zero Trust** → Access → Applications: a **Bypass** application for `auth.overyondrdev.com`, then
-   switch the `overyondrdev.com` application to **Bypass** once sign-in works (see the cutover guide).
+   switch the `overyondrdev.com` application to **Bypass** once sign-in works: step by step in [CUTOVER.md](CUTOVER.md).
 
 ## Rotating the session key
 
