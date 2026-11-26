@@ -1,4 +1,8 @@
-# Cloudflare Access sign-in page (Yondr branded)
+# Cloudflare Access sign-in page (Yondr branded) — retired
+
+> **Retired (26 November 2026).** overyondrdev.com no longer signs people in with Cloudflare Access (it charged a
+> seat per person). Sign-in is the Yondr Google sign-in at `auth.overyondrdev.com` (`auth/`), whose page reuses this
+> design: `auth/src/pages.js`. This file is kept for reference only.
 
 `login.html` is the page people see when they sign in to anything on `*.overyondrdev.com` (the one-time code page).
 Cloudflare inserts its own sign-in box where `<cf-access-authbox></cf-access-authbox>` sits; everything else is ours.
