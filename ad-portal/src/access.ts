@@ -1,10 +1,12 @@
+import { yondrUser } from './yondr-session.js';
+
 // Safety net behind Cloudflare Access. Access signs people in at the edge and adds a signed token
 // (Cf-Access-Jwt-Assertion) to every request it lets through. The Worker checks the token's signature against the
 // Yondr team's signing keys, its issuer and its expiry, so if ads.overyondrdev.com were ever left out of Access, the
 // portal would refuse requests instead of serving ads to anyone. It is not a second login: any app in the Yondr
 // Access team may have issued the token, so tightening who gets in (e.g. marketing only) is done in Access itself.
 
-interface AccessEnv { ACCESS_TEAM_DOMAIN?: string; DEV_EMAIL?: string }
+interface AccessEnv { ACCESS_TEAM_DOMAIN?: string; DEV_EMAIL?: string; YONDR_AUTH_PUBLIC_JWK?: string; ALLOWED_EMAIL_DOMAINS?: string }
 interface Jwk extends JsonWebKey { kid?: string }
 
 let keys: Jwk[] | null = null;
@@ -25,10 +27,13 @@ async function certs(team: string): Promise<Jwk[]> {
   return keys;
 }
 
-// Returns the signed-in email, or null when the request didn't come through Access.
+// Returns the signed-in email, or null. The Yondr Google sign-in session (auth.overyondrdev.com, checked by
+// ./yondr-session.js) comes first; Cloudflare Access tokens are still accepted while Access is being retired.
 export async function accessEmail(request: Request, env: AccessEnv): Promise<string | null> {
   // Local development only (.dev.vars): sign in as DEV_EMAIL, or as X-Dev-Email to try other roles. Never set in production.
   if (env.DEV_EMAIL) return (request.headers.get('X-Dev-Email') || env.DEV_EMAIL).toLowerCase();
+  const yondr = await yondrUser(request, env);
+  if (yondr) return yondr.email;
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
   if (!token || !env.ACCESS_TEAM_DOMAIN) return null;
   try {

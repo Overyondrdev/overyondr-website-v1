@@ -11,6 +11,7 @@
 
 import { serveStatic } from './static';
 import { accessEmail } from './access';
+import { loginUrl } from './yondr-session.js';
 import { can, helpContacts, helpFeedback, log, seen, setTourRole, tourRole, usersApi, whoIs, type Who } from './roles';
 import { editors, inbox, notify } from './notify';
 
@@ -506,8 +507,11 @@ export default {
     const url = new URL(request.url);
     const email = await accessEmail(request, env);
     if (!email) {
-      return new Response('Sign-in required. Open https://ads.overyondrdev.com and sign in with your @overyondr.com email.', {
-        status: 403, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
+      // Pages go to the Yondr Google sign-in and come back; API calls and files get a 401.
+      if ((request.method === 'GET' || request.method === 'HEAD') && !url.pathname.startsWith('/api/') && !url.pathname.startsWith('/files/'))
+        return new Response(null, { status: 302, headers: { location: loginUrl(request), 'cache-control': 'no-store' } });
+      return new Response('Sign-in required. Open https://ads.overyondrdev.com and sign in with your Yondr Google account.', {
+        status: 401, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
     }
     try {
       if (url.pathname.startsWith('/api/')) return await api(request, env, url.pathname.slice(5), email, ctx);

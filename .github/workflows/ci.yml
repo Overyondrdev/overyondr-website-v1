@@ -51,5 +51,42 @@ jobs:
       - run: for f in public/*.js; do node --check "$f"; done
       - run: npx wrangler -c wrangler.toml deploy --dry-run --outdir dist
 
+  # Yondr Google sign-in (auth.overyondrdev.com): its own Worker in auth/. Unit tests for sessions and Google tokens.
+  auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: auth
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: npm run check
+      # Every site must use the same session verifier.
+      - run: |
+          for f in ../src/worker/yondr-session.js ../ad-portal/src/yondr-session.js ../apps/christmas-cards/src/yondr-session.js; do
+            cmp src/session.js "$f" || { echo "$f differs from auth/src/session.js"; exit 1; }
+          done
+
+  # Christmas cards (cards.overyondrdev.com): its own Worker in apps/christmas-cards/.
+  christmas-cards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/christmas-cards
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: apps/christmas-cards/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npx wrangler deploy --dry-run --outdir dist
+
 # Deploys are handled by Cloudflare Workers Builds (Git integration), not by Actions,
 # so no Cloudflare secrets are stored in GitHub.
