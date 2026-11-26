@@ -16,11 +16,26 @@ stop, take a screenshot and ask Chad.
 | Cloudflare account | `3fac6c19097c5692e17198cffa818085` |
 | Sign-in Worker | `yondr-auth` at `https://auth.overyondrdev.com` |
 | Google redirect URI | `https://auth.overyondrdev.com/callback` |
-| Access app to bypass | `overyondrdev.com (Yondr website dev)` (covers `overyondrdev.com` and `*.overyondrdev.com`) |
-| Access app to bypass | `Yondr Christmas Cards` (path `cards.overyondrdev.com/auth`) |
-| Access app to add | `auth.overyondrdev.com (Yondr Google sign-in)`, Bypass |
+| Access app to add (Part C) | `auth.overyondrdev.com (Yondr Google sign-in)`, Bypass |
+| Access app to add (Part D) | `Yondr sites (Google sign-in)`, Bypass, for the hosts that check the Google sign-in |
+| Access app to narrow (Part D) | `overyondrdev.com (Yondr website dev)`: keep it on Allow, but remove the bare `overyondrdev.com` hostname so only `*.overyondrdev.com` remains (it then only covers subdomains that aren't listed elsewhere) |
+| Access app to bypass (Part D) | `Yondr Christmas Cards` (path `cards.overyondrdev.com/auth`) |
+
+Every web host on overyondrdev.com is one of these Workers, and each checks the Google sign-in itself:
+`overyondrdev.com`, `www`, `v1`, `v2` (overyondr-website-v1), `ads` (yondr-ad-portal), `requests`
+(yondr-marketing-requests), `cards` (yondr-christmas-cards), `auth` (yondr-auth). The other DNS records are mail only.
 
 ---
+
+## Part 0: Check the plans (read only, 2 minutes)
+
+1. `https://dash.cloudflare.com/3fac6c19097c5692e17198cffa818085/workers/plans` (Workers & Pages → **Plans**).
+   **You should see** **Workers Paid**. If it says **Free**, tell Chad before anything else: with several hundred
+   people, every page and image is a Worker request and the Free plan's 100,000 requests a day will run out (pages then
+   fail). Workers Paid includes 10 million requests a month.
+2. `https://one.dash.cloudflare.com/` → **Settings** → **Cloudflare One plan** (or Account → Plan). Note the plan name
+   and the number of seats **purchased**. Tell Chad: on a paid Zero Trust plan you are billed for the seats purchased
+   (not the seats used), so after Part E he should lower the purchased seats or move to the Free plan.
 
 ## Part A: Google sign-in client (Google Cloud; needs an overyondr.com Google account, ideally a Workspace admin)
 
@@ -61,32 +76,46 @@ stop, take a screenshot and ask Chad.
    Google**, ask Chad to choose his `@overyondr.com` account.
    **You should see** "You’re signed in as chad@…". If you see "Sign-in isn’t set up yet", Part B is incomplete. If
    Google shows "Error 400: redirect_uri_mismatch", fix the URI in step 3.
+   If you see **"Use your Yondr account"** although Chad used his @overyondr.com account, the Workspace's primary domain
+   isn't overyondr.com: stop and tell Chad (the fix is one setting, `ALLOWED_WORKSPACE_DOMAINS` on `yondr-auth`; the
+   Worker log line "sign-in refused … hd=…" shows the right value). If Google says the app is blocked by the
+   administrator, a Workspace admin must allow it: admin.google.com → Security → Access and data control → API controls
+   → App access control → find `Yondr (overyondrdev.com)` → **Trusted**.
 9. **Stop here and ask Chad** to confirm that the website change is live (pull request
    `Overyondrdev/overyondr-website-v1#26` merged and deployed). Don't continue until he says yes: until then the
    website relies on Access and would become public.
 
-## Part D: Switch Access to Bypass (only after step 9 is confirmed)
+## Part D: Switch the sites to the Google sign-in in Access (only after step 9 is confirmed)
 
-10. Zero Trust → Access → **Applications** → `overyondrdev.com (Yondr website dev)` → **Policies** (or Configure) →
-    open the policy `Yondr staff (@overyondr.com)`. Change **Action** to **Bypass**, and **Include** to **Everyone**
-    (remove the "Emails ending in" rule). Rename it to `Bypass: sites check the Yondr Google sign-in`. **Save**.
-11. Same for the application `Yondr Christmas Cards` (`cards.overyondrdev.com/auth`): policy Action **Bypass**,
-    Include **Everyone**. **Save**.
-    **You should see** every application's policy showing **Bypass**.
+10. Zero Trust → Access → **Applications** → **Add an application** → **Self-hosted**.
+    - Name `Yondr sites (Google sign-in)`.
+    - Add these public hostnames (subdomain + domain `overyondrdev.com`, path empty), one per **+ Add public hostname**:
+      `www`, `v1`, `v2`, `ads`, `requests`. Do **not** add the bare `overyondrdev.com` yet (step 11).
+    - Policy: name `Bypass: these sites check the Yondr Google sign-in`, Action **Bypass**, Include **Everyone**. Save.
+    **You should see** the application with 5 hostnames.
+11. Open `overyondrdev.com (Yondr website dev)` → **Overview / Configure** → under its hostnames, **remove the bare
+    `overyondrdev.com`** (keep `*.overyondrdev.com` and its Allow policy unchanged). Save. Then open
+    `Yondr sites (Google sign-in)` again, **+ Add public hostname**: subdomain empty, domain `overyondrdev.com`. Save.
+    **You should see** `Yondr sites (Google sign-in)` with 6 hostnames, and `overyondrdev.com (Yondr website dev)`
+    with only `*.overyondrdev.com`.
+11b. Open `Yondr Christmas Cards` (`cards.overyondrdev.com/auth`) → its policy → Action **Bypass**, Include
+    **Everyone**. Save. (The app `cards.overyondrdev.com (Christmas cards: own email-code sign-in)` is already Bypass.)
 12. In a fresh **Incognito** window, open each address, sign in with Google when asked, and check the page loads:
     - `https://overyondrdev.com/` (portal with V1/V2 buttons)
     - `https://v1.overyondrdev.com/`, then `https://v2.overyondrdev.com/` (no second sign-in needed)
     - `https://ads.overyondrdev.com/`, `https://requests.overyondrdev.com/`
     - `https://cards.overyondrdev.com/` → **Sign in with Google**
-    **You should see** a Google sign-in once, then every site open. A Cloudflare Access page anywhere means that
-    application isn't on Bypass yet.
+    **You should see** a Google sign-in once, then every site open. A Cloudflare Access page (orange/black "Sign in
+    with Cloudflare Access" or an email-code prompt) anywhere means that host isn't covered by a Bypass app yet:
+    fix it before Part E, because each Access sign-in uses a seat.
 13. In another fresh Incognito window, sign in with a **non-Yondr** Google account (e.g. a personal Gmail) at
     `https://v1.overyondrdev.com/`.
     **You should see** "Use your Yondr account … Only @overyondr.com Google accounts can use Yondr’s overyondrdev.com
     sites", and no site content.
 
-**If anything in step 12 or 13 is wrong:** set the policies from steps 10 and 11 back to **Allow** with Include
-**Emails ending in** `@overyondr.com` (this restores the old login immediately), then report what you saw.
+**If anything in step 12 or 13 is wrong:** change the policy of `Yondr sites (Google sign-in)` to **Allow** with Include
+**Emails ending in** `@overyondr.com` (this restores the old Access login on those hosts immediately), then report what
+you saw.
 
 ## Part E: Free the seats
 
@@ -104,7 +133,8 @@ Tell Chad:
 - Google client created (project name, Internal audience): yes/no.
 - Secrets on `yondr-auth`: names listed.
 - Test sign-in (step 8): worked?
-- Bypass applied to which applications (steps 7, 10, 11).
+- Plans from Part 0 (Workers plan; Zero Trust plan and seats purchased).
+- Bypass applied to which applications and hostnames (steps 7, 10, 11, 11b).
 - Step 12: which sites opened; step 13: non-Yondr account blocked?
 - Seats before → after; seat expiration set.
 - Anything that looked different from these instructions.

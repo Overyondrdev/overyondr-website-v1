@@ -72,6 +72,10 @@ test('Google ID tokens: only verified Yondr Workspace accounts, for our client, 
     g = await googleToken(google(over));
     assert.equal((await checkIdToken(g.token, opts(g.keys))).error, err, JSON.stringify(over));
   }
+  // A Workspace whose primary domain differs from the email domain, when configured.
+  g = await googleToken(google({ hd: 'yondr-group.com' }));
+  assert.equal((await checkIdToken(g.token, { ...opts(g.keys), workspaces: ['yondr-group.com'] })).email, 'sam@overyondr.com');
+  assert.equal((await checkIdToken(g.token, opts(g.keys))).error, 'domain');
   const a = await googleToken(google());
   const b = await googleToken(google());
   assert.equal((await checkIdToken(a.token, opts(b.keys))).error, 'signature', 'signed by a different key');

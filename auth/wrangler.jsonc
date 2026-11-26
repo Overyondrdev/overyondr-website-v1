@@ -15,6 +15,9 @@
   "vars": {
     // Only verified Google Workspace accounts of these domains can sign in (hd claim and email both checked).
     "ALLOWED_EMAIL_DOMAINS": "overyondr.com",
+    // Google Workspace organization (primary domain) whose accounts may sign in: Google's `hd` claim. Usually the same
+    // as above; if overyondr.com is a secondary domain of your Workspace, put the primary domain here.
+    "ALLOWED_WORKSPACE_DOMAINS": "overyondr.com",
     // The session cookie is shared by this domain and all its subdomains; sign-in only returns to these hosts.
     "SITE_DOMAIN": "overyondrdev.com",
     "SESSION_HOURS": "12",

@@ -27,6 +27,12 @@ const domains = (env) =>
     .split(',')
     .map((d) => d.trim().toLowerCase())
     .filter(Boolean);
+// The Google Workspace organization(s) whose accounts may sign in (Google's `hd` claim). Defaults to the email domains.
+const workspaces = (env) =>
+  String(env.ALLOWED_WORKSPACE_DOMAINS || env.ALLOWED_EMAIL_DOMAINS || 'overyondr.com')
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
 const siteDomain = (env) => String(env.SITE_DOMAIN || 'overyondrdev.com').toLowerCase();
 
 /** Only send people back to https pages on overyondrdev.com (no open redirects). */
@@ -69,7 +75,7 @@ async function googleCerts(force = false) {
 }
 
 /** Check Google's ID token: signature, issuer, audience, expiry, nonce, verified Yondr Workspace email. */
-export async function checkIdToken(idToken, { clientId, nonce, allowed, keys }) {
+export async function checkIdToken(idToken, { clientId, nonce, allowed, workspaces: hds = allowed, keys }) {
   let claims = await verifySignature(idToken, keys || (await googleCerts()), 'RS256');
   if (!claims && !keys) claims = await verifySignature(idToken, await googleCerts(true), 'RS256'); // keys rotated
   if (!claims) return { error: 'signature' };
@@ -82,8 +88,8 @@ export async function checkIdToken(idToken, { clientId, nonce, allowed, keys }) 
   const email = String(claims.email || '').toLowerCase();
   const domain = email.slice(email.lastIndexOf('@') + 1);
   // Both checks: hd is set only for Google Workspace accounts of that organization, and the email must match.
-  if (claims.email_verified !== true || !allowed.includes(String(claims.hd || '').toLowerCase()) || !allowed.includes(domain)) {
-    return { error: 'domain', email };
+  if (claims.email_verified !== true || !hds.includes(String(claims.hd || '').toLowerCase()) || !allowed.includes(domain)) {
+    return { error: 'domain', email, hd: claims.hd || null };
   }
   return { email, name: claims.name || null, sub: claims.sub };
 }
@@ -150,7 +156,7 @@ async function login(request, env, url) {
     nonce,
     code_challenge: await sha256b64u(verifier),
     code_challenge_method: 'S256',
-    hd: domains(env)[0],
+    hd: workspaces(env)[0],
     ...(url.searchParams.get('switch') ? { prompt: 'select_account' } : {}),
   }).toString();
   return redirect(g.toString(), [cookie(FLOW_COOKIE, flow, { maxAge: 600, path: '/callback' })]);
@@ -187,9 +193,10 @@ async function callback(request, env, url) {
     console.error('google token', tokenRes.status, tokens.error);
     return page('Try again', `<h1>Google didn’t finish signing you in</h1><p>Please try again.</p>${signInLink(flow.r)}`, 502, { 'set-cookie': clearFlow });
   }
-  const who = await checkIdToken(tokens.id_token, { clientId: env.GOOGLE_CLIENT_ID, nonce: flow.nonce, allowed: domains(env) });
+  const who = await checkIdToken(tokens.id_token, { clientId: env.GOOGLE_CLIENT_ID, nonce: flow.nonce, allowed: domains(env), workspaces: workspaces(env) });
   if (who.error) {
-    console.warn('sign-in refused', who.error, who.email ? who.email.replace(/^[^@]*/, '***') : '');
+    // Logged without the person's name; `hd` shows which Workspace an account belongs to, if a setting needs fixing.
+    console.warn('sign-in refused', who.error, who.email ? who.email.replace(/^[^@]*/, '***') : '', 'hd=' + (who.hd || 'none'));
     const msg =
       who.error === 'domain'
         ? `<h1>Use your Yondr account</h1><p>${who.email ? `You signed in as <strong>${esc(who.email)}</strong>. ` : ''}Only @${esc(domains(env)[0])} Google accounts can use Yondr’s overyondrdev.com sites.</p>${signInLink(flow.r, 'Use another account', '&switch=1')}`
