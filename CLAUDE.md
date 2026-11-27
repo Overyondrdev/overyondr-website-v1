@@ -1,5 +1,8 @@
 # overyondr.com V1 — instructions for Claude
 
+**Read [docs/PLATFORM.md](docs/PLATFORM.md) before changing sign-in, deploys, DNS, Cloudflare settings or adding a
+site**: what runs where, the Yondr Google sign-in, Access seats, and deploy lessons.
+
 V1 is the overyondr.com Squarespace site, migrated page-for-page to a static Astro build
 served by one Cloudflare Worker. Visitors must see exactly what they saw on Squarespace;
 change what they see only to fix a bug (and say so in the PR).
@@ -17,16 +20,15 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
 - All of overyondrdev.com requires a **Yondr Google sign-in** (`auth/`, Worker `yondr-auth` at `auth.overyondrdev.com`):
   only verified `@overyondr.com` Google Workspace accounts. Every site checks the shared `yondr_session` cookie itself
   with a copy of `auth/src/session.js` (keep copies identical; CI checks). Cloudflare Access is set to Bypass for these
-  hosts because Access charges a seat per person. Never add a host without the session check, and keep
+  hosts because Access charges a seat per person (docs/PLATFORM.md §2–3). Never add a host without the session check, and keep
   `workers_dev` and `preview_urls` `false` in every Wrangler config.
 - Host routing and query-string pages live in `src/worker/index.js`.
 - overyondr.com still points to Squarespace. Do NOT add overyondr.com routes to `wrangler.jsonc`;
   that happens only at cutover, after sign-off. The Worker already serves V1 for any non-dev host.
 - Dev hosts are `noindex` via `public/_headers`. Keep it that way.
-- `ads.overyondrdev.com` (ad library) is a separate Worker, `yondr-ad-portal`, in `ad-portal/` with its own
-  `wrangler.toml`, R2 bucket and D1 database. It is not part of this site's build or deploy; see `ad-portal/README.md`.
-  CI checks it in the `ad-portal` job of `.github/workflows/ci.yml`; when changing portal features, update its help
-  articles in `ad-portal/public/help-content.js`.
+- `ads.overyondrdev.com` (ad library) is a separate Worker, `yondr-ad-portal`, in its own repository
+  **Overyondrdev/digital-ads-portal** (moved out of `ad-portal/` here in November 2026, with its history). It has its own
+  CI and Workers Builds deploy; it keeps a copy of `auth/src/session.js` that must stay identical.
 
 ## Feedback tool
 Yondr staff leave feedback on any dev page through a widget; the team reviews it at **overyondrdev.com/admin**.
