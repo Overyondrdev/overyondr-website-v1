@@ -77,6 +77,6 @@ newsletter form shows a confirmation only, until a provider is connected.
 ## Deploys
 
 V2 lives in `v2/` inside the **overyondr-website-v1** repo. The root build builds V2, `scripts/merge-v2.mjs` copies it
-into `dist/__v2`, and the single Cloudflare Worker serves it on https://v2.overyondrdev.com (behind Cloudflare Access,
+into `dist/__v2`, and the single Cloudflare Worker serves it on https://v2.overyondrdev.com (behind the Yondr Google sign-in,
 with the team feedback widget). Merges to `main` deploy automatically via Cloudflare Workers Builds.
 overyondr.com still points to Squarespace; production domains are added only at cutover.
