@@ -18,13 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # Pin third-party actions to a commit SHA before going live (Dependabot keeps them current).
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      # Actions are pinned to commit SHAs (version in the comment); Dependabot keeps them current.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - run: node scripts/secret-scan.mjs # no API keys, tokens or private keys in tracked files
       - run: npm run build          # V1 + V2 (v2/), merged into dist/; fails on any Squarespace CDN reference
       - run: npm run format:check --prefix v2
       - run: npm run check:links --prefix v2   # V2 internal links (blocking)
@@ -40,8 +41,8 @@ jobs:
       run:
         working-directory: auth
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
       - run: npm run check
