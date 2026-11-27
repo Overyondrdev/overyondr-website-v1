@@ -1,5 +1,8 @@
 # overyondr.com V1 — instructions for Claude
 
+**Read [docs/PLATFORM.md](docs/PLATFORM.md) before changing sign-in, deploys, DNS, Cloudflare settings or adding a
+site**: what runs where, the Yondr Google sign-in, Access seats, and deploy lessons.
+
 V1 is the overyondr.com Squarespace site, migrated page-for-page to a static Astro build
 served by one Cloudflare Worker. Visitors must see exactly what they saw on Squarespace;
 change what they see only to fix a bug (and say so in the PR).
@@ -16,7 +19,7 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
 - All of overyondrdev.com requires a **Yondr Google sign-in** (`auth/`, Worker `yondr-auth` at `auth.overyondrdev.com`):
   only verified `@overyondr.com` Google Workspace accounts. Every site checks the shared `yondr_session` cookie itself
   with a copy of `auth/src/session.js` (keep copies identical; CI checks). Cloudflare Access is set to Bypass for these
-  hosts because Access charges a seat per person. Never add a host without the session check, and keep
+  hosts because Access charges a seat per person (docs/PLATFORM.md §2–3). Never add a host without the session check, and keep
   `workers_dev` and `preview_urls` `false` in every Wrangler config.
 - Host routing and query-string pages live in `src/worker/index.js`.
 - overyondr.com still points to Squarespace. Do NOT add overyondr.com routes to `wrangler.jsonc`;

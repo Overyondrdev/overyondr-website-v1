@@ -1,0 +1,126 @@
+# overyondrdev.com platform guide
+
+How Yondr's preview sites and internal tools on `overyondrdev.com` fit together, how people sign in, how things
+deploy, and what we learned the hard way. **Read this before changing sign-in, deploys, DNS, Cloudflare settings or
+adding a site.** Each repository's CLAUDE.md points here.
+
+## 1. What runs where
+
+All in Cloudflare account `3fac6c19097c5692e17198cffa818085`. Every site is a Worker on a custom domain.
+
+| Host | Worker | Code | Deploys |
+| --- | --- | --- | --- |
+| `overyondrdev.com`, `www`, `v1`, `v2` | `overyondr-website-v1` | this repo (`src/`, `v2/`) | **Workers Builds** on merge to `main` (PR + **build** check required) |
+| `ads` | `yondr-ad-portal` | repo `Overyondrdev/digital-ads-portal` (moved out of `ad-portal/` here) | see that repo's README |
+| `cards` | `yondr-christmas-cards` | moving to repo `Overyondrdev/christmass-cards` (PR #20 here removes `apps/christmas-cards/`) | `npx wrangler deploy` |
+| `auth` | `yondr-auth` (the sign-in) | this repo, `auth/` | `npx wrangler -c wrangler.jsonc deploy` in `auth/` |
+| `requests` | `yondr-marketing-requests` | repo `Overyondrdev/marketing-request-portal` | `npx wrangler deploy` (migrations first: `npm run deploy`) |
+
+Everything else in the `overyondrdev.com` DNS zone is mail (Resend: `resend._domainkey`, `send`; Cloudflare Email
+Service: `cf-bounce*`; `_dmarc` with `p=reject`). Don't change those records.
+
+`overyondr.com` itself is still on Squarespace. Nothing here may add `overyondr.com` routes before the cutover.
+
+## 2. Sign-in: the Yondr Google sign-in (no Cloudflare Access seats)
+
+**Rule: every `*.overyondrdev.com` site checks the Yondr Google sign-in itself.** Cloudflare Access is set to
+**Bypass** for these hosts and plays no part in signing people in.
+
+How it works:
+1. A site sees no valid `yondr_session` cookie → redirects to `https://auth.overyondrdev.com/login?return=<url>`.
+2. That page (`auth/src/pages.js`) says which site you're going to and what happens; **Continue with Google** starts
+   Google sign-in (`/login/google`, OpenID Connect with PKCE, state and nonce).
+3. `auth` accepts only **verified Google Workspace** accounts whose Workspace (`hd`) and email are `overyondr.com`, then
+   sets `yondr_session`: an ES256-signed token, 12 hours, cookie for `.overyondrdev.com` (HttpOnly, Secure, Lax).
+4. Each site verifies it with its copy of `auth/src/session.js` and the public key in its `YONDR_AUTH_PUBLIC_JWK`
+   variable. Copies: `src/worker/yondr-session.js` (here; CI compares it with `auth/src/session.js`), and one in each
+   other site's repository (`digital-ads-portal`, `christmass-cards`, `marketing-request-portal`). When
+   `auth/src/session.js` changes, update every copy.
+
+The Google client is an **Internal** OAuth app in Google Cloud project `overyondrdev-sign-in`; its ID and secret are
+secrets on `yondr-auth` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`), with `SESSION_PRIVATE_JWK` (the signing key).
+Details and key rotation: `auth/README.md`. Estate inventory, session rules and risks: `docs/OPERATIONS.md` (when
+added). How the switch from Access was done: `auth/CUTOVER.md`.
+
+The sites still also accept a Cloudflare Access token (left over from the switch). It's harmless (still
+`@overyondr.com` only) and can be removed once nobody needs it.
+
+### Adding a new site (checklist)
+1. Put it on its own subdomain as a Worker with `workers_dev: false` and `preview_urls: false`.
+2. Copy `auth/src/session.js` into it unchanged; set `YONDR_AUTH_PUBLIC_JWK` (copy it from any site's config) and
+   `ALLOWED_EMAIL_DOMAINS = "overyondr.com"`.
+3. Check the session on **every** request, including static files (use `run_worker_first: true`, or bundle the files
+   into the Worker). Pages: redirect to `loginUrl(request)`. APIs: answer 401 JSON. Sign-out links:
+   `https://auth.overyondrdev.com/logout?return=<site>`.
+4. Add the site's name and one-line purpose to `SITES` in `auth/src/pages.js` (shown on the sign-in page).
+5. Deploy, then add the hostname to the Access application **"Yondr sites (Google sign-in)"** (Bypass).
+   Until you do, the wildcard application (Allow) keeps the new host behind Access: safe, but every sign-in there costs
+   a seat.
+6. In an Incognito window: the site sends you to the sign-in page, comes back after Google, and a personal Gmail is
+   refused.
+
+### If sign-in breaks
+- Roll back on any host: Zero Trust → Access → Applications → "Yondr sites (Google sign-in)" → policy Action
+  **Allow**, Include **Emails ending in** `@overyondr.com`. Access logins return at once (and cost seats again).
+- "Use your Yondr account" for real staff: the Workspace's primary domain isn't `overyondr.com` → set
+  `ALLOWED_WORKSPACE_DOMAINS` on `yondr-auth` (the log line `sign-in refused … hd=…` shows the value).
+- Google "app blocked by administrator": a Workspace admin marks `Yondr (overyondrdev.com)` as Trusted (admin.google.com
+  → Security → API controls → App access control).
+
+## 3. Cloudflare Access and seats: what we learned
+
+- **Every distinct email that signs in through Access uses a Zero Trust seat** for the month, whichever login method
+  (one-time code, Google, …). Plus-addresses (`chad+test@`) are separate people. Being a Yondr employee doesn't matter.
+- The account is on **Zero Trust Standard** with **1 seat bought**; 25 people signing in through Access hit the limit
+  ("Your Cloudflare Access organization has used all of its available seats") and blocked everyone else.
+- **Bypass** policies don't authenticate, so they use no seats. That's why sign-in moved into our Workers.
+- Access applications match the **most specific** hostname/path. The wildcard app "overyondrdev.com (Yondr website
+  dev)" (`*.overyondrdev.com`, Allow) stays as a safety net for any host not listed in a Bypass app.
+- Target state: Zero Trust → Overview shows **0 of 1** seats used. If it creeps up, someone is reaching a host that is
+  still behind Access: find it (Zero Trust → Logs → Access) and add it to the Bypass app (after it checks the session).
+  "Remove inactive users from seats" is set to 1 month.
+
+## 4. Deploying: what we learned
+
+- **The website repo's `main` is protected**: changes need a pull request and the **build** check. Merges deploy via
+  Workers Builds. The **"Workers Builds: overyondr-website-v1"** check on pull requests always fails (branch preview
+  upload: "name … must match the name of your Worker"); it isn't required and doesn't affect production.
+- **From a Claude cloud session, `wrangler deploy` can't upload Workers static assets** (the asset-upload step gets a
+  401 through the session's proxy). So the ad library, Christmas cards and marketing requests **bundle their files into
+  the Worker script** (each repo's build step) and deploy fine from anywhere. The website uses static assets
+  and deploys only through Workers Builds.
+- `wrangler deploy` **replaces dashboard plain-text variables** with what's in the config: keep every variable in
+  `wrangler.jsonc`/`wrangler.toml`. Secrets survive deploys; set them with `npx wrangler secret put NAME` or the
+  dashboard (type **Secret**).
+- `wrangler types` reads `.dev.vars`: move it aside first, or local values end up in the generated types.
+- Local `wrangler dev` rewrites every request's host to the first route, so host-based logic can't be tested locally
+  with a Host header; and Workers AI bindings need remote mode (use a temporary config without the binding to test).
+
+## 5. Secrets, privacy and repositories
+
+- Never commit secrets or personal email addresses. Owner/admin lists are secrets (`OWNER_EMAILS`). Tests and seed
+  data use fictional `@overyondr.com` people.
+- `DEV_EMAIL` (sign in as someone without Google) is **local only** (`.dev.vars`); it must never be set on a deployed
+  Worker: it would skip sign-in.
+- All five repositories (`overyondr-website-v1`, `overyondr-website-v2`, `marketing-request-portal`,
+  `digital-ads-portal`, `christmass-cards`) are **public** on GitHub. They hold no secrets, but consider making them
+  private (Settings → General → Change visibility).
+
+## 6. Email
+
+| Sender | Used by | Service | Notes |
+| --- | --- | --- | --- |
+| `marketing@overyondrdev.com` ("Yondr Marketing") | marketing requests notifications | **Resend** (secret `RESEND_API_KEY`, `EMAIL_ENABLED` on) | No inbox: most emails reply to the person who acted. |
+| `cards@overyondrdev.com` | Christmas cards | Cloudflare Email Service (`send_email` binding) | Records under `cf-bounce`. |
+
+`overyondrdev.com` has DMARC `p=reject`; Resend's DKIM (`resend._domainkey`) satisfies it.
+
+## 7. Testing
+
+- **Plus-addresses (`chad+test@overyondr.com`) can't sign in any more.** They worked with Access, which only emailed a
+  code to the address; Google signs in real Workspace accounts only. To test other roles on the live sites, give a
+  colleague the role (marketing portal: People & routing), or create dedicated test users in Google Workspace (each is a
+  Workspace licence). The marketing portal's old `chad+…` test people can be switched off there (Active toggle).
+- Locally: `DEV_EMAIL` in `.dev.vars`, plus an `X-Dev-Email` header to act as someone else (marketing portal, ad library).
+- After any sign-in change, check in Incognito: a signed-out visit lands on the sign-in page for the right site; signed
+  in, every site opens; a personal Gmail is refused; APIs answer 401 when signed out.
