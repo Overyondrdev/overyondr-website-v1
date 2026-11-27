@@ -17,9 +17,9 @@ _Last full audit: 27 Nov 2026._
 | `digital-ads-portal` | Ad library, `ads.overyondrdev.com` | Moved out of `ad-portal/` on 27 Nov ([v1 #30](https://github.com/Overyondrdev/overyondr-website-v1/pull/30), merged) |
 | `christmass-cards` | Client Christmas-card address collection, `cards.overyondrdev.com` | Moved out of `apps/christmas-cards/` on 27 Nov ([v1 #20](https://github.com/Overyondrdev/overyondr-website-v1/pull/20) removes the old copy) |
 | `marketing-request-portal` | Marketing request intake and approvals, `requests.overyondrdev.com` | Own repo from the start |
-| `overyondr-website-v2` | **Orphaned.** Early standalone copy of V2; `main` is empty. The real V2 is `overyondr-website-v1/v2/` | Archive it (see R3) |
+| `overyondr-website-v2` | Future home of V2 (section 6.2). Today `main` is empty and the live V2 is built from `overyondr-website-v1/v2/` | Being set up |
 
-All five are **public** on GitHub (R1).
+All five are **public** on GitHub, by decision (GitHub free plan). Treat every commit as published (R1).
 
 ### Cloudflare (account `3fac6c19097c5692e17198cffa818085`)
 | Worker | Hosts | Data | Deploys from |
@@ -45,7 +45,12 @@ Several Claude sessions work on this estate at once. To keep it calm:
 
 1. **One session per area.** Website/V1/V2/feedback/auth; ad library; marketing requests; Christmas cards; hub (this
    doc, cross-cutting checks). A session working outside its area says so in its PR.
-2. **Always branch, always PR, never push or force-push `main`.** Wait for the required checks. Squash-merge.
+2. **Always branch, always PR, never push or force-push `main`.** Wait for the required checks.
+   **When a PR is ready, merge it yourself (squash) and push — don't wait for the owner** (owner's standing instruction,
+   27 Nov 2026), unless the owner said otherwise for that piece of work. "Ready" means: required checks green, branch
+   up to date with `main`, docs updated, no open review questions. After merging, check the change live and say what you
+   checked. Still ask first for: `overyondr.com` cutover, deleting data or databases, DNS changes, and anything the owner
+   asked to approve.
 3. **Cross-cutting changes** (sign-in, `session.js`, DNS, Access, shared docs such as `CLAUDE.md`/`PLATFORM.md`) are
    announced in the PR description with "Affects: <other repos>". Before opening one, check for open PRs touching the
    same files and rebase after they merge, rather than racing.
@@ -63,9 +68,9 @@ Severity: **High** = could expose data or break sign-in; **Medium** = real defec
 
 | # | Sev | Risk | Action | Where |
 | --- | --- | --- | --- | --- |
-| R1 | High | All five repos are public: sign-in, admin and data-handling code, config IDs and internal docs are readable by anyone | Make all five private (GitHub → Settings → General → Change visibility). Workers Builds keeps working | GitHub (owner only) |
+| R1 | Accepted | All repos are public (owner decision: GitHub free plan). Code, config IDs and docs are readable by anyone | Keep public. Never commit secrets, personal emails, client data or internal-only notes; review diffs with that in mind | all |
 | R2 | Medium | Feedback admin: a non-owner admin could demote an owner by re-adding them as admin, then remove them | **Fixed** in this PR (`src/worker/feedback/api.js`) | v1 |
-| R3 | Medium | Orphaned `overyondr-website-v2` repo still claims `v2.overyondrdev.com` in its `wrangler.jsonc`, with no sign-in check. A deploy from it would take the v2 host away from the website Worker and could make V2 public. No such Worker exists today | Replace its README with a pointer to `overyondr-website-v1/v2/`, remove the route, archive the repo; delete branch `claude/confident-ritchie-seh2sa` in both repos | v2 repo |
+| R3 | Medium | Orphaned `overyondr-website-v2` repo still claims `v2.overyondrdev.com` in its `wrangler.jsonc`, with no sign-in check. A deploy from it would take the v2 host away from the website Worker and could make V2 public. No such Worker exists today | Superseded by section 6.2: the repo gets the real V2 and its own Worker with the sign-in check; until then nobody deploys from it | v2 repo |
 | R4 | Medium | Ad library accepts any Cloudflare Access token from the team (no audience or email-domain check) as a fallback | Fix in [digital-ads-portal#3](https://github.com/Overyondrdev/digital-ads-portal/pull/3) (fallback removed), awaiting merge | `digital-ads-portal` `src/access.ts` |
 | R5 | Medium | Ad library help article "Signing in" still describes one-time email codes and week-long sessions; the real sign-in is Google with 12-hour sessions | Fix in [digital-ads-portal#3](https://github.com/Overyondrdev/digital-ads-portal/pull/3), awaiting merge | `digital-ads-portal` |
 | R6 | Low | Open v1 PRs #20 (remove cards copy) and #29 (`PLATFORM.md`) touch nearby files; #30 merged 27 Nov. #29 is updated for the new repo layout and no longer overlaps #20 | Merge #20 and #29 in either order; then #29's author changes cards from "moving to" to "in" | v1 |
@@ -93,3 +98,29 @@ Severity: **High** = could expose data or break sign-in; **Medium** = real defec
 Not started. Needs owner sign-off. Before it: V1 parity sign-off (`scripts/migrate/compare.mjs`), analytics tags
 re-added, `overyondr.com` routes in `wrangler.jsonc`, root link check blocking, actions SHA-pinned, R1/R3/R7 closed,
 redirects verified against the live site, and a rollback plan (point DNS back to Squarespace).
+
+## 6. Planned restructuring (owner decisions, 27 Nov 2026)
+
+### 6.1 Feedback tool becomes its own product (first)
+The feedback widget, API, admin dashboard and data move out of the website into a **universal, pluggable tool** that
+any site or internal tool can add with one script tag, to collect documented, individual feedback on pages and on
+specific assets (an ad, a request, a card design).
+- New repo **`Overyondrdev/yondr-feedback`**, own Worker **`yondr-feedback`** on **`feedback.overyondrdev.com`**.
+- Keeps the existing data: D1 `yondr-feedback`, KV `yondr-feedback-screenshots` and Workers AI move to the new Worker's
+  bindings (no copy, no migration). Admin moves to `feedback.overyondrdev.com/admin`; `overyondrdev.com/admin`
+  redirects there.
+- Embed: `<script src="https://feedback.overyondrdev.com/widget.js" data-project="v1" defer>`; optional
+  `data-asset="<id>"` or `YondrFeedback.open({ asset })` to attach feedback to one item. The API allows credentialed
+  requests from `https://*.overyondrdev.com` only and checks the Yondr sign-in like every site.
+- The website preview toolbar and tour become an optional module of the same script (`data-toolbar="website"`).
+- Website, V2 and the portals then only carry the script tag.
+
+### 6.2 V2 becomes its own site (second)
+V1 and V2 must not be confused: V2 is on its way to becoming the public main website.
+- V2 code moves from `overyondr-website-v1/v2/` to **`Overyondrdev/overyondr-website-v2`** (its `main` is empty
+  today; the orphaned early copy there is replaced). Own Worker **`overyondr-website-v2`** serving
+  `v2.overyondrdev.com`, with its own copy of `session.js`, Workers Builds deploys, and the feedback script tag.
+- The V1 Worker stops serving `v2.` and `dist/__v2`; `v2/` and its CI steps are removed from the V1 repo.
+- Switch-over: the new Worker is verified first, then the `v2.overyondrdev.com` domain is moved to it in one step, then
+  the V1 cleanup PR merges. Signed-out visitors must still land on the sign-in page throughout.
+- Later, the `overyondr.com` cutover will point at whichever site is signed off as the public site.
