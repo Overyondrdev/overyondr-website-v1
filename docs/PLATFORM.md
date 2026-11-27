@@ -56,8 +56,10 @@ The sites still also accept a Cloudflare Access token (left over from the switch
    `https://auth.overyondrdev.com/logout?return=<site>`.
 4. Add the site's name and one-line purpose to `SITES` in `auth/src/pages.js` (shown on the sign-in page).
 5. Deploy, then add the hostname to the Access application **"Yondr sites (Google sign-in)"** (Bypass).
-   Until you do, the wildcard application (Allow) keeps the new host behind Access: safe, but every sign-in there costs
-   a seat.
+   (Optional since 27 Nov 2026: the wildcard application is Bypass too, so no host ever costs a seat. It also means
+   **Access no longer protects a new host**: the site's own session check is the only lock, so do step 3 before the
+   host goes live, and add the host to `GATE` in `Overyondrdev/yondr-ops` `src/checks.js` so Ops alerts within 5
+   minutes if it is ever reachable signed out.)
 6. In an Incognito window: the site sends you to the sign-in page, comes back after Google, and a personal Gmail is
    refused.
 
@@ -77,7 +79,10 @@ The sites still also accept a Cloudflare Access token (left over from the switch
   ("Your Cloudflare Access organization has used all of its available seats") and blocked everyone else.
 - **Bypass** policies don't authenticate, so they use no seats. That's why sign-in moved into our Workers.
 - Access applications match the **most specific** hostname/path. The wildcard app "overyondrdev.com (Yondr website
-  dev)" (`*.overyondrdev.com`, Allow) stays as a safety net for any host not listed in a Bypass app.
+  dev)" (`*.overyondrdev.com`) is **Bypass** (owner decision, 27 Nov 2026: never use Access seats anywhere). It used
+  to be Allow, as a safety net for hosts not yet in a Bypass app. **Never set any overyondrdev.com Access policy back to
+  Allow**: that charges a seat per person again. The safety net is now each site's own session check plus Ops' sign-in
+  checks (`GATE`, `site_exposed` alert).
 - Target state: Zero Trust → Overview shows **0 of 1** seats used. If it creeps up, someone is reaching a host that is
   still behind Access: find it (Zero Trust → Logs → Access) and add it to the Bypass app (after it checks the session).
   "Remove inactive users from seats" is set to 1 month.
