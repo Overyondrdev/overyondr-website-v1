@@ -17,8 +17,9 @@ It replaces Cloudflare Access logins, which cost a Zero Trust seat for every per
 4. It sets `yondr_session`: an ES256-signed token (12 hours) in a cookie for `.overyondrdev.com` (HttpOnly, Secure,
    SameSite=Lax), and sends the person back. Returns only go to `https://*.overyondrdev.com`.
 5. Each site verifies the cookie with `src/session.js` and the public key in its `YONDR_AUTH_PUBLIC_JWK` variable.
-   Copies of `session.js` live in `src/worker/`, `ad-portal/src/`, `apps/christmas-cards/src/` and the
-   marketing-request-portal repo; CI checks the copies in this repo are identical.
+   Copies of `session.js` live in `src/worker/`, `ad-portal/src/`, and the christmass-cards and
+   marketing-request-portal repos. CI checks the copies in this repo are identical; christmass-cards' CI compares
+   its copy with this one, so update it there too when this file changes.
 
 `/logout?return=<url>` ends the session everywhere. `/.well-known/jwks.json` publishes the public key.
 
