@@ -54,7 +54,7 @@ test('sync: not set up is reported, nothing stored', async () => {
 test('sync: reads the sheet with a service account token and stores active people', async () => {
   const kp = await crypto.subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
   const der = Buffer.from(await crypto.subtle.exportKey('pkcs8', kp.privateKey)).toString('base64');
-  const sa = JSON.stringify({ client_email: 'reader@example.iam.gserviceaccount.com', private_key: `-----BEGIN PRIVATE KEY-----\n${der}\n-----END PRIVATE KEY-----\n` });
+  const sa = JSON.stringify({ client_email: 'reader@example.iam.gserviceaccount.com', private_key: `-----BEGIN PRIVATE KEY-----\n${der}\n-----END PRIVATE KEY-----\n` }); // generated at test time, not a real key. secret-scan: allow
   const calls = [];
   const fetchFn = async (url, init = {}) => {
     calls.push(String(url));
