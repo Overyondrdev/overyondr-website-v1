@@ -107,7 +107,8 @@ redirects verified against the live site, and a rollback plan (point DNS back to
 
 ### 6.1 Feedback tool becomes its own product (first)
 Status: **done 27 Nov.** Live on `feedback.overyondrdev.com` (in the Access Bypass app); the website embeds it (#32);
-data upgraded in place (`project`, `asset`, `asset_label`). Next: embed in the ad library, marketing requests, cards.
+data upgraded in place (`project`, `asset`, `asset_label`). **Scope (owner, 27 Nov): the widget is on the website only**
+(portal, V1, V2). Other tools add it only when the owner decides to.
 The feedback widget, API, admin dashboard and data move out of the website into a **universal, pluggable tool** that
 any site or internal tool can add with one script tag, to collect documented, individual feedback on pages and on
 specific assets (an ad, a request, a card design).
@@ -132,6 +133,7 @@ V1 and V2 must not be confused: V2 is on its way to becoming the public main web
 - Later, the `overyondr.com` cutover will point at whichever site is signed off as the public site.
 
 ### 6.3 Operations: alerts, backups, auto-fix (owner decisions, 27 Nov 2026)
+- **Email: Resend for all overyondrdev.com email** (PLATFORM.md §6), one API key per sending Worker.
 - **Yondr Ops** (`ops.overyondrdev.com`, repo `yondr-ops`, live 27 Nov): checks every site every 5 minutes; alerts on
   change (and "resolved"), critical re-alerts hourly; admins (the feedback admin list) add people on **Alerts** and pick
   per person: alert types, email/Slack, severity, quiet hours. Owners always get `site_down`/`site_exposed`. Every alert
