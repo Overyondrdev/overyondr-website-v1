@@ -7,7 +7,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 
 // Where people are going: shown on the page so they know which Yondr site asked them to sign in.
 const SITES = [
-  { host: /^(www\.)?overyondrdev\.com$/, name: 'Yondr preview portal', about: 'the hub for previewing the new overyondr.com and Yondr’s other work in progress' },
+  { host: /^(www\.)?overyondrdev\.com$/, name: 'Yondr Dev Portal', about: 'one place for Website Review, Marketing Requests, Ad Campaigns and Christmas Card Requests' },
   { host: /^v1\./, name: 'Website V1 preview', about: 'overyondr.com as it is today, moved to its new home' },
   { host: /^v2\./, name: 'Website V2 preview', about: 'the redesign of overyondr.com, in progress' },
   { host: /^ads\./, name: 'Ad library', about: 'where Yondr ads are found, reviewed and downloaded' },

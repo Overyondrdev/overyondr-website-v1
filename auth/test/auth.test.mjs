@@ -85,7 +85,7 @@ test('the sign-in page says where you are going, and escapes what comes from the
   const { signInPage, siteFor } = await import('../src/pages.js');
   assert.equal(siteFor('https://requests.overyondrdev.com/requests/MR-1').name, 'Marketing requests');
   assert.equal(siteFor('https://cards.overyondrdev.com/auth').name, 'Christmas cards');
-  assert.equal(siteFor('https://overyondrdev.com/').name, 'Yondr preview portal');
+  assert.equal(siteFor('https://overyondrdev.com/').name, 'Yondr Dev Portal');
   const html = signInPage({ ret: 'https://ads.overyondrdev.com/?q="><script>x</script>', domain: 'overyondr.com', hours: 12 });
   assert.match(html, /Ad library/);
   assert.match(html, /Continue with Google/);

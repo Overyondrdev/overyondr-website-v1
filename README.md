@@ -8,7 +8,7 @@ image, file, video and font self-hosted. The redesign (V2) will live in its own 
 ## Where it runs
 | URL | What |
 | --- | --- |
-| https://overyondrdev.com | Portal: **Yondr Website V1** / **Yondr Website V2** buttons |
+| https://overyondrdev.com | **Yondr Dev Portal**: Website Review (`/website`, V1 / V2), Marketing Requests, Ad Campaigns, Christmas Card Request |
 | https://v1.overyondrdev.com | This site |
 | https://v2.overyondrdev.com | V2: its own repository and Worker ([overyondr-website-v2](https://github.com/Overyondrdev/overyondr-website-v2)) |
 
