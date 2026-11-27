@@ -110,10 +110,15 @@ The sites still also accept a Cloudflare Access token (left over from the switch
 
 ## 6. Email
 
+**Rule (owner, 27 Nov 2026): all email sent from overyondrdev.com goes through Resend.** Each sending Worker has its own
+Resend API key (sending access, domain `overyondrdev.com`) in a secret named `RESEND_API_KEY`, so one key can be
+revoked without touching the others. Don't add Cloudflare Email Service (`send_email`) or any other provider.
+
 | Sender | Used by | Service | Notes |
 | --- | --- | --- | --- |
 | `marketing@overyondrdev.com` ("Yondr Marketing") | marketing requests notifications | **Resend** (secret `RESEND_API_KEY`, `EMAIL_ENABLED` on) | No inbox: most emails reply to the person who acted. |
-| `cards@overyondrdev.com` | Christmas cards | Cloudflare Email Service (`send_email` binding) | Records under `cf-bounce`. |
+| `alerts@overyondrdev.com` ("Yondr Ops") | ops alerts and digests | **Resend** (secret `RESEND_API_KEY` on `yondr-ops`) | No inbox. |
+| `cards@overyondrdev.com` | Christmas cards | Cloudflare Email Service today → **moving to Resend** (cards repo) | The `cf-bounce` records can go once cards has moved (ask first: DNS). |
 
 `overyondrdev.com` has DMARC `p=reject`; Resend's DKIM (`resend._domainkey`) satisfies it.
 
