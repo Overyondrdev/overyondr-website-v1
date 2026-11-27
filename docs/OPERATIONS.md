@@ -18,7 +18,7 @@ _Last full audit: 27 Nov 2026._
 | `christmass-cards` | Client Christmas-card address collection, `cards.overyondrdev.com` | Moved out of `apps/christmas-cards/` on 27 Nov ([v1 #20](https://github.com/Overyondrdev/overyondr-website-v1/pull/20) removes the old copy) |
 | `marketing-request-portal` | Marketing request intake and approvals, `requests.overyondrdev.com` | Own repo from the start |
 | `yondr-feedback` | Feedback tool: widget, API, admin, `feedback.overyondrdev.com` | Own repo since 27 Nov (6.1) |
-| `yondr-ops` | Ops hub: monitoring every 5 min, alerts (people & rules), nightly backups, auto-fix engine (triage, issues, verification) + revert, `ops.overyondrdev.com` | Own repo since 27 Nov (6.3) |
+| `yondr-ops` | Ops hub and **admin dashboard**: overview, issues (assign, track), people & permissions, status page for all staff, errors, deploys + rollback, backups + monthly restore drill, keys calendar, access review, alerts, auto-fix engine + revert, `ops.overyondrdev.com` | Own repo since 27 Nov (6.3) |
 | `overyondr-website-v2` | Future home of V2 (section 6.2). Today `main` is empty and the live V2 is built from `overyondr-website-v1/v2/` | Being set up |
 
 All seven are **public** on GitHub, by decision (GitHub free plan). Treat every commit as published (R1).
@@ -28,7 +28,7 @@ All seven are **public** on GitHub, by decision (GitHub free plan). Treat every 
 | --- | --- | --- | --- |
 | `overyondr-website-v1` | `overyondrdev.com`, `www`, `v1`, `v2` | none (static assets) | Workers Builds on merge to `main` |
 | `yondr-feedback` | `feedback` | D1 `yondr-feedback`, KV `yondr-feedback-screenshots`, Workers AI | `npm run deploy` in `yondr-feedback` |
-| `yondr-ops` | `ops` (+ crons: every 5 min monitoring, every 5 min auto-fix, 03:17 UTC backups) | D1 `yondr-ops`, R2 `yondr-ops-backups`, Workers AI; reads the other four D1 databases (read-only) for admins and backups | `npm run deploy` in `yondr-ops` |
+| `yondr-ops` | `ops` (+ crons: every 5 min monitoring, every 5 min auto-fix, 03:17 UTC backups) | D1 `yondr-ops`, D1 `yondr-ops-restore-drill` (scratch for the monthly restore test; emptied after), R2 `yondr-ops-backups`, Workers AI, service binding to `yondr-feedback` (role changes as the signed-in admin); reads the other four D1 databases (read-only) | `npm run deploy` in `yondr-ops` |
 | `yondr-auth` | `auth` | none (secrets only) | `wrangler deploy` in `auth/` |
 | `yondr-ad-portal` | `ads` | D1 `yondr-ad-portal-db`, R2 `yondr-ad-portal-assets` | Workers Builds from `digital-ads-portal` |
 | `yondr-christmas-cards` | `cards` | D1 `yondr-christmas-cards` (client addresses: **personal data**), email binding | Workers Builds from `christmass-cards` |
