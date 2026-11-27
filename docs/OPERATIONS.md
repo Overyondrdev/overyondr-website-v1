@@ -18,15 +18,17 @@ _Last full audit: 27 Nov 2026._
 | `christmass-cards` | Client Christmas-card address collection, `cards.overyondrdev.com` | Moved out of `apps/christmas-cards/` on 27 Nov ([v1 #20](https://github.com/Overyondrdev/overyondr-website-v1/pull/20) removes the old copy) |
 | `marketing-request-portal` | Marketing request intake and approvals, `requests.overyondrdev.com` | Own repo from the start |
 | `yondr-feedback` | Feedback tool: widget, API, admin, `feedback.overyondrdev.com` | Own repo since 27 Nov (6.1) |
+| `yondr-ops` | Ops hub: monitoring every 5 min, alerts (people & rules), nightly backups, auto-fix log + revert, `ops.overyondrdev.com` | Own repo since 27 Nov (6.3) |
 | `overyondr-website-v2` | Future home of V2 (section 6.2). Today `main` is empty and the live V2 is built from `overyondr-website-v1/v2/` | Being set up |
 
-All six are **public** on GitHub, by decision (GitHub free plan). Treat every commit as published (R1).
+All seven are **public** on GitHub, by decision (GitHub free plan). Treat every commit as published (R1).
 
 ### Cloudflare (account `3fac6c19097c5692e17198cffa818085`)
 | Worker | Hosts | Data | Deploys from |
 | --- | --- | --- | --- |
 | `overyondr-website-v1` | `overyondrdev.com`, `www`, `v1`, `v2` | none (static assets) | Workers Builds on merge to `main` |
 | `yondr-feedback` | `feedback` | D1 `yondr-feedback`, KV `yondr-feedback-screenshots`, Workers AI | `npm run deploy` in `yondr-feedback` |
+| `yondr-ops` | `ops` (+ cron every 5 min and 03:17 UTC) | D1 `yondr-ops`, R2 `yondr-ops-backups`; reads the other four D1 databases (read-only) for admins and backups | `npm run deploy` in `yondr-ops` |
 | `yondr-auth` | `auth` | none (secrets only) | `wrangler deploy` in `auth/` |
 | `yondr-ad-portal` | `ads` | D1 `yondr-ad-portal-db`, R2 `yondr-ad-portal-assets` | Workers Builds from `digital-ads-portal` |
 | `yondr-christmas-cards` | `cards` | D1 `yondr-christmas-cards` (client addresses: **personal data**), email binding | Workers Builds from `christmass-cards` |
@@ -104,8 +106,8 @@ redirects verified against the live site, and a rollback plan (point DNS back to
 ## 6. Planned restructuring (owner decisions, 27 Nov 2026)
 
 ### 6.1 Feedback tool becomes its own product (first)
-Status: repo and code done (yondr-feedback #1). Next: deploy the Worker, add `feedback` to the Access Bypass app,
-then merge the website switch-over PR.
+Status: **done 27 Nov.** Live on `feedback.overyondrdev.com` (in the Access Bypass app); the website embeds it (#32);
+data upgraded in place (`project`, `asset`, `asset_label`). Next: embed in the ad library, marketing requests, cards.
 The feedback widget, API, admin dashboard and data move out of the website into a **universal, pluggable tool** that
 any site or internal tool can add with one script tag, to collect documented, individual feedback on pages and on
 specific assets (an ad, a request, a card design).
@@ -128,3 +130,22 @@ V1 and V2 must not be confused: V2 is on its way to becoming the public main web
 - Switch-over: the new Worker is verified first, then the `v2.overyondrdev.com` domain is moved to it in one step, then
   the V1 cleanup PR merges. Signed-out visitors must still land on the sign-in page throughout.
 - Later, the `overyondr.com` cutover will point at whichever site is signed off as the public site.
+
+### 6.3 Operations: alerts, backups, auto-fix (owner decisions, 27 Nov 2026)
+- **Yondr Ops** (`ops.overyondrdev.com`, repo `yondr-ops`, live 27 Nov): checks every site every 5 minutes; alerts on
+  change (and "resolved"), critical re-alerts hourly; admins (the feedback admin list) add people on **Alerts** and pick
+  per person: alert types, email/Slack, severity, quiet hours. Owners always get `site_down`/`site_exposed`. Every alert
+  is logged. Nightly backups of all D1 databases to R2: 30 daily + 12 monthly, the same for personal data (the
+  Christmas-card addresses are **kept**, by owner decision; owner-only downloads).
+- **Until email/Slack are connected**: an hourly Claude scheduled task checks every host and pushes to the owner's phone
+  only when something fails. Retire it once Ops alerts are delivering.
+- **Auto-fix rules (owner):** only feedback of type **bug** can be auto-fixed, and only when it is **objective**
+  (verifiable: errors, broken links, a form that fails, broken layout at 375 px, text differing from its source,
+  sign-in failures). **Subjective** issues (look, wording, tone, preference), even if marked critical, never auto-fix:
+  they go to a person. Objective critical bugs are fixed immediately; other objective bugs are queued. Fixes go
+  through a PR with all checks, can't touch sign-in, deploy config, CI or migrations, have a size limit, are verified
+  after deploy and reverted automatically if anything breaks. Every step is logged in Ops (**Auto-fixes**), each with
+  a **Revert** button; updates go out as `autofix_*` alerts. Master switch `autofix_enabled` is off until the owner turns
+  it on. Engine: Claude Code GitHub Action using the owner's Claude subscription (`CLAUDE_CODE_OAUTH_TOKEN` org secret).
+- **Christmas cards:** addresses are associated with each rep and curated into per-rep lists for ongoing
+  communications (work in the cards repo).

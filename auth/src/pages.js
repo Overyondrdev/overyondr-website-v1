@@ -13,6 +13,7 @@ const SITES = [
   { host: /^ads\./, name: 'Ad library', about: 'where Yondr ads are found, reviewed and downloaded' },
   { host: /^requests\./, name: 'Marketing requests', about: 'where you ask marketing for work and follow it to delivery' },
   { host: /^cards\./, name: 'Christmas cards', about: 'where you add the clients who should receive a Yondr card' },
+  { host: /^ops\./, name: 'Yondr Ops', about: 'where admins watch the sites, manage alerts, backups and auto-fixes' },
   { host: /^feedback\./, name: 'Feedback', about: 'where the team reviews feedback left on Yondr’s sites and work' },
 ];
 export function siteFor(returnUrl) {
