@@ -18,7 +18,10 @@
     // and "Yondr Christmas Cards" which guards only cards.overyondrdev.com/auth (Cloudflare emails the code).
     "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8,c99197f9fb449f627897900bfa03703c4d54ed0d650e20bb20dd3d6d87262c4c",
     // Sign-in code emails come from this address (domain must be onboarded in Cloudflare Email Sending).
-    "EMAIL_FROM": "cards@overyondrdev.com"
+    "EMAIL_FROM": "cards@overyondrdev.com",
+    // Yondr Google sign-in (auth.overyondrdev.com): public key of the shared session cookie. Safe to commit.
+    "YONDR_AUTH_PUBLIC_JWK": "{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"BpCjLJMykOsJbtPTm63rdbw2BzRUTNTz3jj9LWqK6AM\",\"y\":\"RyW0y7Dki1BQ6GnYdD-4FPovGYfoaMmDgr21lNU7xXQ\",\"kid\":\"yondr-2026-11-26-a3a7e6\"}",
+    "ALLOWED_EMAIL_DOMAINS": "overyondr.com"
     // Secret (set in the dashboard or with `npx wrangler secret put GOOGLE_MAPS_API_KEY`):
     //   GOOGLE_MAPS_API_KEY  Google Address Validation API key. Without it, only the built-in checks run.
   },

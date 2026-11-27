@@ -33,6 +33,8 @@
   var ABOUT = [['portal', 'Both or general'], ['v1', 'V1'], ['v2', 'V2']];
   var PRIORITY = [['low', 'Low'], ['normal', 'Normal'], ['high', 'High'], ['critical', 'Critical']];
 
+  var MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl';
+
   var store = {
     get: function (k, d) { try { var v = localStorage.getItem('yfb:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set: function (k, v) { try { localStorage.setItem('yfb:' + k, JSON.stringify(v)); } catch (e) { /* private mode */ } },
@@ -121,7 +123,7 @@
  --sans:"YFB Inter Tight","Inter Tight",Arial,sans-serif;--serif:"YFB Fraunces",Fraunces,Georgia,serif;\
  font:400 14px/1.5 var(--sans);color:var(--ob);-webkit-font-smoothing:antialiased}\
 button{font:inherit;color:inherit;cursor:pointer}\
-:focus-visible{outline:2.5px solid var(--g);outline-offset:2px;border-radius:8px}\
+:focus-visible{outline:2.5px solid var(--g);outline-offset:2px}\
 .launcher:focus-visible,.head :focus-visible,.annot :focus-visible,.shot .acts button:focus-visible{outline-color:var(--l)}\
 .launcher{position:fixed;right:0;top:50%;z-index:2147483000;display:flex;flex-direction:column;align-items:center;gap:10px;\
  padding:16px 11px 18px;border:0;border-radius:14px 0 0 14px;background:var(--g);color:var(--l);\
@@ -155,6 +157,7 @@ button{font:inherit;color:inherit;cursor:pointer}\
 .tab .new{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--l);margin-left:6px;vertical-align:2px}\
 .body{flex:1;overflow:auto;padding:18px;overscroll-behavior:contain}\
 .foot{padding:12px 18px 16px;border-top:1px solid var(--line);background:var(--paper)}\
+.foot:empty{display:none}\
 h3{font:500 22px/1.15 var(--serif);color:var(--g);margin:0 0 4px}\
 .sub{margin:0 0 16px;color:var(--muted);font-size:13px}\
 .label{display:block;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);margin:16px 0 8px}\
@@ -162,7 +165,7 @@ h3{font:500 22px/1.15 var(--serif);color:var(--g);margin:0 0 4px}\
 .chip{border:1px solid var(--line);background:var(--ow);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--g);transition:all .15s}\
 .chip:hover{border-color:var(--moss)}\
 .chip[aria-pressed=true]{background:var(--g);border-color:var(--g);color:var(--ow);font-weight:700}\
-textarea{display:block;width:100%;min-height:110px;max-height:260px;resize:vertical;border:1px solid var(--line);border-radius:var(--r);background:#fff;\
+textarea{display:block;width:100%;min-height:110px;max-height:260px;resize:vertical;border:1px solid var(--line);border-radius:12px;background:#fff;\
  padding:12px 14px;font:inherit;font-size:14.5px;color:var(--ob);line-height:1.5;transition:border-color .15s,box-shadow .15s}\
 textarea:focus{outline:0;border-color:var(--g);box-shadow:0 0 0 3px rgba(28,48,11,.16)}\
 .tools{display:flex;gap:6px;margin-top:10px}\
@@ -199,7 +202,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
 .item{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--ow);border-radius:var(--r);padding:14px 16px;margin-bottom:10px;transition:border-color .15s,transform .15s}\
 .item:hover{border-color:var(--moss);transform:translateY(-1px)}\
 .item .meta{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap}\
-.item p{margin:0;color:var(--ob);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}\
+.item p{margin:0;color:var(--ob);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}\
 .item .unread{width:8px;height:8px;border-radius:50%;background:var(--g);margin-left:auto}\
 .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em}\
 .pill.t{background:var(--mist);color:var(--g)}\
@@ -208,7 +211,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
 .empty{color:var(--muted);padding:28px 4px}\
 .empty h3{margin-bottom:8px}\
 .back{display:inline-flex;align-items:center;gap:4px;border:0;background:transparent;color:var(--g);font-weight:600;padding:0;margin-bottom:12px}\
-.detail .msg{white-space:pre-wrap;margin:10px 0 12px;font-size:14.5px}\
+.detail .msg{white-space:pre-wrap;overflow-wrap:anywhere;margin:10px 0 12px;font-size:14.5px}\
 .gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}\
 .gallery a{display:block;border-radius:10px;overflow:hidden;border:1px solid var(--line)}\
 .gallery img{width:100%;display:block}\
@@ -217,7 +220,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
 .cmt .who{font-size:12px;font-weight:700;color:var(--g)}\
 .cmt .who span{font-weight:400;color:var(--muted);margin-left:6px}\
 .cmt .team{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--g);color:var(--ow);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}\
-.cmt p{margin:3px 0 0;white-space:pre-wrap}\
+.cmt p{margin:3px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}\
 .reply{display:flex;gap:8px;margin-top:10px}\
 .reply textarea{min-height:44px;height:44px;border-radius:12px;padding:10px 12px;font-size:14px}\
 .reply button{flex:none;width:44px;border:0;border-radius:12px;background:var(--g);color:var(--ow);display:grid;place-items:center}\
@@ -236,9 +239,13 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
 .annot-bar .tb:hover{background:rgba(244,249,209,.16)}\
 .annot-bar .tb[aria-pressed=true]{background:var(--deep);color:var(--l);box-shadow:inset 0 0 0 1.5px var(--l)}\
 .annot-bar .sep{width:1px;height:26px;background:rgba(244,249,209,.18);margin:0 6px}\
-.annot-bar .sw{width:22px;height:22px;border-radius:50%;border:2px solid transparent;padding:0}\
+.annot-bar .sw{width:22px;height:22px;border-radius:50%;border:2px solid transparent;padding:0;box-shadow:inset 0 0 0 1px rgba(244,249,209,.45)}\
 .annot-bar .sw[aria-pressed=true]{border-color:var(--ow);box-shadow:0 0 0 2px var(--g) inset}\
-.annot-bar .act{border:0;border-radius:12px;padding:10px 16px;font-weight:700}\
+.annot-bar .act{border:0;border-radius:12px;padding:10px 16px;font-weight:700;white-space:nowrap}\
+.annot-bar .end{display:flex;gap:6px;margin-left:auto}\
+.annot-bar .act.cancel:hover{background:rgba(244,249,209,.08)}\
+.annot-bar .act.ok:hover{background:#fff}\
+.annot-bar :focus-visible{outline-color:var(--l)}\
 .annot-bar .act.cancel{background:transparent;color:var(--ow)}\
 .annot-bar .act.ok{background:var(--ow);color:var(--g)}\
 .annot-stage{flex:1;display:grid;place-items:center;overflow:hidden;padding:0 16px 16px}\
@@ -277,7 +284,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
 .tcard.wide{width:min(460px,calc(100vw - 24px))}\
 .tcard .wmk{width:80px;display:block;margin-bottom:18px}\
 .tcard .eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--moss);margin:0 0 8px}\
-.tcard h2{font:500 24px/1.15 var(--serif);color:var(--g);margin:0 0 8px;letter-spacing:-.01em}\
+.tcard h2{font:500 24px/1.15 var(--serif);color:var(--g);margin:0 0 8px;letter-spacing:-.01em;text-wrap:balance}\
 .tcard p{margin:0;font-size:14.5px;line-height:1.5}\
 .tcard ol{list-style:none;margin:14px 0 0;padding:0}\
 .tcard li{display:grid;grid-template-columns:30px 1fr;gap:4px 10px;padding:12px 0;border-top:2px solid var(--mist)}\
@@ -292,10 +299,14 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
 .tskip:hover{color:var(--g)}\
 .tnav .primary{width:auto;padding:10px 18px;font-size:14px}\
 .tnav .ghost{padding:10px 14px}\
+.tnav button{white-space:nowrap}\
+@media (max-width:1000px){.bar .wm span{display:none}}\
 @media (max-width:720px){.bar{grid-template-columns:auto 1fr auto;gap:6px;padding:0 6px}.bar .wm,.b-tour .l,.b-fb .l,.b-back .l{display:none}.b-fb .s,.b-back .s{display:inline}\
 .b-switch{justify-self:center}.b-switch a{padding:6px 12px}.b-fb{padding:7px 12px 7px 10px}}\
 .hidden{display:none!important}\
-@media (max-width:480px){.panel{width:100vw;border-radius:0;box-shadow:none}.launcher{padding:12px 7px 13px}}\
+@media (max-width:480px){.panel,.with-bar .panel{width:100vw;border-radius:0;box-shadow:none}.launcher{padding:12px 7px 13px}\
+.tnav.stack{flex-wrap:wrap}.tnav.stack .tdots{flex-basis:100%;margin-bottom:6px}.tnav.stack button{flex:1}\
+.annot-bar .title{flex-basis:100%;margin-bottom:4px}.annot-bar .sep{display:none}}\
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}';
 
   // ------------------------------------------------------------------ mount
@@ -330,12 +341,18 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     setTimeout(function () { t.remove(); }, 2600);
   }
 
+  var opener = null;
   function toggle(open) {
     state.open = open;
     panel.classList.toggle('hidden', !open);
     launcher.classList.toggle('hidden', open || state.hidden);
     launcher.setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open) { render(); refreshMine(); } else launcher.focus();
+    if (open) { opener = (shadow.activeElement || document.activeElement); render(); refreshMine(); }
+    else {
+      var back = opener && opener.isConnected && !(opener.classList && opener.classList.contains('hidden')) ? opener : barFb || launcher;
+      opener = null;
+      if (back && back.focus) back.focus();
+    }
   }
   if (state.hidden) launcher.classList.add('hidden');
 
@@ -564,8 +581,12 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       }
       var r = t.getBoundingClientRect(), pad = 6;
       var sr = { l: r.left - pad, t: r.top - pad, w: r.width + pad * 2, h: r.height + pad * 2 };
-      // Keep a tall target (e.g. the version cards) from filling the screen.
-      if (sr.t < m) { sr.h -= m - sr.t; sr.t = m; }
+      // Keep the ring on screen (targets in the top bar sit near the edges) without cutting through the target,
+      // and keep a tall target (e.g. the version cards) from filling the screen.
+      var e = 3;
+      if (sr.l < e) { sr.w -= e - sr.l; sr.l = e; }
+      if (sr.l + sr.w > vw - e) sr.w = vw - e - sr.l;
+      if (sr.t < e) { sr.h -= e - sr.t; sr.t = e; }
       if (sr.t + sr.h > vh - m) sr.h = vh - m - sr.t;
       spot.classList.remove('hidden'); veil.classList.add('hidden');
       spot.style.left = sr.l + 'px'; spot.style.top = sr.t + 'px'; spot.style.width = sr.w + 'px'; spot.style.height = sr.h + 'px';
@@ -619,7 +640,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       }
       var dots = steps.length > 1 ? el('div', { class: 'tdots', 'aria-hidden': 'true' }, steps.map(function (_, n) { return el('i', { class: n === i ? 'on' : '' }); }))
         : el('div', { class: 'tdots' });
-      card.appendChild(el('div', { class: 'tnav' }, [dots].concat(buttons)));
+      card.appendChild(el('div', { class: 'tnav' + (st.last ? ' stack' : '') }, [dots].concat(buttons)));
       var t = visibleTarget(st);
       if (t && t.getRootNode() === document) {
         var r = t.getBoundingClientRect();
@@ -646,7 +667,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     tour.s++;
     saveTour();
     var final = tour.s >= TOUR_SKIPS;
-    var where = bar ? 'the ? Tour button in the top bar' : 'Take the tour at the top of this page';
+    var where = bar ? 'the Tour button in the top bar' : 'Take the tour at the top of this page';
     runCards([{
       target: tourButton, eyebrow: 'Tour',
       title: final ? 'The tour is here whenever you need it' : 'No problem, pick it up anytime',
@@ -808,7 +829,7 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
     footEl.appendChild(btn);
     footEl.appendChild(el('div', { class: 'hint' }, [
       el('span', { text: state.me ? 'Sending as ' + state.me.email : '' }),
-      el('span', { html: '<kbd>⌘</kbd> <kbd>Enter</kbd> to send' }),
+      el('span', { html: '<kbd>' + MOD + '</kbd> <kbd>Enter</kbd> to send' }),
     ]));
     function updateSend() { btn.disabled = state.sending || !state.message.trim(); }
     updateSend();
@@ -1032,10 +1053,11 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       bar.appendChild(b);
     });
     bar.appendChild(el('span', { class: 'sep' }));
-    bar.appendChild(el('button', { class: 'tb', type: 'button', title: 'Undo (⌘Z)', 'aria-label': 'Undo', html: ICON.undo, onclick: undo }));
-    bar.appendChild(el('span', { class: 'sep' }));
-    bar.appendChild(el('button', { class: 'act cancel', type: 'button', text: 'Cancel', onclick: function () { close(null); } }));
-    bar.appendChild(el('button', { class: 'act ok', type: 'button', text: 'Attach screenshot', onclick: finish }));
+    bar.appendChild(el('button', { class: 'tb', type: 'button', title: 'Undo (' + MOD + (MOD === 'Ctrl' ? '+' : '') + 'Z)', 'aria-label': 'Undo', html: ICON.undo, onclick: undo }));
+    bar.appendChild(el('span', { class: 'sep last' }));
+    bar.appendChild(el('div', { class: 'end' }, [
+      el('button', { class: 'act cancel', type: 'button', text: 'Cancel', onclick: function () { close(null); } }),
+      el('button', { class: 'act ok', type: 'button', text: 'Attach screenshot', onclick: finish })]));
     overlay.appendChild(bar);
     overlay.appendChild(el('div', { class: 'annot-stage' }, [canvas]));
     root.appendChild(overlay);
@@ -1123,17 +1145,24 @@ kbd{font:600 11px/1 var(--sans);padding:2px 5px;border-radius:5px;border:1px sol
       var input = el('input', { class: 'annot-text', type: 'text', placeholder: 'Type, then Enter', style: 'left:' + e.clientX + 'px;top:' + (e.clientY - 18) + 'px' });
       root.appendChild(input);
       setTimeout(function () { input.focus(); }, 0);
+      var committed = false;
       function commit() {
+        if (committed) return;
+        committed = true;
         if (input.value.trim()) shapes.push({ kind: 'text', color: color, x: p.x, y: p.y, text: input.value.trim() });
         input.remove(); redraw();
       }
-      input.addEventListener('keydown', function (ev) { ev.stopPropagation(); if (ev.key === 'Enter') commit(); if (ev.key === 'Escape') input.remove(); });
+      input.addEventListener('keydown', function (ev) { ev.stopPropagation(); if (ev.key === 'Enter') commit(); if (ev.key === 'Escape') { committed = true; input.remove(); } });
       input.addEventListener('blur', commit);
     }
     function onKey(e) {
-      if (e.key === 'Escape') { e.preventDefault(); close(null); }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); undo(); }
-      if (e.key === 'Enter' && !(e.target && e.target.tagName === 'INPUT')) { e.preventDefault(); finish(); }
+      var typing = shadow.activeElement && shadow.activeElement.tagName === 'INPUT';
+      if (e.key === 'Escape') { if (typing) return; e.preventDefault(); close(null); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !typing) { e.preventDefault(); undo(); }
+      // Events are retargeted to the shadow host, so look at what has focus inside it: Enter on Cancel or
+      // in the text box must not attach the screenshot.
+      var f = shadow.activeElement;
+      if (e.key === 'Enter' && !(f && /^(INPUT|BUTTON)$/.test(f.tagName))) { e.preventDefault(); finish(); }
     }
     document.addEventListener('keydown', onKey, true);
     function finish() {

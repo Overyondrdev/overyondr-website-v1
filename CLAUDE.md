@@ -14,13 +14,19 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
 | `v2.overyondrdev.com` | V2, the Loba redesign (work in progress), built from `v2/` into `dist/__v2` |
 | `cards.overyondrdev.com` | Christmas card list app: a separate Worker in `apps/christmas-cards/` (see its README) |
 
-- All of overyondrdev.com is behind Cloudflare Access (Zero Trust team `overyondr.cloudflareaccess.com`,
-  app "overyondrdev.com (Yondr website dev)"): one-time code emailed to any `@overyondr.com` address,
-  session lasts 7 days. `workers_dev` and `preview_urls` stay `false` in `wrangler.jsonc` so nothing bypasses it.
+- All of overyondrdev.com requires a **Yondr Google sign-in** (`auth/`, Worker `yondr-auth` at `auth.overyondrdev.com`):
+  only verified `@overyondr.com` Google Workspace accounts. Every site checks the shared `yondr_session` cookie itself
+  with a copy of `auth/src/session.js` (keep copies identical; CI checks). Cloudflare Access is set to Bypass for these
+  hosts because Access charges a seat per person. Never add a host without the session check, and keep
+  `workers_dev` and `preview_urls` `false` in every Wrangler config.
 - Host routing and query-string pages live in `src/worker/index.js`.
 - overyondr.com still points to Squarespace. Do NOT add overyondr.com routes to `wrangler.jsonc`;
   that happens only at cutover, after sign-off. The Worker already serves V1 for any non-dev host.
 - Dev hosts are `noindex` via `public/_headers`. Keep it that way.
+- `ads.overyondrdev.com` (ad library) is a separate Worker, `yondr-ad-portal`, in `ad-portal/` with its own
+  `wrangler.toml`, R2 bucket and D1 database. It is not part of this site's build or deploy; see `ad-portal/README.md`.
+  CI checks it in the `ad-portal` job of `.github/workflows/ci.yml`; when changing portal features, update its help
+  articles in `ad-portal/public/help-content.js`.
 
 ## Feedback tool
 Yondr staff leave feedback on any dev page through a widget; the team reviews it at **overyondrdev.com/admin**.
@@ -32,8 +38,8 @@ Yondr staff leave feedback on any dev page through a widget; the team reviews it
   person's first 3 visits (visit = back after 30+ min), once per visit; finishing ends it; the 1st skip points at the Tour
   button and offers to resume next visit; the 2nd skip is final. Part-way tours are still offered after visit 3.
   State is the `yfb_tour` cookie on `.overyondrdev.com` (shared by all dev hosts); any `[data-yfb-tour]` element replays it.
-- API: `src/worker/feedback/api.js` at `/__feedback/api/*`. Identity = Cloudflare Access email, verified from the
-  `Cf-Access-Jwt-Assertion` token (`auth.js`). Data: D1 `yondr-feedback` (`env.DB`, schema in `schema.js`, applied
+- API: `src/worker/feedback/api.js` at `/__feedback/api/*`. Identity = the Yondr Google sign-in session (`auth.js`, via
+  `src/worker/yondr-session.js`); Access tokens are still accepted during the switch. Data: D1 `yondr-feedback` (`env.DB`, schema in `schema.js`, applied
   automatically), screenshots in KV (`env.SHOTS`), AI summaries via Workers AI (`env.AI`).
 - Admin: `src/pages/admin.astro` + `public/__feedback/admin.{js,css}`. Roles live in the `admins` table (owner/admin);
   owners/admins add others under People & access. Non-admins see an "Admins only" page.

@@ -6,6 +6,7 @@ import site from '../v1/site.json';
 import { handleFeedbackApi } from './feedback/api.js';
 import { currentUser, roleOf } from './feedback/auth.js';
 import { ensureSchema } from './feedback/schema.js';
+import { loginUrl } from './yondr-session.js';
 
 const PORTAL_HOSTS = new Set(['overyondrdev.com', 'www.overyondrdev.com']);
 const SHARED_ASSET = /^\/(css|fonts|js|images|brand|_astro)\//;
@@ -13,12 +14,12 @@ const SHARED_ASSET = /^\/(css|fonts|js|images|brand|_astro)\//;
 // Portal pages: show who is signed in (Cloudflare Access adds this header after login).
 async function portalPage(env, request, path) {
   const res = await serve(env, request, path);
-  const email = request.headers.get('Cf-Access-Authenticated-User-Email');
+  const user = await currentUser(request, env).catch(() => null);
+  const email = user && user.email;
   if (!email) return res;
   let isAdmin = false;
   try {
-    const user = env.DB && (await currentUser(request, env));
-    if (user) { await ensureSchema(env.DB); isAdmin = !!(await roleOf(env.DB, user.email)); }
+    if (env.DB) { await ensureSchema(env.DB); isAdmin = !!(await roleOf(env.DB, email)); }
   } catch { /* the portal still works without the admin link */ }
   return new HTMLRewriter()
     .on('[data-user-email]', { element(el) { el.setInnerContent(email); } })
@@ -142,8 +143,22 @@ async function route(request, env) {
   return env.ASSETS.fetch(request);
 }
 
+// Every overyondrdev.com page needs a Yondr sign-in (Google, @overyondr.com only). overyondr.com itself (after
+// cutover) stays public, so only these hosts are gated.
+const SIGNIN_HOST = /(^|\.)overyondrdev\.com$/;
+
 export default {
   async fetch(request, env) {
+    const host = new URL(request.url).hostname;
+    if (SIGNIN_HOST.test(host) && !(await currentUser(request, env).catch(() => null))) {
+      const path = new URL(request.url).pathname;
+      if ((request.method === 'GET' || request.method === 'HEAD') && !path.startsWith('/__feedback/api/'))
+        return new Response(null, { status: 302, headers: { location: loginUrl(request), 'cache-control': 'no-store' } });
+      return new Response(JSON.stringify({ error: 'Please sign in with your Yondr Google account.' }), {
+        status: 401,
+        headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+      });
+    }
     const res = await route(request, env);
     const url = new URL(request.url);
     // The admin dashboard has its own feedback views, so no widget there.

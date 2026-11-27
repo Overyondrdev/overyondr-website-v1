@@ -3,6 +3,7 @@
 //   /admin   the card team's view: everyone's clients, who added them, export, settings
 //   /signin  email + one-time code sign-in (src/signin.js), used when Cloudflare Access isn't in front
 //   /api/*   JSON API (src/api.js)
+import { loginUrl } from './yondr-session.js';
 import { handleApi } from './api.js';
 import { handleSignin, createSession, validEmail } from './signin.js';
 import { currentUser } from './auth.js';
@@ -50,11 +51,15 @@ export default {
     const url = new URL(request.url);
     let res;
     if (url.pathname === '/auth') {
-      // Cloudflare Access guards /auth only: it emails the code (from Cloudflare, reliably delivered) and
-      // forwards a signed token. We turn that verified email into the app's own 30-day session.
+      // /auth signs people in with their Yondr Google account (auth.overyondrdev.com, shared by every
+      // overyondrdev.com site) and turns that verified email into the app's own 30-day session.
       const user = await currentUser(request, env);
       const next = url.searchParams.get('next');
       const dest = new URL(next && /^\/[a-z]*$/.test(next) ? next : '/', url);
+      if (!user) {
+        // Not signed in: Yondr Google sign-in, then back here (which starts the cards session).
+        return withHeaders(new Response(null, { status: 302, headers: { location: loginUrl(request), 'cache-control': 'no-store' } }));
+      }
       if (!user || !validEmail(user.email)) return withHeaders(Response.redirect(new URL('/signin?error=1', url), 302));
       const cookie = user.via === 'session' ? null : await createSession(request, env, user.email);
       const out = new Response(null, { status: 302, headers: { location: dest.toString(), 'cache-control': 'no-store' } });
@@ -65,9 +70,13 @@ export default {
     else if (url.pathname.startsWith('/api/signin/')) res = await handleSignin(request, env, url.pathname.slice(12));
     else if (url.pathname.startsWith('/api/')) res = await handleApi(request, env, url.pathname.slice(5));
     else if (PROTECTED.has(url.pathname) && !(await currentUser(request, env))) {
-      // Not signed in: show the sign-in page, then come back here.
+      // Straight to the Yondr sign-in page (auth.overyondrdev.com) via /auth, which then starts the cards session.
       const next = url.pathname === '/' ? '' : '?next=' + encodeURIComponent(url.pathname);
-      return withHeaders(Response.redirect(new URL('/signin' + next, url), 302));
+      return withHeaders(Response.redirect(new URL('/auth' + next, url), 302));
+    } else if (url.pathname === '/signin' && !url.searchParams.get('error')) {
+      // The old sign-in page now hands over to the Yondr sign-in page (kept only to show sign-in errors).
+      const next = url.searchParams.get('next');
+      return withHeaders(Response.redirect(new URL('/auth' + (next && /^\/[a-z]*$/.test(next) ? '?next=' + encodeURIComponent(next) : ''), url), 302));
     } else if (url.pathname === '/signin' && (await currentUser(request, env))) {
       const next = url.searchParams.get('next');
       return Response.redirect(new URL(next && /^\/[a-z]*$/.test(next) ? next : '/', url), 302);

@@ -1,5 +1,5 @@
-// Sign-in page: shows the deadline and sends people to /auth, where Cloudflare Access emails them a
-// one-time code (Cloudflare's mail is reliably delivered to overyondr.com). /auth then starts our session.
+// Sign-in page: shows the deadline and sends people to /auth, which signs them in with their Yondr Google account
+// (auth.overyondrdev.com) and then starts our session.
 import { deadlineBadge } from './shared.js';
 
 const $ = (s) => document.querySelector(s);

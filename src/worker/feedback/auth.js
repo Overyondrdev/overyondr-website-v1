@@ -1,4 +1,7 @@
-// Identity for the feedback tool comes from Cloudflare Access (every overyondrdev.com host is behind it).
+import { yondrUser } from '../yondr-session.js';
+
+// Identity: the Yondr Google sign-in session (auth.overyondrdev.com, checked by ../yondr-session.js) for every
+// overyondrdev.com host. Cloudflare Access tokens are still accepted while Access is being retired.
 // The Cf-Access-Jwt-Assertion header is verified against the team's signing keys and the app's AUD,
 // so the email can't be spoofed. Local development (`wrangler dev`) may set DEV_EMAIL in .dev.vars.
 
@@ -39,6 +42,8 @@ async function verify(token, env) {
 export async function currentUser(request, env) {
   // DEV_EMAIL is only ever set in a local .dev.vars file (never in wrangler.jsonc / production).
   if (env.DEV_EMAIL) return { email: env.DEV_EMAIL.toLowerCase() };
+  const yondr = await yondrUser(request, env);
+  if (yondr) return yondr;
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
   if (!token) return null;
   try {

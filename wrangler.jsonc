@@ -23,7 +23,10 @@
   "vars": {
     // Cloudflare Access: team domain + the overyondrdev.com application's AUD tag (used to verify sign-in tokens).
     "ACCESS_TEAM_DOMAIN": "overyondr.cloudflareaccess.com",
-    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8"
+    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8",
+    // Yondr Google sign-in (auth.overyondrdev.com): public key of the shared session cookie. Safe to commit.
+    "YONDR_AUTH_PUBLIC_JWK": "{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"BpCjLJMykOsJbtPTm63rdbw2BzRUTNTz3jj9LWqK6AM\",\"y\":\"RyW0y7Dki1BQ6GnYdD-4FPovGYfoaMmDgr21lNU7xXQ\",\"kid\":\"yondr-2026-11-26-a3a7e6\"}",
+    "ALLOWED_EMAIL_DOMAINS": "overyondr.com"
   },
   // No public *.workers.dev or preview URLs: they would bypass the Cloudflare Access login.
   "workers_dev": false,

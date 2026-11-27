@@ -1,3 +1,4 @@
+import { yondrUser } from './yondr-session.js';
 import { sessionUser } from './signin.js';
 
 // Identity comes from Cloudflare Access (every overyondrdev.com host is behind it).
@@ -44,6 +45,9 @@ async function verify(token, env) {
 export async function currentUser(request, env) {
   // DEV_EMAIL is only ever set in a local .dev.vars file (never in wrangler.jsonc / production).
   if (env.DEV_EMAIL) return { email: env.DEV_EMAIL.toLowerCase(), via: 'dev' };
+  // The Yondr Google sign-in session (auth.overyondrdev.com), shared by all overyondrdev.com sites.
+  const yondr = await yondrUser(request, env);
+  if (yondr) return { email: yondr.email, via: 'yondr' };
   const token = request.headers.get('Cf-Access-Jwt-Assertion');
   if (token) {
     try {
