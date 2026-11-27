@@ -14,7 +14,7 @@ _Last full audit: 27 Nov 2026._
 | Repo | What it is | Status |
 | --- | --- | --- |
 | `overyondr-website-v1` | Website Worker: portal, V1 (migrated Squarespace site), V2 (`v2/`), feedback tool, and `auth/` (the sign-in Worker) | Main repo. `main` protected; merges deploy via Workers Builds |
-| `digital-ads-portal` | Ad library, `ads.overyondrdev.com` | Moved out of `ad-portal/` on 27 Nov ([v1 #30](https://github.com/Overyondrdev/overyondr-website-v1/pull/30) removes the old copy) |
+| `digital-ads-portal` | Ad library, `ads.overyondrdev.com` | Moved out of `ad-portal/` on 27 Nov ([v1 #30](https://github.com/Overyondrdev/overyondr-website-v1/pull/30), merged) |
 | `christmass-cards` | Client Christmas-card address collection, `cards.overyondrdev.com` | Moved out of `apps/christmas-cards/` on 27 Nov ([v1 #20](https://github.com/Overyondrdev/overyondr-website-v1/pull/20) removes the old copy) |
 | `marketing-request-portal` | Marketing request intake and approvals, `requests.overyondrdev.com` | Own repo from the start |
 | `overyondr-website-v2` | **Orphaned.** Early standalone copy of V2; `main` is empty. The real V2 is `overyondr-website-v1/v2/` | Archive it (see R3) |
@@ -68,10 +68,10 @@ Severity: **High** = could expose data or break sign-in; **Medium** = real defec
 | R3 | Medium | Orphaned `overyondr-website-v2` repo still claims `v2.overyondrdev.com` in its `wrangler.jsonc`, with no sign-in check. A deploy from it would take the v2 host away from the website Worker and could make V2 public. No such Worker exists today | Replace its README with a pointer to `overyondr-website-v1/v2/`, remove the route, archive the repo; delete branch `claude/confident-ritchie-seh2sa` in both repos | v2 repo |
 | R4 | Medium | Ad library accepts any Cloudflare Access token from the team (no audience or email-domain check) as a fallback | Remove the Access fallback (Access is now Bypass) or check the audience and domain | `digital-ads-portal` `src/access.ts` |
 | R5 | Medium | Ad library help article "Signing in" still describes one-time email codes and week-long sessions; the real sign-in is Google with 12-hour sessions | Update `public/help-content.js` | `digital-ads-portal` |
-| R6 | Medium | Three open v1 PRs (#20, #29, #30) edit the same files (`CLAUDE.md`, CI, docs); `PLATFORM.md` in #29 still lists ads and cards as living in this repo | Merge #20 and #30 first, then update #29 to the new repo layout and merge | v1 |
+| R6 | Low | Open v1 PRs #20 (remove cards copy) and #29 (`PLATFORM.md`) touch nearby files; #30 merged 27 Nov. #29 is updated for the new repo layout and no longer overlaps #20 | Merge #20 and #29 in either order; then #29's author changes cards from "moving to" to "in" | v1 |
 | R7 | Medium | V2 lead forms show "sent" but only log the data when `PUBLIC_FORM_ENDPOINT` is unset (`v2/src/pages/get-started.astro`, footer newsletter) | Must be wired to HubSpot (or similar) before V2 launches | v1 `v2/` |
 | R8 | Medium | Access-token fallbacks remain in the website, ad library and cards; Christmas cards still routes the old email-code sign-in API | Once Zero Trust shows 0 seats for a week, remove all Access fallbacks and `ACCESS_*` vars | all |
-| R9 | Low | Test plus-addresses can't sign in with Google, so role testing on live sites has no test accounts | Decide: dedicated Workspace test users, or test with colleagues | owner |
+| R9 | Low | Test plus-addresses (`name+test@`) can't sign in with Google, so role testing on live sites has no test accounts | Decide: dedicated Workspace test users, or test with colleagues | owner |
 | R10 | Low | `v1.overyondrdev.com` was missing from the `noindex` rules in `public/_headers` | **Fixed** in this PR | v1 |
 | R11 | Low | CI actions are pinned to tags not SHAs; Dependabot doesn't watch `v2/` or `auth/` | Pin before cutover; add Dependabot entries | v1 |
 | R12 | Low | Copyright reads "© Yondr, Inc. 2027" while it is 2026 (deliberate, #25) and is hard-coded in ~200 files | Confirm intended; generate the year at build time later | v1 |
