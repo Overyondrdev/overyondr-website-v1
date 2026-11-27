@@ -18,7 +18,7 @@ _Last full audit: 27 Nov 2026._
 | `christmass-cards` | Client Christmas-card address collection, `cards.overyondrdev.com` | Moved out of `apps/christmas-cards/` on 27 Nov ([v1 #20](https://github.com/Overyondrdev/overyondr-website-v1/pull/20) removes the old copy) |
 | `marketing-request-portal` | Marketing request intake and approvals, `requests.overyondrdev.com` | Own repo from the start |
 | `yondr-feedback` | Feedback tool: widget, API, admin, `feedback.overyondrdev.com` | Own repo since 27 Nov (6.1) |
-| `yondr-ops` | Ops hub: monitoring every 5 min, alerts (people & rules), nightly backups, auto-fix log + revert, `ops.overyondrdev.com` | Own repo since 27 Nov (6.3) |
+| `yondr-ops` | Ops hub: monitoring every 5 min, alerts (people & rules), nightly backups, auto-fix engine (triage, issues, verification) + revert, `ops.overyondrdev.com` | Own repo since 27 Nov (6.3) |
 | `overyondr-website-v2` | Future home of V2 (section 6.2). Today `main` is empty and the live V2 is built from `overyondr-website-v1/v2/` | Being set up |
 
 All seven are **public** on GitHub, by decision (GitHub free plan). Treat every commit as published (R1).
@@ -28,7 +28,7 @@ All seven are **public** on GitHub, by decision (GitHub free plan). Treat every 
 | --- | --- | --- | --- |
 | `overyondr-website-v1` | `overyondrdev.com`, `www`, `v1`, `v2` | none (static assets) | Workers Builds on merge to `main` |
 | `yondr-feedback` | `feedback` | D1 `yondr-feedback`, KV `yondr-feedback-screenshots`, Workers AI | `npm run deploy` in `yondr-feedback` |
-| `yondr-ops` | `ops` (+ cron every 5 min and 03:17 UTC) | D1 `yondr-ops`, R2 `yondr-ops-backups`; reads the other four D1 databases (read-only) for admins and backups | `npm run deploy` in `yondr-ops` |
+| `yondr-ops` | `ops` (+ crons: every 5 min monitoring, every 5 min auto-fix, 03:17 UTC backups) | D1 `yondr-ops`, R2 `yondr-ops-backups`, Workers AI; reads the other four D1 databases (read-only) for admins and backups | `npm run deploy` in `yondr-ops` |
 | `yondr-auth` | `auth` | none (secrets only) | `wrangler deploy` in `auth/` |
 | `yondr-ad-portal` | `ads` | D1 `yondr-ad-portal-db`, R2 `yondr-ad-portal-assets` | Workers Builds from `digital-ads-portal` |
 | `yondr-christmas-cards` | `cards` | D1 `yondr-christmas-cards` (client addresses: **personal data**), email binding | Workers Builds from `christmass-cards` |
@@ -149,5 +149,18 @@ V1 and V2 must not be confused: V2 is on its way to becoming the public main web
   after deploy and reverted automatically if anything breaks. Every step is logged in Ops (**Auto-fixes**), each with
   a **Revert** button; updates go out as `autofix_*` alerts. Master switch `autofix_enabled` is off until the owner turns
   it on. Engine: Claude Code GitHub Action using the owner's Claude subscription (`CLAUDE_CODE_OAUTH_TOKEN` org secret).
+- **How it is built** (27 Nov 2026; full flow, setup and security model: `yondr-ops` README "Auto-fix"):
+  the feedback tool reports every item to Ops; Ops triages (type, project → repo, objective/subjective by Workers AI,
+  where *unsure = subjective*; admins can override with **Mark objective / Mark subjective**) and, for an objective bug,
+  opens a GitHub issue labelled `autofix` in the target repo (critical: at once; others: at most 3 an hour, setting).
+  `.github/workflows/autofix.yml` (in this repo and `overyondr-website-v2`; other repos are added later and until then
+  their bugs go to a person) lets Claude edit files and run the build only; a separate step checks the change
+  mechanically (no sign-in/`auth/`/`src/worker/`, Wrangler, CI, migrations, dependencies, `_headers`/`_redirects`;
+  ≤ 10 files, ≤ 200 lines) and opens the PR; `autofix-guard.yml` checks again and turns on auto-merge, which waits
+  for the required checks. After the merge Ops watches the Workers Builds deploy and the site checks for 15 minutes:
+  failure → automatic revert PR; otherwise "verified". Only the ops account (variable `AUTOFIX_ACTORS`) can start a fix;
+  issues and PRs are public, so the feedback tool sends no personal data and staff should keep bug reports free of
+  confidential details. Required before switching on: the owner setup list in that README (tokens, org secrets and
+  variable, labels, *Allow auto-merge*, `build` as a required check on `main`).
 - **Christmas cards:** addresses are associated with each rep and curated into per-rep lists for ongoing
   communications (work in the cards repo).
