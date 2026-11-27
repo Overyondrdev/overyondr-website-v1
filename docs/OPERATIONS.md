@@ -77,6 +77,7 @@ Severity: **High** = could expose data or break sign-in; **Medium** = real defec
 | R12 | Low | Copyright reads "© Yondr, Inc. 2027" while it is 2026 (deliberate, #25) and is hard-coded in ~200 files | Confirm intended; generate the year at build time later | v1 |
 | R13 | Low | Stale "Cloudflare Access" wording in code comments and docs (`README.md`, `wrangler.jsonc`, `v2/CLAUDE.md`, `v2/README.md`, `src/worker/index.js`) | Sweep after #29 merges | v1 |
 | R14 | Low | Root `check:links` reports ~294 broken links, nearly all false positives (redirects, query-string pages, blocked external hosts); the step is non-blocking | Configure skips so real breaks show; make blocking at cutover | v1 |
+| R15 | Low | GitHub/npm report moderate advisories (minimatch/glob via `linkinator`, the build-time link checker; root and `v2/`). Not shipped to visitors; only reads our own files in CI | Upgrade or replace `linkinator` when a non-breaking fix exists | v1 |
 
 ## 4. Daily check (what the morning report covers)
 1. Every host above redirects signed-out visitors to sign-in; `auth` answers; `overyondr.com` still Squarespace.
