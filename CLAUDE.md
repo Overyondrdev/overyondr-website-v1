@@ -1,5 +1,9 @@
 # overyondr.com V1 — instructions for Claude
 
+**Start with the [overyondrdev.com Handbook](docs/handbook/README.md)**: the single source of truth for the whole
+platform (what runs where, sign-in without Cloudflare seats, portals, people directory, operations, auto-fix, how we
+work, runbooks, decisions). If your change alters what it says, update it in the same PR.
+
 **Read [docs/PLATFORM.md](docs/PLATFORM.md) before changing sign-in, deploys, DNS, Cloudflare settings or adding a
 site**: what runs where, the Yondr Google sign-in, Access seats, and deploy lessons. **Read
 [docs/OPERATIONS.md](docs/OPERATIONS.md) for how sessions work here** (merge when ready, one area per session),

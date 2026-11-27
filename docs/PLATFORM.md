@@ -1,5 +1,8 @@
 # overyondrdev.com platform guide
 
+> Part of the [overyondrdev.com Handbook](handbook/README.md), the single source of truth. This page is the deep
+> technical reference for sign-in, deploys and Cloudflare.
+
 How Yondr's preview sites and internal tools on `overyondrdev.com` fit together, how people sign in, how things
 deploy, and what we learned the hard way. **Read this before changing sign-in, deploys, DNS, Cloudflare settings or
 adding a site.** Each repository's CLAUDE.md points here.
