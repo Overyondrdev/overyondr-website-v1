@@ -1,3 +1,7 @@
+# Security headers (HSTS, nosniff, Referrer-Policy, X-Frame-Options, Permissions-Policy, CSP report-only) are added
+# to every response by the Worker (src/worker/index.js, withSecurityHeaders), not here: the Worker runs first and
+# also returns redirects and sign-in responses this file never sees.
+
 # Keep the dev domain and preview URLs out of search results.
 # overyondr.com is not listed here, so production stays indexable at cutover.
 https://overyondrdev.com/*

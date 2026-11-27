@@ -145,22 +145,71 @@ async function route(request, env) {
   return env.ASSETS.fetch(request);
 }
 
+// Security headers on every response this Worker returns: pages, static files, query-string pages, portal, redirects
+// and the sign-in 302/401. Set only when absent, so a stricter header from the asset or V2's _headers wins.
+// - HSTS without includeSubDomains/preload: this Worker serves overyondr.com at cutover, and we must not commit
+//   subdomains we don't run (Squarespace, HubSpot, shop) to HTTPS-only.
+// - Permissions-Policy leaves display-capture at its default ('self'): the feedback widget runs in the page and
+//   takes screenshots with getDisplayMedia.
+// - CSP is report-only (violations show in the browser console; no report endpoint) on V1 and the portal: V1 is the
+//   Squarespace page HTML with inline scripts/styles and HubSpot, Vimeo, YouTube, Elfsight and Shopify embeds, and an
+//   enforced policy could silently break one. Enforce after the cutover review (docs/OPERATIONS.md, risk register).
+const SECURITY_HEADERS = {
+  'Strict-Transport-Security': 'max-age=31536000',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+};
+const CSP_REPORT_ONLY = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://feedback.overyondrdev.com https://js.hsforms.net https://*.hsforms.net " +
+    'https://*.hsforms.com https://*.hubspot.com https://*.hs-scripts.com https://*.hscollectedforms.net ' +
+    'https://static.elfsight.com https://*.elfsight.com https://*.elfsightcdn.com https://player.vimeo.com ' +
+    'https://www.youtube.com',
+  "style-src 'self' 'unsafe-inline' https://feedback.overyondrdev.com https://*.elfsight.com https://*.elfsightcdn.com",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data: https://feedback.overyondrdev.com https://*.elfsightcdn.com",
+  "media-src 'self' blob: https:",
+  "connect-src 'self' https://feedback.overyondrdev.com https://*.hsforms.com https://*.hsforms.net https://*.hubspot.com " +
+    'https://*.hubapi.com https://*.hscollectedforms.net https://*.elfsight.com https://*.elfsightcdn.com',
+  'frame-src https://player.vimeo.com https://www.youtube.com https://www.youtube-nocookie.com https://*.hsforms.net ' +
+    'https://*.hsforms.com https://*.hubspot.com https://*.elfsight.com https://*.myshopify.com',
+  "form-action 'self' https://*.hsforms.com https://*.hubspot.com https://*.myshopify.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'self'",
+].join('; ');
+
+function withSecurityHeaders(res, host) {
+  const out = new Response(res.body, res); // Response.redirect() and asset responses have immutable headers
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!out.headers.has(k)) out.headers.set(k, v);
+  const type = out.headers.get('content-type') || '';
+  if (!host.startsWith('v2.') && type.includes('text/html') && !out.headers.has('Content-Security-Policy-Report-Only'))
+    out.headers.set('Content-Security-Policy-Report-Only', CSP_REPORT_ONLY);
+  return out;
+}
+
 // Every overyondrdev.com page needs a Yondr sign-in (Google, @overyondr.com only). overyondr.com itself (after
 // cutover) stays public, so only these hosts are gated.
 const SIGNIN_HOST = /(^|\.)overyondrdev\.com$/;
 
 export default {
   async fetch(request, env) {
-    const host = new URL(request.url).hostname;
-    if (SIGNIN_HOST.test(host) && !(await currentUser(request, env).catch(() => null))) {
-      if (request.method === 'GET' || request.method === 'HEAD')
-        return new Response(null, { status: 302, headers: { location: loginUrl(request), 'cache-control': 'no-store' } });
-      return new Response(JSON.stringify({ error: 'Please sign in with your Yondr Google account.' }), {
-        status: 401,
-        headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-      });
-    }
-    const res = await route(request, env);
-    return withWidget(res, new URL(request.url).hostname);
+    return withSecurityHeaders(await handle(request, env), new URL(request.url).hostname);
   },
 };
+
+async function handle(request, env) {
+  const host = new URL(request.url).hostname;
+  if (SIGNIN_HOST.test(host) && !(await currentUser(request, env).catch(() => null))) {
+    if (request.method === 'GET' || request.method === 'HEAD')
+      return new Response(null, { status: 302, headers: { location: loginUrl(request), 'cache-control': 'no-store' } });
+    return new Response(JSON.stringify({ error: 'Please sign in with your Yondr Google account.' }), {
+      status: 401,
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    });
+  }
+  const res = await route(request, env);
+  return withWidget(res, new URL(request.url).hostname);
+}
