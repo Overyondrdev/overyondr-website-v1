@@ -116,9 +116,10 @@ The sites still also accept a Cloudflare Access token (left over from the switch
 
 ## 7. Testing
 
-- Test people: Google Workspace delivers `chad+anything@overyondr.com` to Chad's inbox, and each is a separate
-  sign-in. With the Google sign-in these cost nothing (they did cost seats under Access). The marketing portal has
-  test accounts for each role (see its Google Sheet "Marketing request portal: roles and permissions").
+- **Plus-addresses (`chad+test@overyondr.com`) can't sign in any more.** They worked with Access, which only emailed a
+  code to the address; Google signs in real Workspace accounts only. To test other roles on the live sites, give a
+  colleague the role (marketing portal: People & routing), or create dedicated test users in Google Workspace (each is a
+  Workspace licence). The marketing portal's old `chad+…` test people can be switched off there (Active toggle).
 - Locally: `DEV_EMAIL` in `.dev.vars`, plus an `X-Dev-Email` header to act as someone else (marketing portal, ad library).
 - After any sign-in change, check in Incognito: a signed-out visit lands on the sign-in page for the right site; signed
   in, every site opens; a personal Gmail is refused; APIs answer 401 when signed out.
