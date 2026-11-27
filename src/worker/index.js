@@ -1,5 +1,5 @@
 // Routes requests by hostname; all content is static assets in dist/.
-//   overyondrdev.com, www.  -> portal page (V1 / V2 buttons)
+//   overyondrdev.com, www.  -> the Dev Portal: home (/) with every portal, and Website Review (/website, V1 / V2)
 //   v2.overyondrdev.com     -> NOT here: V2 is its own Worker (repo Overyondrdev/overyondr-website-v2)
 //   anything else (v1.overyondrdev.com, and overyondr.com after cutover) -> the V1 site
 import site from '../v1/site.json';
@@ -54,11 +54,15 @@ function queryRoute(url) {
 // Feedback widget (with the website preview toolbar and tour): injected into every HTML page on the dev domains only
 // (never on overyondr.com).
 const DEV_HOST = /(^|\.)overyondrdev\.com$|^(127\.0\.0\.1|localhost)$/;
-function withWidget(res, host) {
+// The Dev Portal home is not a website page, so it gets the widget without the website toolbar and tour.
+function withWidget(res, url) {
+  const host = url.hostname;
   const type = res.headers.get('content-type') || '';
   if (!DEV_HOST.test(host) || !type.includes('text/html')) return res;
-  const project = PORTAL_HOSTS.has(host) ? 'portal' : 'v1';
-  const tag = `<script src="${FEEDBACK}/widget.js" data-project="${project}" data-toolbar="website" defer></script>`;
+  const portal = PORTAL_HOSTS.has(host);
+  const project = portal ? 'portal' : 'v1';
+  const toolbar = portal && url.pathname === '/' ? '' : ' data-toolbar="website"';
+  const tag = `<script src="${FEEDBACK}/widget.js" data-project="${project}"${toolbar} defer></script>`;
   return new HTMLRewriter()
     .on('body', { element(el) { el.append(tag, { html: true }); } })
     .transform(res);
@@ -70,6 +74,8 @@ async function route(request, env) {
 
   if (PORTAL_HOSTS.has(host)) {
     if (url.pathname === '/') return portalPage(env, request, '/portal');
+    if (url.pathname === '/website') return portalPage(env, request, '/portal-website');
+    if (url.pathname === '/website/') return Response.redirect(new URL('/website', url), 301);
     if (url.pathname === '/admin' || url.pathname === '/admin/') return Response.redirect(FEEDBACK + '/admin', 301);
     if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
     return Response.redirect(new URL('/', url), 302);
@@ -156,5 +162,5 @@ async function handle(request, env) {
     });
   }
   const res = await route(request, env);
-  return withWidget(res, new URL(request.url).hostname);
+  return withWidget(res, new URL(request.url));
 }
