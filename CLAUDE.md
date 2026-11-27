@@ -17,6 +17,7 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
 | `overyondrdev.com`, `www.` | Portal page with the **Yondr Website V1** / **V2** buttons (`src/pages/portal.astro`) |
 | `v1.overyondrdev.com` | The migrated V1 site |
 | `v2.overyondrdev.com` | V2, the Loba redesign (work in progress), built from `v2/` into `dist/__v2` |
+| `cards.overyondrdev.com` | Christmas card list app: its own repo, [Overyondrdev/christmass-cards](https://github.com/Overyondrdev/christmass-cards) |
 
 - All of overyondrdev.com requires a **Yondr Google sign-in** (`auth/`, Worker `yondr-auth` at `auth.overyondrdev.com`):
   only verified `@overyondr.com` Google Workspace accounts. Every site checks the shared `yondr_session` cookie itself

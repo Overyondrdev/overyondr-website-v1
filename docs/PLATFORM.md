@@ -12,7 +12,7 @@ All in Cloudflare account `3fac6c19097c5692e17198cffa818085`. Every site is a Wo
 | --- | --- | --- | --- |
 | `overyondrdev.com`, `www`, `v1`, `v2` | `overyondr-website-v1` | this repo (`src/`, `v2/`) | **Workers Builds** on merge to `main` (PR + **build** check required) |
 | `ads` | `yondr-ad-portal` | repo `Overyondrdev/digital-ads-portal` (moved out of `ad-portal/` here) | see that repo's README |
-| `cards` | `yondr-christmas-cards` | moving to repo `Overyondrdev/christmass-cards` (PR #20 here removes `apps/christmas-cards/`) | `npx wrangler deploy` |
+| `cards` | `yondr-christmas-cards` | repo `Overyondrdev/christmass-cards` (moved out of `apps/christmas-cards/` here) | Workers Builds from that repo |
 | `auth` | `yondr-auth` (the sign-in) | this repo, `auth/` | `npx wrangler -c wrangler.jsonc deploy` in `auth/` |
 | `requests` | `yondr-marketing-requests` | repo `Overyondrdev/marketing-request-portal` | `npx wrangler deploy` (migrations first: `npm run deploy`) |
 
@@ -102,8 +102,9 @@ The sites still also accept a Cloudflare Access token (left over from the switch
 - `DEV_EMAIL` (sign in as someone without Google) is **local only** (`.dev.vars`); it must never be set on a deployed
   Worker: it would skip sign-in.
 - All five repositories (`overyondr-website-v1`, `overyondr-website-v2`, `marketing-request-portal`,
-  `digital-ads-portal`, `christmass-cards`) are **public** on GitHub. They hold no secrets, but consider making them
-  private (Settings → General → Change visibility).
+  `digital-ads-portal`, `christmass-cards`) are **public** on GitHub, and stay public
+  for now (decision: GitHub free plan). So treat every commit as published: no secrets, no personal email addresses,
+  no client data, no internal-only notes; IDs and public keys are fine.
 
 ## 6. Email
 
