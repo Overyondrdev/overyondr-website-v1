@@ -152,7 +152,7 @@ V1 and V2 must not be confused: V2 is on its way to becoming the public main web
   through a PR with all checks, can't touch sign-in, deploy config, CI or migrations, have a size limit, are verified
   after deploy and reverted automatically if anything breaks. Every step is logged in Ops (**Auto-fixes**), each with
   a **Revert** button; updates go out as `autofix_*` alerts. Master switch `autofix_enabled` is off until the owner turns
-  it on. Engine: Claude Code GitHub Action using the owner's Claude subscription (`CLAUDE_CODE_OAUTH_TOKEN` org secret).
+  it on. Engine: Claude Code GitHub Action with a Claude API key from Claude Console (`ANTHROPIC_API_KEY` org secret, monthly spend limit set in Console; owner decision 27 Nov: no Terminal step).
 - **How it is built** (27 Nov 2026; full flow, setup and security model: `yondr-ops` README "Auto-fix"):
   the feedback tool reports every item to Ops; Ops triages (type, project → repo, objective/subjective by Workers AI,
   where *unsure = subjective*; admins can override with **Mark objective / Mark subjective**) and, for an objective bug,
