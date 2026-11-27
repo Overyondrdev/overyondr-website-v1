@@ -10,7 +10,7 @@ image, file, video and font self-hosted. The redesign (V2) will live in its own 
 | --- | --- |
 | https://overyondrdev.com | Portal: **Yondr Website V1** / **Yondr Website V2** buttons |
 | https://v1.overyondrdev.com | This site |
-| https://v2.overyondrdev.com | V2 placeholder |
+| https://v2.overyondrdev.com | V2: its own repository and Worker ([overyondr-website-v2](https://github.com/Overyondrdev/overyondr-website-v2)) |
 
 All of overyondrdev.com requires the Yondr Google sign-in (`@overyondr.com` Google accounts only; see
 [docs/PLATFORM.md](docs/PLATFORM.md), the guide to how the sites, sign-in and deploys fit together).

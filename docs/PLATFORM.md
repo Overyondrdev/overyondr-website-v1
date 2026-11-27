@@ -10,7 +10,8 @@ All in Cloudflare account `3fac6c19097c5692e17198cffa818085`. Every site is a Wo
 
 | Host | Worker | Code | Deploys |
 | --- | --- | --- | --- |
-| `overyondrdev.com`, `www`, `v1`, `v2` | `overyondr-website-v1` | this repo (`src/`, `v2/`) | **Workers Builds** on merge to `main` (PR + **build** check required) |
+| `overyondrdev.com`, `www`, `v1` | `overyondr-website-v1` | this repo (`src/`) | **Workers Builds** on merge to `main` (PR + **build** check required) |
+| `v2` | `overyondr-website-v2` (the redesign; own sign-in check) | repo `Overyondrdev/overyondr-website-v2` (moved out of `v2/` here) | Workers Builds from that repo |
 | `ads` | `yondr-ad-portal` | repo `Overyondrdev/digital-ads-portal` (moved out of `ad-portal/` here) | see that repo's README |
 | `cards` | `yondr-christmas-cards` | repo `Overyondrdev/christmass-cards` (moved out of `apps/christmas-cards/` here) | Workers Builds from that repo |
 | `auth` | `yondr-auth` (the sign-in) | this repo, `auth/` | `npx wrangler -c wrangler.jsonc deploy` in `auth/` |

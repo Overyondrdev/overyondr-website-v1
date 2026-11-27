@@ -21,13 +21,12 @@
   // No public *.workers.dev or preview URLs: they would bypass the sign-in check on the custom domains.
   "workers_dev": false,
   "preview_urls": false,
-  // Dev domains. overyondrdev.com = portal, v1. = migrated site, v2. = redesign placeholder.
+  // Dev domains. overyondrdev.com = portal, v1. = migrated site. (v2. belongs to the overyondr-website-v2 Worker.)
   // All require the Yondr Google sign-in (@overyondr.com Google accounts; src/worker/yondr-session.js).
   // The production domains (overyondr.com, www) are added only at cutover, after sign-off.
   "routes": [
     { "pattern": "overyondrdev.com", "custom_domain": true },
     { "pattern": "www.overyondrdev.com", "custom_domain": true },
-    { "pattern": "v1.overyondrdev.com", "custom_domain": true },
-    { "pattern": "v2.overyondrdev.com", "custom_domain": true }
+    { "pattern": "v1.overyondrdev.com", "custom_domain": true }
   ]
 }
