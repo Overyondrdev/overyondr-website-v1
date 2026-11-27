@@ -7,11 +7,13 @@ code, so we always know who added each client.
 A separate Worker (`yondr-christmas-cards`) and database (D1 `yondr-christmas-cards`) from the website.
 
 ## Sign-in (`public/signin.html`, `/auth` in `src/index.js`)
-- Signed-out visitors go to `/auth`, which sends them to the Yondr Google sign-in (`auth.overyondrdev.com`; see
-  `docs/PLATFORM.md` in the repo root) and back. `/auth` then starts the app's own 30-day session cookie and returns
-  the person to where they were going. `/signin` only shows sign-in errors now.
-- Cloudflare Access is on **Bypass** for the whole host (including `/auth`), so the app's own session is the gate
-  and nobody uses an Access seat. Access tokens are still accepted, left over from the switch.
+- `/signin` is the Christmas-styled page everyone lands on. **Sign in with your Yondr email** goes to `/auth`.
+- Cloudflare Access guards **only** `cards.overyondrdev.com/auth` (application "Yondr Christmas Cards", allow
+  `@overyondr.com`). Cloudflare shows its code screen (Yondr colours, set in Zero Trust → Settings → Custom pages)
+  and emails the one-time code from `noreply@notify.cloudflare.com`, which Yondr mail already trusts.
+- `/auth` verifies the Access token (`ACCESS_AUD` lists both Access apps), then starts the app's own 30-day session
+  cookie and returns the person to where they were going. Everything else on the host is behind a **Bypass**
+  Access application, so the app's own session is the gate.
 - Why not send codes ourselves: `src/signin.js` can still email codes through Cloudflare Email Sending
   (`/api/signin/start`), and Cloudflare reported them delivered, but Yondr's mail system silently held them. The page
   no longer uses that path. If IT approves `cards@overyondrdev.com`, it can be switched back.
@@ -80,7 +82,7 @@ For deploy-on-merge, connect this Worker to the repo in Cloudflare (Workers Buil
 | `src/index.js` | Worker entry: `/api/*` → API, everything else → static files in `public/` |
 | `src/api.js` | JSON API (clients, bulk check/save, admin) |
 | `src/address.js` | Address rules + Google Address Validation |
-| `src/auth.js` | Who is signed in: the Yondr Google session (`src/yondr-session.js`), a legacy Access token, else the app's session |
+| `src/auth.js` | Who is signed in: Cloudflare Access token, else the email-code session |
 | `src/signin.js` | Email-code sign-in, sessions and the code email |
 | `src/schema.js` / `schema.sql` | D1 tables |
 | `public/signin.html`, `signin.js` | Sign-in page |

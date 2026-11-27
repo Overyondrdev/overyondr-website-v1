@@ -11,8 +11,8 @@ All in Cloudflare account `3fac6c19097c5692e17198cffa818085`. Every site is a Wo
 | Host | Worker | Code | Deploys |
 | --- | --- | --- | --- |
 | `overyondrdev.com`, `www`, `v1`, `v2` | `overyondr-website-v1` | this repo (`src/`, `v2/`) | **Workers Builds** on merge to `main` (PR + **build** check required) |
-| `ads` | `yondr-ad-portal` | this repo, `ad-portal/` | `npx wrangler -c wrangler.toml deploy` in `ad-portal/` |
-| `cards` | `yondr-christmas-cards` | this repo, `apps/christmas-cards/` | `npx wrangler deploy` in that folder |
+| `ads` | `yondr-ad-portal` | repo `Overyondrdev/digital-ads-portal` (moved out of `ad-portal/` here) | see that repo's README |
+| `cards` | `yondr-christmas-cards` | moving to repo `Overyondrdev/christmass-cards` (PR #20 here removes `apps/christmas-cards/`) | `npx wrangler deploy` |
 | `auth` | `yondr-auth` (the sign-in) | this repo, `auth/` | `npx wrangler -c wrangler.jsonc deploy` in `auth/` |
 | `requests` | `yondr-marketing-requests` | repo `Overyondrdev/marketing-request-portal` | `npx wrangler deploy` (migrations first: `npm run deploy`) |
 
@@ -33,13 +33,14 @@ How it works:
 3. `auth` accepts only **verified Google Workspace** accounts whose Workspace (`hd`) and email are `overyondr.com`, then
    sets `yondr_session`: an ES256-signed token, 12 hours, cookie for `.overyondrdev.com` (HttpOnly, Secure, Lax).
 4. Each site verifies it with its copy of `auth/src/session.js` and the public key in its `YONDR_AUTH_PUBLIC_JWK`
-   variable. Copies: `src/worker/yondr-session.js`, `ad-portal/src/yondr-session.js`,
-   `apps/christmas-cards/src/yondr-session.js` (CI checks these are identical) and
-   `marketing-request-portal/src/lib/yondr-session.js` (same code, Prettier-formatted).
+   variable. Copies: `src/worker/yondr-session.js` (here; CI compares it with `auth/src/session.js`), and one in each
+   other site's repository (`digital-ads-portal`, `christmass-cards`, `marketing-request-portal`). When
+   `auth/src/session.js` changes, update every copy.
 
 The Google client is an **Internal** OAuth app in Google Cloud project `overyondrdev-sign-in`; its ID and secret are
 secrets on `yondr-auth` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`), with `SESSION_PRIVATE_JWK` (the signing key).
-Details and key rotation: `auth/README.md`. How the switch from Access was done: `auth/CUTOVER.md`.
+Details and key rotation: `auth/README.md`. Estate inventory, session rules and risks: `docs/OPERATIONS.md` (when
+added). How the switch from Access was done: `auth/CUTOVER.md`.
 
 The sites still also accept a Cloudflare Access token (left over from the switch). It's harmless (still
 `@overyondr.com` only) and can be removed once nobody needs it.
@@ -86,8 +87,7 @@ The sites still also accept a Cloudflare Access token (left over from the switch
   upload: "name … must match the name of your Worker"); it isn't required and doesn't affect production.
 - **From a Claude cloud session, `wrangler deploy` can't upload Workers static assets** (the asset-upload step gets a
   401 through the session's proxy). So the ad library, Christmas cards and marketing requests **bundle their files into
-  the Worker script** (`ad-portal/src/static.ts`, `apps/christmas-cards/scripts/bundle.mjs`,
-  `marketing-request-portal/scripts/build-static.mjs`) and deploy fine from anywhere. The website uses static assets
+  the Worker script** (each repo's build step) and deploy fine from anywhere. The website uses static assets
   and deploys only through Workers Builds.
 - `wrangler deploy` **replaces dashboard plain-text variables** with what's in the config: keep every variable in
   `wrangler.jsonc`/`wrangler.toml`. Secrets survive deploys; set them with `npx wrangler secret put NAME` or the
@@ -102,8 +102,9 @@ The sites still also accept a Cloudflare Access token (left over from the switch
   data use fictional `@overyondr.com` people.
 - `DEV_EMAIL` (sign in as someone without Google) is **local only** (`.dev.vars`); it must never be set on a deployed
   Worker: it would skip sign-in.
-- All three repositories (`overyondr-website-v1`, `overyondr-website-v2`, `marketing-request-portal`) are **public** on
-  GitHub. They hold no secrets, but consider making them private (Settings → General → Change visibility).
+- All five repositories (`overyondr-website-v1`, `overyondr-website-v2`, `marketing-request-portal`,
+  `digital-ads-portal`, `christmass-cards`) are **public** on GitHub. They hold no secrets, but consider making them
+  private (Settings → General → Change visibility).
 
 ## 6. Email
 
