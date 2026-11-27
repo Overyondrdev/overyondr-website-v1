@@ -15,6 +15,7 @@ All in Cloudflare account `3fac6c19097c5692e17198cffa818085`. Every site is a Wo
 | `cards` | `yondr-christmas-cards` | repo `Overyondrdev/christmass-cards` (moved out of `apps/christmas-cards/` here) | Workers Builds from that repo |
 | `auth` | `yondr-auth` (the sign-in) | this repo, `auth/` | `npx wrangler -c wrangler.jsonc deploy` in `auth/` |
 | `requests` | `yondr-marketing-requests` | repo `Overyondrdev/marketing-request-portal` | `npx wrangler deploy` (migrations first: `npm run deploy`) |
+| `ops` | `yondr-ops` (monitoring, alerts, backups, auto-fix log; D1 `yondr-ops`, R2 `yondr-ops-backups`) | repo `Overyondrdev/yondr-ops` | `npm run deploy` (bundled; see its README) |
 | `feedback` | `yondr-feedback` (feedback tool: widget, API, admin; D1 `yondr-feedback`, KV, AI) | repo `Overyondrdev/yondr-feedback` | `npm run deploy` (bundled; see its README) |
 
 Everything else in the `overyondrdev.com` DNS zone is mail (Resend: `resend._domainkey`, `send`; Cloudflare Email
