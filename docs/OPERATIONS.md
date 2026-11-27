@@ -135,6 +135,9 @@ V1 and V2 must not be confused: V2 is on its way to becoming the public main web
 
 ### 6.3 Operations: alerts, backups, auto-fix (owner decisions, 27 Nov 2026)
 - **Email: Resend for all overyondrdev.com email** (PLATFORM.md §6), one API key per sending Worker.
+- **More owner decisions (27 Nov):** no Google Workspace test user (signed-in checks stay manual); HubSpot wiring
+  for V2's forms is parked (R7 stays open, not urgent); the feedback widget stays on **V1 and V2** (and the portal), with
+  the preview toolbar, including after V2 moves to its own Worker.
 - **Yondr Ops** (`ops.overyondrdev.com`, repo `yondr-ops`, live 27 Nov): checks every site every 5 minutes; alerts on
   change (and "resolved"), critical re-alerts hourly; admins (the feedback admin list) add people on **Alerts** and pick
   per person: alert types, email/Slack, severity, quiet hours. Owners always get `site_down`/`site_exposed`. Every alert
