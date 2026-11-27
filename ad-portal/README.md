@@ -10,7 +10,7 @@ repository unchanged.
 
 | What | Where |
 | --- | --- |
-| Worker: API, files, uploads | `src/index.ts`; roles `src/roles.ts`; notifications `src/notify.ts`; Access check `src/access.ts`; app files `src/static.ts` |
+| Worker: API, files, uploads | `src/index.ts`; roles `src/roles.ts`; notifications `src/notify.ts`; sign-in check `src/access.ts` + `src/yondr-session.js`; app files `src/static.ts` |
 | App (no framework, no runtime dependencies) | `public/index.html`, `app.js`, `app.css`, `tour.js`, `brand/` |
 | Editing (loaded only for editors) | `public/editor.js` (edit an ad, Edit copy tab, history), `public/render.js` (renderer + GIF encoder) |
 | Help center (`/help`) | `public/help.html`, `help.js`, `help.css`; **articles in `public/help-content.js`** |
@@ -21,12 +21,12 @@ repository unchanged.
 
 ## Sign-in
 
-Cloudflare Access app "overyondrdev.com (Yondr website dev)" covers `*.overyondrdev.com`: people sign in with an
-`@overyondr.com` email before a request reaches the Worker. As a safety net the Worker also checks Access's signed
-token (`Cf-Access-Jwt-Assertion`: Yondr team signature, issuer, expiry; `src/access.ts`) and takes the email from it.
-Requests without a valid token get a 403, so the portal stays private even if the host were left out of Access.
-`workers_dev` and `preview_urls` are off. The R2 bucket is private: files are only served through the Worker.
-To limit the portal to the marketing team later, add a separate Access app for `ads.overyondrdev.com`.
+People sign in with the Yondr Google sign-in (`auth.overyondrdev.com`, `@overyondr.com` Google accounts only; see
+`docs/PLATFORM.md` in the repo root). The Worker checks the shared `yondr_session` cookie on every request
+(`src/yondr-session.js`, called from `src/access.ts`): signed-out page views go to the sign-in page, API calls and files
+get a 401. Cloudflare Access is on Bypass for this host (it charges a seat per person); an Access token is still
+accepted, left over from the switch. `workers_dev` and `preview_urls` are off. The R2 bucket is private: files are
+only served through the Worker.
 
 ## Roles
 

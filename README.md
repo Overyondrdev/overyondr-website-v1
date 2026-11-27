@@ -12,7 +12,8 @@ image, file, video and font self-hosted. The redesign (V2) will live in its own 
 | https://v1.overyondrdev.com | This site |
 | https://v2.overyondrdev.com | V2 placeholder |
 
-All three are protected by Cloudflare Access (one-time code emailed to `@overyondr.com` addresses).
+All of overyondrdev.com requires the Yondr Google sign-in (`@overyondr.com` Google accounts only; see
+[docs/PLATFORM.md](docs/PLATFORM.md), the guide to how the sites, sign-in and deploys fit together).
 overyondr.com itself still points to Squarespace until cutover.
 
 ## Run locally

@@ -12,7 +12,7 @@
     { "binding": "DB", "database_name": "yondr-christmas-cards", "database_id": "85da3dd4-e124-4087-a369-d48647053be3" }
   ],
   "vars": {
-    // Cloudflare Access: the overyondrdev.com application covers *.overyondrdev.com, so this host shares its AUD.
+    // Legacy Cloudflare Access tokens (still accepted). Sign-in is the Yondr Google sign-in; see docs/PLATFORM.md.
     "ACCESS_TEAM_DOMAIN": "overyondr.cloudflareaccess.com",
     // AUD tags of the Access applications whose tokens we accept (comma-separated): the overyondrdev.com app,
     // and "Yondr Christmas Cards" which guards only cards.overyondrdev.com/auth (Cloudflare emails the code).
@@ -27,7 +27,7 @@
   },
   // Cloudflare Email Sending: delivers the sign-in codes (src/signin.js).
   "send_email": [{ "name": "EMAIL" }],
-  // No *.workers.dev or preview URLs: they would bypass the Cloudflare Access login.
+  // No *.workers.dev or preview URLs: they would bypass the sign-in check on the custom domain.
   "workers_dev": false,
   "preview_urls": false,
   "routes": [{ "pattern": "cards.overyondrdev.com", "custom_domain": true }]

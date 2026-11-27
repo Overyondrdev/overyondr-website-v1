@@ -1,5 +1,5 @@
 # yondr-ad-portal: the Yondr ad library at https://ads.overyondrdev.com (its own Worker, separate from
-# overyondr-website-v1). Cloudflare Access app "overyondrdev.com (Yondr website dev)" covers *.overyondrdev.com.
+# overyondr-website-v1). Sign-in: the Yondr Google sign-in (auth.overyondrdev.com); see docs/PLATFORM.md.
 name = "yondr-ad-portal"
 main = "src/index.ts"
 compatibility_date = "2026-11-01"
@@ -24,7 +24,7 @@ type = "Data"
 globs = ["**/*.woff2"]
 fallthrough = false
 
-# Cloudflare Access team whose signed tokens the Worker checks (src/access.ts).
+# Cloudflare Access team (legacy: Access tokens are still accepted; sign-in is the Yondr Google session).
 [vars]
 ACCESS_TEAM_DOMAIN = "overyondr.cloudflareaccess.com"
 # Public key of the Yondr Google sign-in (auth.overyondrdev.com) that signs the shared session cookie. Safe to commit.

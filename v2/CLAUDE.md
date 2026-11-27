@@ -8,7 +8,8 @@ V3 prototype; see README.md for the page map, design system and pre-launch conte
 V2 lives in the `v2/` folder of the **overyondr-website-v1** repository (merged from overyondr-website-v2).
 The repo root `npm run build` builds V2 (`npm run build --prefix v2`) and `scripts/merge-v2.mjs` copies `v2/dist`
 into `dist/__v2`. One Cloudflare Worker (repo root `wrangler.jsonc`, `src/worker/index.js`) serves it on
-**https://v2.overyondrdev.com**, behind Cloudflare Access, with the feedback widget injected.
+**https://v2.overyondrdev.com**, behind the Yondr Google sign-in (see `docs/PLATFORM.md` in the repo root), with the
+feedback widget injected.
 There is no separate V2 Worker or `wrangler.jsonc` — don't add one (it would take the v2 domain from the main Worker).
 `public/_redirects` and `public/_headers` here still work: the Worker applies them for the V2 host.
 Do NOT add overyondr.com routes; that happens only at cutover, after sign-off.
