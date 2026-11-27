@@ -90,6 +90,7 @@ Severity: **High** = could expose data or break sign-in; **Medium** = real defec
 | R16 | Medium | Workers Builds for `yondr-ad-portal` gets no push events from `digital-ads-portal` (Cloudflare's GitHub app likely lacks access to the new repo), so merges there don't deploy until someone builds by hand | Owner: GitHub → Settings → Applications → Cloudflare Workers and Pages → Configure → add `digital-ads-portal` (and `christmass-cards` if missing) | GitHub (owner only) |
 | R17 | Resolved | Ad library's `OWNER_EMAILS` is a committed plain variable, not a secret | **Fixed** 27 Nov ([digital-ads-portal#4](https://github.com/Overyondrdev/digital-ads-portal/pull/4)): now a secret | `digital-ads-portal` |
 | R18 | Low | V1 sends `Content-Security-Policy-Report-Only`, not an enforced CSP: V1 is Squarespace's page HTML (inline scripts and styles) plus HubSpot, Vimeo, YouTube, Elfsight and Shopify embeds, and an enforced policy could silently break one. The other security headers (HSTS without `includeSubDomains`, nosniff, Referrer-Policy, `X-Frame-Options: SAMEORIGIN`, Permissions-Policy without `display-capture` so the feedback widget can take screenshots) are enforced on every Worker response | CSP report-only on V1; enforce after cutover review: check the browser console on every page type with the embeds loading, tighten (drop `'unsafe-inline'` where possible), then switch to `Content-Security-Policy`. Consider HSTS `includeSubDomains` once every overyondr.com subdomain is HTTPS | v1 `src/worker/index.js` (`SECURITY_HEADERS`, `CSP_REPORT_ONLY`) |
+| R19 | Mitigated | Auto-fix spend: the Claude API key is paid per use; a bug storm or a prompt injection could run up cost | **Mitigated** (owner rules, §6.3): $50/month budget in Ops, owners alerted at 50 %/70 % and when the forecast is over budget, auto-fix pauses at 90 % ($45) until an owner approves more; Claude Console spend limit $60 as a hard backstop; kill switch `autofix_enabled` | `yondr-ops`, website workflows, Claude Console |
 
 ## 4. Daily check (what the morning report covers)
 1. Every host above redirects signed-out visitors to sign-in; `auth` answers; `overyondr.com` still Squarespace.
@@ -153,6 +154,26 @@ V1 and V2 must not be confused: V2 is on its way to becoming the public main web
   after deploy and reverted automatically if anything breaks. Every step is logged in Ops (**Auto-fixes**), each with
   a **Revert** button; updates go out as `autofix_*` alerts. Master switch `autofix_enabled` is off until the owner turns
   it on. Engine: Claude Code GitHub Action with a Claude API key from Claude Console (`ANTHROPIC_API_KEY` org secret, monthly spend limit set in Console; owner decision 27 Nov: no Terminal step).
+- **Auto-fix spending rules (owner, 27 Nov):** the Claude API key is paid per use. Budget **$50 a month** (calendar
+  month, UTC). Every workflow run reports what it cost to Ops (a run whose cost can't be read counts as $2). Owners are
+  alerted **before** reaching the budget: at **50 %** and **70 %** (once each a month), and **ahead of time** when the
+  forecast (spend so far ÷ days elapsed, at least 3, × days in the month, plus $2 per fix waiting or in progress) is over
+  budget (at most once a day). At **90 % ($45)** auto-fix **pauses**: bugs are still triaged and queued, nothing starts,
+  and the workflows' gate answers "paused: budget". It carries on this month only when an owner **approves** more in Ops
+  (Auto-fixes → Spend; up to $100 at a time, audited, alert to owners), and from the 1st of the next month. These alerts
+  always reach owners and ignore quiet hours. **Backstop:** the Claude Console workspace's monthly spend limit is
+  **$60**; if owners approve more than $10 extra in a month, they raise the Console limit too. Details: `yondr-ops`
+  README "Auto-fix → Spending".
+- **Public issues, private people (owner, 27 Nov):** the owner accepted that auto-fix issues and PRs are public (free
+  GitHub plan, R1) **on the condition that personal details stay private**. What is sent: the bug's text, title, page
+  URL/path, page title and asset name, its type, priority and project, and how many screenshots there are. What is
+  removed from that text (in the feedback tool, and again in Ops, before anything reaches GitHub): e-mail addresses;
+  phone numbers (international and local formats); street addresses with the town and postcode/ZIP after them; UK
+  postcodes; secrets in URLs (parameters named like key/token/secret/password/auth/session/signature/code), Bearer/Basic
+  credentials and known token formats. What is never sent: the author, assignee, voters and commenters, any name, and the
+  screenshots themselves (they stay behind the Yondr sign-in). The issue says "an admin" classified it, not who. The
+  feedback widget warns people reporting a bug that it may be shared publicly and not to include personal or
+  confidential details.
 - **How it is built** (27 Nov 2026; full flow, setup and security model: `yondr-ops` README "Auto-fix"):
   the feedback tool reports every item to Ops; Ops triages (type, project → repo, objective/subjective by Workers AI,
   where *unsure = subjective*; admins can override with **Mark objective / Mark subjective**) and, for an objective bug,
@@ -163,8 +184,8 @@ V1 and V2 must not be confused: V2 is on its way to becoming the public main web
   ≤ 10 files, ≤ 200 lines) and opens the PR; `autofix-guard.yml` checks again and turns on auto-merge, which waits
   for the required checks. After the merge Ops watches the Workers Builds deploy and the site checks for 15 minutes:
   failure → automatic revert PR; otherwise "verified". Only the ops account (variable `AUTOFIX_ACTORS`) can start a fix;
-  issues and PRs are public, so the feedback tool sends no personal data and staff should keep bug reports free of
-  confidential details. Required before switching on: the owner setup list in that README (tokens, org secrets and
+  issues and PRs are public, so personal details are removed first (see "Public issues, private people" above) and
+  staff should keep bug reports free of confidential details. Required before switching on: the owner setup list in that README (tokens, org secrets and
   variable, labels, *Allow auto-merge*, `build` as a required check on `main`).
 - **Christmas cards:** addresses are associated with each rep and curated into per-rep lists for ongoing
   communications (work in the cards repo).
