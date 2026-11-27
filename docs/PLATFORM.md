@@ -137,3 +137,24 @@ revoked without touching the others. Don't add Cloudflare Email Service (`send_e
 - Locally: `DEV_EMAIL` in `.dev.vars`, plus an `X-Dev-Email` header to act as someone else (marketing portal, ad library).
 - After any sign-in change, check in Incognito: a signed-out visit lands on the sign-in page for the right site; signed
   in, every site opens; a personal Gmail is refused; APIs answer 401 when signed out.
+
+## 8. People fields: always the directory picker
+
+**Rule (owner, 27 Nov 2026): every field where someone enters a Yondr person — assignee, approver, watcher, owner,
+reviewer, rep, admin, user, alert recipient — now and in future, uses the shared directory picker.** Typing shows the
+few relevant people (name and title, at most 6), never a long list. Data comes from the Yondr Team Contact List sheet
+via `auth.overyondrdev.com` (`auth/README.md` "People directory"); no site keeps its own copy of the staff list.
+
+How to add it to a field:
+1. Load the script once per page: `<script src="https://auth.overyondrdev.com/people-picker.js" defer></script>`.
+2. Mark the field: `<input type="email" data-people>` (it gets the person's email). Options: `data-people-fill="name"`
+   (it gets the name), `data-people-external` (also accepts addresses outside the directory, e.g. owners adding a
+   guest). Fields rendered later by JavaScript are picked up automatically.
+3. CSP: allow `https://auth.overyondrdev.com` in `script-src` and `connect-src`. No inline styles are needed.
+4. To fill a name field too, or add the person straight away, listen for `people:select` (`event.detail` =
+   `{ name, email, title }`; it bubbles). `input` and `change` also fire.
+5. Keep server-side validation as it is (work emails only where the field requires it). The picker helps people
+   type; it doesn't replace checks.
+
+Don't add `<datalist>`s or custom staff dropdowns for people fields; replace any you find.
+

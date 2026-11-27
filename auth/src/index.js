@@ -7,6 +7,11 @@
 //                         @overyondr.com Google Workspace account (hd claim + email domain)
 //   /logout?return=<url>  end the session on every overyondrdev.com site
 //   /.well-known/jwks.json  the public key sites use to check sessions (also set as YONDR_AUTH_PUBLIC_JWK)
+//   /people-picker.js     the shared name/email autofill every site loads (src/people-picker.client.js)
+//   /api/people           signed-in staff only: the active Yondr directory (name, email, title), for the picker
+//   /api/people/lookup?emails=a,b  names for known addresses (former staff included)
+//   /api/people/status    when the directory last updated and how many people it has (no personal data)
+//   cron (4× a day)       copies the Yondr Team Contact List sheet into KV (src/directory.js)
 //
 // The session is an ES256-signed token in a cookie for .overyondrdev.com (HttpOnly, Secure, SameSite=Lax), checked
 // by each site with src/session.js. Secrets: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SESSION_PRIVATE_JWK.
@@ -14,6 +19,7 @@
 import { decode, randomString, sha256b64u, signES256, verifySignature } from './jwt.js';
 import { AUTH_ORIGIN, SESSION_AUDIENCE, SESSION_COOKIE, SESSION_ISSUER, verifySession } from './session.js';
 import { messagePage, signInPage } from './pages.js';
+import { activePeople, KV_META, lookup, syncDirectory } from './directory.js';
 
 const FLOW_COOKIE = 'yondr_auth_flow';
 const GOOGLE_AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -245,12 +251,63 @@ async function home(request, env) {
   );
 }
 
+// ---------------------------------------------------------------- people directory (src/directory.js)
+const SITE_ORIGIN = /^https:\/\/([a-z0-9-]+\.)*overyondrdev\.com$/;
+/** Credentialed CORS for overyondrdev.com sites only (read-only GETs). */
+function cors(request) {
+  const origin = request.headers.get('origin') || '';
+  if (!SITE_ORIGIN.test(origin)) return {};
+  return { 'access-control-allow-origin': origin, 'access-control-allow-credentials': 'true', 'access-control-allow-methods': 'GET', 'access-control-allow-headers': 'accept', 'access-control-max-age': '600', vary: 'Origin' };
+}
+function json(request, body, status = 200, extra = {}) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'private, no-store', 'x-content-type-options': 'nosniff', ...cors(request), ...extra },
+  });
+}
+const STALE_MS = 7 * 3600_000;
+/** Self-healing: if the scheduled update hasn't run for a while (or never ran), update in the background. */
+async function refreshIfStale(env, ctx) {
+  if (!env.DIRECTORY || !ctx) return;
+  const meta = (await env.DIRECTORY.get(KV_META, 'json')) || {};
+  const last = Date.parse(meta.last_attempt || 0) || 0;
+  if (Date.now() - last > STALE_MS) ctx.waitUntil(syncDirectory(env));
+}
+async function people(request, env, url, ctx) {
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(request) });
+  if (!env.DIRECTORY) return json(request, { error: 'The directory isn’t set up.' }, 503);
+  if (!(await currentSession(request, env))) return json(request, { error: 'Please sign in with your Yondr Google account.' }, 401);
+  await refreshIfStale(env, ctx);
+  if (url.pathname === '/api/people') return json(request, await activePeople(env));
+  if (url.pathname === '/api/people/lookup') return json(request, { people: await lookup(env, String(url.searchParams.get('emails') || '').split(',')) });
+  if (url.pathname === '/api/people/status') {
+    const m = (await env.DIRECTORY.get(KV_META, 'json')) || {};
+    return json(request, {
+      ok: m.ok ?? null, error: m.error || null, last_ok: m.last_ok || null, last_attempt: m.last_attempt || null, active: m.active ?? 0, inactive: m.inactive ?? 0,
+      skipped_rows: m.skipped_rows || [], history: m.history || [],
+    });
+  }
+  return json(request, { error: 'Not found' }, 404);
+}
+async function pickerScript() {
+  const { default: src } = await import('./people-picker.client.js');
+  return new Response(src, {
+    headers: { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'public, max-age=300', 'access-control-allow-origin': '*', 'x-content-type-options': 'nosniff', 'cross-origin-resource-policy': 'cross-origin' },
+  });
+}
+
 export default {
-  async fetch(request, env) {
+  async scheduled(event, env, ctx) {
+    if (env.DIRECTORY) ctx.waitUntil(syncDirectory(env).then((m) => console.log('directory sync', m.ok ? 'ok' : 'failed', m.active ?? 0, m.error || '')));
+  },
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     try {
+      if (url.pathname.startsWith('/api/people')) return await people(request, env, url, ctx);
       if (request.method !== 'GET' && request.method !== 'HEAD') return new Response('Method not allowed', { status: 405 });
       switch (url.pathname) {
+        case '/people-picker.js':
+          return await pickerScript();
         case '/':
           return await home(request, env);
         case '/login':

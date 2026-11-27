@@ -30,7 +30,7 @@ All seven are **public** on GitHub, by decision (GitHub free plan). Treat every 
 | `overyondr-website-v2` | `v2` | none (static assets) | Workers Builds on merge to `main` (repo `overyondr-website-v2`) |
 | `yondr-feedback` | `feedback` | D1 `yondr-feedback`, KV `yondr-feedback-screenshots`, Workers AI | `npm run deploy` in `yondr-feedback` |
 | `yondr-ops` | `ops` (+ crons: every 5 min monitoring, every 5 min auto-fix, 03:17 UTC backups) | D1 `yondr-ops`, D1 `yondr-ops-restore-drill` (scratch for the monthly restore test; emptied after), R2 `yondr-ops-backups`, Workers AI, service binding to `yondr-feedback` (role changes as the signed-in admin); reads the other four D1 databases (read-only) | `npm run deploy` in `yondr-ops` |
-| `yondr-auth` | `auth` | none (secrets only) | `wrangler deploy` in `auth/` |
+| `yondr-auth` | `auth` (+ cron 4×/day: people directory sync) | KV `yondr-directory` (names, emails, titles from the Yondr Team Contact List; no phones or locations) | `wrangler deploy` in `auth/` |
 | `yondr-ad-portal` | `ads` | D1 `yondr-ad-portal-db`, R2 `yondr-ad-portal-assets` | Workers Builds from `digital-ads-portal` |
 | `yondr-christmas-cards` | `cards` | D1 `yondr-christmas-cards` (client addresses: **personal data**), email binding | Workers Builds from `christmass-cards` |
 | `yondr-marketing-requests` | `requests` | D1 `yondr-marketing-requests-db`, R2 `yondr-marketing-requests-files`, Resend email | `wrangler deploy` |
