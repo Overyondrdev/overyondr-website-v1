@@ -21,6 +21,13 @@
     // The session cookie is shared by this domain and all its subdomains; sign-in only returns to these hosts.
     "SITE_DOMAIN": "overyondrdev.com",
     "SESSION_HOURS": "12",
+    "DIRECTORY_SHEET_ID": "1ZH-_cFxZ2dlYUC37wVrs8cZDcEu95oh6Eop7LlWSCkU",
   },
+  // People directory (src/directory.js): the Yondr Team Contact List sheet, copied into KV 4 times a day
+  // (01:23, 07:23, 13:23, 19:23 UTC). Secret DIRECTORY_SA_KEY = the read-only service account's JSON key (README).
+  "kv_namespaces": [{ "binding": "DIRECTORY", "id": "5339d6576e0f40ca83134966a8d50536" }],
+  "triggers": { "crons": ["23 1,7,13,19 * * *"] },
+  // The shared autofill script is served as text.
+  "rules": [{ "type": "Text", "globs": ["**/*.client.js"], "fallthrough": false }],
   "observability": { "enabled": true },
 }
