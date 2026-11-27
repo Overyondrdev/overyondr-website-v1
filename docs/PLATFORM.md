@@ -39,8 +39,7 @@ How it works:
 
 The Google client is an **Internal** OAuth app in Google Cloud project `overyondrdev-sign-in`; its ID and secret are
 secrets on `yondr-auth` (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`), with `SESSION_PRIVATE_JWK` (the signing key).
-Details and key rotation: `auth/README.md`. Estate inventory, session rules and risks: `docs/OPERATIONS.md` (when
-added). How the switch from Access was done: `auth/CUTOVER.md`.
+Details and key rotation: `auth/README.md`. Estate inventory, session rules and risks: `docs/OPERATIONS.md`. How the switch from Access was done: `auth/CUTOVER.md`.
 
 The sites still also accept a Cloudflare Access token (left over from the switch). It's harmless (still
 `@overyondr.com` only) and can be removed once nobody needs it.

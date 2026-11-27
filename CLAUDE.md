@@ -1,7 +1,9 @@
 # overyondr.com V1 — instructions for Claude
 
 **Read [docs/PLATFORM.md](docs/PLATFORM.md) before changing sign-in, deploys, DNS, Cloudflare settings or adding a
-site**: what runs where, the Yondr Google sign-in, Access seats, and deploy lessons.
+site**: what runs where, the Yondr Google sign-in, Access seats, and deploy lessons. **Read
+[docs/OPERATIONS.md](docs/OPERATIONS.md) for how sessions work here** (merge when ready, one area per session),
+the risk register and planned restructuring.
 
 V1 is the overyondr.com Squarespace site, migrated page-for-page to a static Astro build
 served by one Cloudflare Worker. Visitors must see exactly what they saw on Squarespace;
