@@ -2,7 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "overyondr-website-v1",
   "compatibility_date": "2026-11-20",
-  // Tiny Worker that routes by hostname (portal / V1 / V2) and serves query-string pages.
+  // Tiny Worker that routes by hostname (portal / V1 / V2) and serves query-string pages. The feedback tool is its
+  // own Worker (Overyondrdev/yondr-feedback); this site only embeds its script.
   "main": "src/worker/index.js",
   "assets": {
     "directory": "./dist",
@@ -12,18 +13,7 @@
     "html_handling": "drop-trailing-slash"
   },
   "observability": { "enabled": true },
-  // Feedback tool (src/worker/feedback): records in D1, screenshots in KV, summaries via Workers AI.
-  "d1_databases": [
-    { "binding": "DB", "database_name": "yondr-feedback", "database_id": "d1284d94-c7e8-4b9e-9526-b108c8425d87" }
-  ],
-  "kv_namespaces": [
-    { "binding": "SHOTS", "id": "de8a09b9bbdf43a59e761a7f57c6a85b" }
-  ],
-  "ai": { "binding": "AI" },
   "vars": {
-    // Legacy Cloudflare Access tokens (still accepted). Sign-in is the Yondr Google sign-in; see docs/PLATFORM.md.
-    "ACCESS_TEAM_DOMAIN": "overyondr.cloudflareaccess.com",
-    "ACCESS_AUD": "77ec28e126571ea261097fe3552f02e9e6237e267b30a75f23377c40a03a85d8",
     // Yondr Google sign-in (auth.overyondrdev.com): public key of the shared session cookie. Safe to commit.
     "YONDR_AUTH_PUBLIC_JWK": "{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"BpCjLJMykOsJbtPTm63rdbw2BzRUTNTz3jj9LWqK6AM\",\"y\":\"RyW0y7Dki1BQ6GnYdD-4FPovGYfoaMmDgr21lNU7xXQ\",\"kid\":\"yondr-2026-11-26-a3a7e6\"}",
     "ALLOWED_EMAIL_DOMAINS": "overyondr.com"

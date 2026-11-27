@@ -3,28 +3,30 @@
 //   v2.overyondrdev.com     -> the V2 redesign (built from v2/ into dist/__v2)
 //   anything else (v1.overyondrdev.com, and overyondr.com after cutover) -> the V1 site
 import site from '../v1/site.json';
-import { handleFeedbackApi } from './feedback/api.js';
-import { currentUser, roleOf } from './feedback/auth.js';
-import { ensureSchema } from './feedback/schema.js';
-import { loginUrl } from './yondr-session.js';
+import { loginUrl, yondrUser } from './yondr-session.js';
+
+// The feedback tool is its own Worker (repo Overyondrdev/yondr-feedback, feedback.overyondrdev.com). This site only
+// embeds its script and sends the old dashboard address there.
+const FEEDBACK = 'https://feedback.overyondrdev.com';
+
+// Who is signed in: the Yondr Google sign-in session. DEV_EMAIL (.dev.vars, local only) is honoured on localhost only.
+async function currentUser(request, env) {
+  if (env.DEV_EMAIL && /^(localhost|127\.0\.0\.1)$/.test(new URL(request.url).hostname)) return { email: env.DEV_EMAIL };
+  return yondrUser(request, env);
+}
 
 const PORTAL_HOSTS = new Set(['overyondrdev.com', 'www.overyondrdev.com']);
 const SHARED_ASSET = /^\/(css|fonts|js|images|brand|_astro)\//;
 
-// Portal pages: show who is signed in (Cloudflare Access adds this header after login).
+// Portal pages: show who is signed in. (The dashboard link is revealed in the page for admins; see Portal.astro.)
 async function portalPage(env, request, path) {
   const res = await serve(env, request, path);
   const user = await currentUser(request, env).catch(() => null);
   const email = user && user.email;
   if (!email) return res;
-  let isAdmin = false;
-  try {
-    if (env.DB) { await ensureSchema(env.DB); isAdmin = !!(await roleOf(env.DB, email)); }
-  } catch { /* the portal still works without the admin link */ }
   return new HTMLRewriter()
     .on('[data-user-email]', { element(el) { el.setInnerContent(email); } })
     .on('[data-who]', { element(el) { el.removeAttribute('data-anon'); } })
-    .on('[data-admin-link]', { element(el) { if (isAdmin) el.removeAttribute('hidden'); } })
     .transform(res);
 }
 
@@ -103,13 +105,16 @@ function queryRoute(url) {
   return null;
 }
 
-// Feedback widget: injected into every HTML page on the dev domains only (never on overyondr.com).
+// Feedback widget (with the website preview toolbar and tour): injected into every HTML page on the dev domains only
+// (never on overyondr.com).
 const DEV_HOST = /(^|\.)overyondrdev\.com$|^(127\.0\.0\.1|localhost)$/;
 function withWidget(res, host) {
   const type = res.headers.get('content-type') || '';
   if (!DEV_HOST.test(host) || !type.includes('text/html')) return res;
+  const project = PORTAL_HOSTS.has(host) ? 'portal' : host.startsWith('v2.') ? 'v2' : 'v1';
+  const tag = `<script src="${FEEDBACK}/widget.js" data-project="${project}" data-toolbar="website" defer></script>`;
   return new HTMLRewriter()
-    .on('body', { element(el) { el.append('<script src="/__feedback/widget.js" defer></script>', { html: true }); } })
+    .on('body', { element(el) { el.append(tag, { html: true }); } })
     .transform(res);
 }
 
@@ -117,12 +122,9 @@ async function route(request, env) {
   const url = new URL(request.url);
   const host = url.hostname;
 
-  if (url.pathname.startsWith('/__feedback/api/')) return handleFeedbackApi(request, env, url.pathname.slice('/__feedback/api/'.length));
-  if (url.pathname.startsWith('/__feedback/')) return env.ASSETS.fetch(request);
-
   if (PORTAL_HOSTS.has(host)) {
     if (url.pathname === '/') return portalPage(env, request, '/portal');
-    if (url.pathname === '/admin' || url.pathname === '/admin/') return portalPage(env, request, '/admin');
+    if (url.pathname === '/admin' || url.pathname === '/admin/') return Response.redirect(FEEDBACK + '/admin', 301);
     if (SHARED_ASSET.test(url.pathname)) return env.ASSETS.fetch(request);
     return Response.redirect(new URL('/', url), 302);
   }
@@ -151,8 +153,7 @@ export default {
   async fetch(request, env) {
     const host = new URL(request.url).hostname;
     if (SIGNIN_HOST.test(host) && !(await currentUser(request, env).catch(() => null))) {
-      const path = new URL(request.url).pathname;
-      if ((request.method === 'GET' || request.method === 'HEAD') && !path.startsWith('/__feedback/api/'))
+      if (request.method === 'GET' || request.method === 'HEAD')
         return new Response(null, { status: 302, headers: { location: loginUrl(request), 'cache-control': 'no-store' } });
       return new Response(JSON.stringify({ error: 'Please sign in with your Yondr Google account.' }), {
         status: 401,
@@ -160,9 +161,6 @@ export default {
       });
     }
     const res = await route(request, env);
-    const url = new URL(request.url);
-    // The admin dashboard has its own feedback views, so no widget there.
-    if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/__feedback/')) return res;
-    return withWidget(res, url.hostname);
+    return withWidget(res, new URL(request.url).hostname);
   },
 };

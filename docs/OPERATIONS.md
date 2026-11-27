@@ -13,18 +13,20 @@ _Last full audit: 27 Nov 2026._
 ### Repositories (GitHub org `Overyondrdev`)
 | Repo | What it is | Status |
 | --- | --- | --- |
-| `overyondr-website-v1` | Website Worker: portal, V1 (migrated Squarespace site), V2 (`v2/`), feedback tool, and `auth/` (the sign-in Worker) | Main repo. `main` protected; merges deploy via Workers Builds |
+| `overyondr-website-v1` | Website Worker: portal, V1 (migrated Squarespace site), V2 (`v2/`, moving out per 6.2), and `auth/` (the sign-in Worker) | Main repo. `main` protected; merges deploy via Workers Builds |
 | `digital-ads-portal` | Ad library, `ads.overyondrdev.com` | Moved out of `ad-portal/` on 27 Nov ([v1 #30](https://github.com/Overyondrdev/overyondr-website-v1/pull/30), merged) |
 | `christmass-cards` | Client Christmas-card address collection, `cards.overyondrdev.com` | Moved out of `apps/christmas-cards/` on 27 Nov ([v1 #20](https://github.com/Overyondrdev/overyondr-website-v1/pull/20) removes the old copy) |
 | `marketing-request-portal` | Marketing request intake and approvals, `requests.overyondrdev.com` | Own repo from the start |
+| `yondr-feedback` | Feedback tool: widget, API, admin, `feedback.overyondrdev.com` | Own repo since 27 Nov (6.1) |
 | `overyondr-website-v2` | Future home of V2 (section 6.2). Today `main` is empty and the live V2 is built from `overyondr-website-v1/v2/` | Being set up |
 
-All five are **public** on GitHub, by decision (GitHub free plan). Treat every commit as published (R1).
+All six are **public** on GitHub, by decision (GitHub free plan). Treat every commit as published (R1).
 
 ### Cloudflare (account `3fac6c19097c5692e17198cffa818085`)
 | Worker | Hosts | Data | Deploys from |
 | --- | --- | --- | --- |
-| `overyondr-website-v1` | `overyondrdev.com`, `www`, `v1`, `v2` | D1 `yondr-feedback`, KV `yondr-feedback-screenshots`, Workers AI | Workers Builds on merge to `main` |
+| `overyondr-website-v1` | `overyondrdev.com`, `www`, `v1`, `v2` | none (static assets) | Workers Builds on merge to `main` |
+| `yondr-feedback` | `feedback` | D1 `yondr-feedback`, KV `yondr-feedback-screenshots`, Workers AI | `npm run deploy` in `yondr-feedback` |
 | `yondr-auth` | `auth` | none (secrets only) | `wrangler deploy` in `auth/` |
 | `yondr-ad-portal` | `ads` | D1 `yondr-ad-portal-db`, R2 `yondr-ad-portal-assets` | Workers Builds from `digital-ads-portal` |
 | `yondr-christmas-cards` | `cards` | D1 `yondr-christmas-cards` (client addresses: **personal data**), email binding | Workers Builds from `christmass-cards` |
@@ -69,7 +71,7 @@ Severity: **High** = could expose data or break sign-in; **Medium** = real defec
 | # | Sev | Risk | Action | Where |
 | --- | --- | --- | --- | --- |
 | R1 | Accepted | All repos are public (owner decision: GitHub free plan). Code, config IDs and docs are readable by anyone | Keep public. Never commit secrets, personal emails, client data or internal-only notes; review diffs with that in mind | all |
-| R2 | Medium | Feedback admin: a non-owner admin could demote an owner by re-adding them as admin, then remove them | **Fixed** in this PR (`src/worker/feedback/api.js`) | v1 |
+| R2 | Medium | Feedback admin: a non-owner admin could demote an owner by re-adding them as admin, then remove them | **Fixed** (v1 #31; carried into `yondr-feedback`) | feedback |
 | R3 | Medium | Orphaned `overyondr-website-v2` repo still claims `v2.overyondrdev.com` in its `wrangler.jsonc`, with no sign-in check. A deploy from it would take the v2 host away from the website Worker and could make V2 public. No such Worker exists today | Superseded by section 6.2: the repo gets the real V2 and its own Worker with the sign-in check; until then nobody deploys from it | v2 repo |
 | R4 | Medium | Ad library accepts any Cloudflare Access token from the team (no audience or email-domain check) as a fallback | Fix in [digital-ads-portal#3](https://github.com/Overyondrdev/digital-ads-portal/pull/3) (fallback removed), awaiting merge | `digital-ads-portal` `src/access.ts` |
 | R5 | Medium | Ad library help article "Signing in" still describes one-time email codes and week-long sessions; the real sign-in is Google with 12-hour sessions | Fix in [digital-ads-portal#3](https://github.com/Overyondrdev/digital-ads-portal/pull/3), awaiting merge | `digital-ads-portal` |
@@ -102,6 +104,8 @@ redirects verified against the live site, and a rollback plan (point DNS back to
 ## 6. Planned restructuring (owner decisions, 27 Nov 2026)
 
 ### 6.1 Feedback tool becomes its own product (first)
+Status: repo and code done (yondr-feedback #1). Next: deploy the Worker, add `feedback` to the Access Bypass app,
+then merge the website switch-over PR.
 The feedback widget, API, admin dashboard and data move out of the website into a **universal, pluggable tool** that
 any site or internal tool can add with one script tag, to collect documented, individual feedback on pages and on
 specific assets (an ad, a request, a card design).

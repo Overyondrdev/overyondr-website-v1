@@ -33,22 +33,15 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
   CI and Workers Builds deploy; it keeps a copy of `auth/src/session.js` that must stay identical.
 
 ## Feedback tool
-Yondr staff leave feedback on any dev page through a widget; the team reviews it at **overyondrdev.com/admin**.
-- Widget: `public/__feedback/widget.js` (Shadow DOM, no dependencies). The Worker injects it into HTML on
-  `*.overyondrdev.com` only — never on overyondr.com. Screenshots use the browser's screen-capture API
-  (one "Share this tab" prompt), then a mark-up editor; images can also be pasted, dropped or uploaded.
-- The same script adds the preview toolbar on V1/V2 (All versions, V1/V2 switch, Tour, Give feedback; the page is
-  pushed down 44px and top-pinned fixed/sticky elements are moved below it) and the tour. The tour is offered on a
-  person's first 3 visits (visit = back after 30+ min), once per visit; finishing ends it; the 1st skip points at the Tour
-  button and offers to resume next visit; the 2nd skip is final. Part-way tours are still offered after visit 3.
-  State is the `yfb_tour` cookie on `.overyondrdev.com` (shared by all dev hosts); any `[data-yfb-tour]` element replays it.
-- API: `src/worker/feedback/api.js` at `/__feedback/api/*`. Identity = the Yondr Google sign-in session (`auth.js`, via
-  `src/worker/yondr-session.js`); Access tokens are still accepted during the switch. Data: D1 `yondr-feedback` (`env.DB`, schema in `schema.js`, applied
-  automatically), screenshots in KV (`env.SHOTS`), AI summaries via Workers AI (`env.AI`).
-- Admin: `src/pages/admin.astro` + `public/__feedback/admin.{js,css}`. Roles live in the `admins` table (owner/admin);
-  owners/admins add others under People & access. Non-admins see an "Admins only" page.
-- Local dev: `DEV_EMAIL="you@overyondr.com"` in `.dev.vars` (git-ignored) signs you in without Access. Make yourself an
-  admin locally with `npx wrangler d1 execute yondr-feedback --local --command "INSERT INTO admins ..."`.
+The feedback tool is its own product: Worker `yondr-feedback` on **feedback.overyondrdev.com**, repo
+**Overyondrdev/yondr-feedback** (widget, API, admin dashboard, data). Change it there, not here.
+- This Worker only embeds it: `withWidget` in `src/worker/index.js` adds
+  `<script src="https://feedback.overyondrdev.com/widget.js" data-project="portal|v1|v2" data-toolbar="website">` to HTML
+  on `*.overyondrdev.com` only — never on overyondr.com. `data-toolbar="website"` turns on the preview toolbar and tour.
+- `overyondrdev.com/admin` redirects (301) to `feedback.overyondrdev.com/admin`. The portal's "Feedback dashboard" link
+  appears for admins (it asks `feedback.overyondrdev.com/api/me`). `[data-yfb-open]` and `[data-yfb-tour]` buttons in
+  pages keep working.
+- Local dev: `DEV_EMAIL="you@overyondr.com"` in `.dev.vars` (git-ignored) signs you in on localhost only.
 
 ## How to ship a change
 1. Branch from `main` (`design/<short-name>`, `content/<page>` or `fix/<thing>`).
@@ -71,7 +64,6 @@ Never force-push `main`. Never commit `dist/`, `node_modules/`, `.migrate/`, `.e
 | `public/js/site.js` | All V1 behaviour (menus, accordions, marquee, slideshows, lightbox…). Replaces Squarespace's scripts and jQuery |
 | `public/images`, `public/files`, `public/s`, `public/videos`, `public/fonts` | Self-hosted assets (`/s/…` keeps the old Squarespace file URLs) |
 | `public/_redirects` | Redirects (same as the live site) |
-| `src/worker/feedback/`, `public/__feedback/`, `src/pages/admin.astro` | Feedback widget, API and admin dashboard |
 | `public/brand/` | Official Yondr brand files (wordmarks, icons) and the brand fonts Fraunces + Inter Tight (OFL). Portal, widget and admin follow the Yondr Brand Guidelines v1.0 |
 | `scripts/migrate/` | One-off migration tooling: `crawl.py` (snapshot live site), `build.py` (generate the above), `compare.mjs` (live vs local screenshots) |
 | `scripts/migrate/missing-on-live-site.txt` | Assets that are already broken on the live Squarespace site |
