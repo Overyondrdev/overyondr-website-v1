@@ -32,6 +32,12 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
   **Overyondrdev/digital-ads-portal** (moved out of `ad-portal/` here in November 2026, with its history). It has its own
   CI and Workers Builds deploy; it keeps a copy of `auth/src/session.js` that must stay identical.
 
+## Auto-fix
+`.github/workflows/autofix.yml`, `autofix-guard.yml` and `autofix-report.yml` let Yondr Ops fix objective bugs from the
+feedback tool automatically (rules: docs/OPERATIONS.md §6.3; flow, setup and security: `Overyondrdev/yondr-ops` README
+"Auto-fix"). Only issues labelled `autofix` by the ops account start them. Keep `FORBIDDEN` identical in `autofix.yml`
+and `autofix-guard.yml`; changes to these workflows go through the owner (CODEOWNERS `.github/`).
+
 ## Feedback tool
 The feedback tool is its own product: Worker `yondr-feedback` on **feedback.overyondrdev.com**, repo
 **Overyondrdev/yondr-feedback** (widget, API, admin dashboard, data). Change it there, not here.
