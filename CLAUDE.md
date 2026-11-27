@@ -16,7 +16,7 @@ Every merge to `main` is built by Cloudflare Workers Builds and live about a min
 | --- | --- |
 | `overyondrdev.com`, `www.` | Portal page with the **Yondr Website V1** / **V2** buttons (`src/pages/portal.astro`) |
 | `v1.overyondrdev.com` | The migrated V1 site |
-| `v2.overyondrdev.com` | V2, the Loba redesign (work in progress), built from `v2/` into `dist/__v2` |
+| `v2.overyondrdev.com` | **Not this repo.** V2 (the Loba redesign) is its own Worker `overyondr-website-v2`, repo [Overyondrdev/overyondr-website-v2](https://github.com/Overyondrdev/overyondr-website-v2). Don't add V2 code here |
 | `cards.overyondrdev.com` | Christmas card list app: its own repo, [Overyondrdev/christmass-cards](https://github.com/Overyondrdev/christmass-cards) |
 
 - All of overyondrdev.com requires a **Yondr Google sign-in** (`auth/`, Worker `yondr-auth` at `auth.overyondrdev.com`):
@@ -42,7 +42,7 @@ and `autofix-guard.yml`; changes to these workflows go through the owner (CODEOW
 The feedback tool is its own product: Worker `yondr-feedback` on **feedback.overyondrdev.com**, repo
 **Overyondrdev/yondr-feedback** (widget, API, admin dashboard, data). Change it there, not here.
 - This Worker only embeds it: `withWidget` in `src/worker/index.js` adds
-  `<script src="https://feedback.overyondrdev.com/widget.js" data-project="portal|v1|v2" data-toolbar="website">` to HTML
+  `<script src="https://feedback.overyondrdev.com/widget.js" data-project="portal|v1" data-toolbar="website">` to HTML
   on `*.overyondrdev.com` only — never on overyondr.com. `data-toolbar="website"` turns on the preview toolbar and tour.
 - `overyondrdev.com/admin` redirects (301) to `feedback.overyondrdev.com/admin`. The portal's "Feedback dashboard" link
   appears for admins (it asks `feedback.overyondrdev.com/api/me`). `[data-yfb-open]` and `[data-yfb-tour]` buttons in

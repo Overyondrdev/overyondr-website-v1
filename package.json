@@ -4,13 +4,12 @@
   "description": "overyondr.com V1 \u2014 Squarespace migration replica (Astro + Cloudflare Workers)",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && npm run build:v2",
+    "build": "astro build",
     "postbuild": "node scripts/check-no-squarespace-cdn.mjs",
     "preview": "npm run build && wrangler dev",
     "check:secrets": "node scripts/secret-scan.mjs",
     "check:links": "linkinator dist --recurse --clean-urls --skip \"linkedin\\\\.com|ashbyhq\\\\.com|^mailto:\"",
-    "deploy": "npm run build && wrangler deploy",
-    "build:v2": "npm ci --prefix v2 --no-audit --no-fund && npm run build --prefix v2 && node scripts/merge-v2.mjs"
+    "deploy": "npm run build && wrangler deploy"
   },
   "license": "UNLICENSED",
   "dependencies": {

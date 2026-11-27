@@ -13,20 +13,21 @@ _Last full audit: 27 Nov 2026._
 ### Repositories (GitHub org `Overyondrdev`)
 | Repo | What it is | Status |
 | --- | --- | --- |
-| `overyondr-website-v1` | Website Worker: portal, V1 (migrated Squarespace site), V2 (`v2/`, moving out per 6.2), and `auth/` (the sign-in Worker) | Main repo. `main` protected; merges deploy via Workers Builds |
+| `overyondr-website-v1` | Website Worker: portal, V1 (migrated Squarespace site) and `auth/` (the sign-in Worker) | Main repo. `main` protected; merges deploy via Workers Builds |
 | `digital-ads-portal` | Ad library, `ads.overyondrdev.com` | Moved out of `ad-portal/` on 27 Nov ([v1 #30](https://github.com/Overyondrdev/overyondr-website-v1/pull/30), merged) |
 | `christmass-cards` | Client Christmas-card address collection, `cards.overyondrdev.com` | Moved out of `apps/christmas-cards/` on 27 Nov ([v1 #20](https://github.com/Overyondrdev/overyondr-website-v1/pull/20) removes the old copy) |
 | `marketing-request-portal` | Marketing request intake and approvals, `requests.overyondrdev.com` | Own repo from the start |
 | `yondr-feedback` | Feedback tool: widget, API, admin, `feedback.overyondrdev.com` | Own repo since 27 Nov (6.1) |
 | `yondr-ops` | Ops hub and **admin dashboard**: overview, issues (assign, track), people & permissions, status page for all staff, errors, deploys + rollback, backups + monthly restore drill, keys calendar, access review, alerts, auto-fix engine + revert, `ops.overyondrdev.com` | Own repo since 27 Nov (6.3) |
-| `overyondr-website-v2` | Future home of V2 (section 6.2). Today `main` is empty and the live V2 is built from `overyondr-website-v1/v2/` | Being set up |
+| `overyondr-website-v2` | V2, the redesign that becomes the public site: own Worker `overyondr-website-v2` with its own sign-in check (section 6.2) | `main` protected; merges deploy via Workers Builds |
 
 All seven are **public** on GitHub, by decision (GitHub free plan). Treat every commit as published (R1).
 
 ### Cloudflare (account `3fac6c19097c5692e17198cffa818085`)
 | Worker | Hosts | Data | Deploys from |
 | --- | --- | --- | --- |
-| `overyondr-website-v1` | `overyondrdev.com`, `www`, `v1`, `v2` | none (static assets) | Workers Builds on merge to `main` |
+| `overyondr-website-v1` | `overyondrdev.com`, `www`, `v1` | none (static assets) | Workers Builds on merge to `main` |
+| `overyondr-website-v2` | `v2` | none (static assets) | Workers Builds on merge to `main` (repo `overyondr-website-v2`) |
 | `yondr-feedback` | `feedback` | D1 `yondr-feedback`, KV `yondr-feedback-screenshots`, Workers AI | `npm run deploy` in `yondr-feedback` |
 | `yondr-ops` | `ops` (+ crons: every 5 min monitoring, every 5 min auto-fix, 03:17 UTC backups) | D1 `yondr-ops`, D1 `yondr-ops-restore-drill` (scratch for the monthly restore test; emptied after), R2 `yondr-ops-backups`, Workers AI, service binding to `yondr-feedback` (role changes as the signed-in admin); reads the other four D1 databases (read-only) | `npm run deploy` in `yondr-ops` |
 | `yondr-auth` | `auth` | none (secrets only) | `wrangler deploy` in `auth/` |
@@ -74,11 +75,11 @@ Severity: **High** = could expose data or break sign-in; **Medium** = real defec
 | --- | --- | --- | --- | --- |
 | R1 | Accepted | All repos are public (owner decision: GitHub free plan). Code, config IDs and docs are readable by anyone | Keep public. Never commit secrets, personal emails, client data or internal-only notes; review diffs with that in mind | all |
 | R2 | Medium | Feedback admin: a non-owner admin could demote an owner by re-adding them as admin, then remove them | **Fixed** (v1 #31; carried into `yondr-feedback`) | feedback |
-| R3 | Medium | Orphaned `overyondr-website-v2` repo still claims `v2.overyondrdev.com` in its `wrangler.jsonc`, with no sign-in check. A deploy from it would take the v2 host away from the website Worker and could make V2 public. No such Worker exists today | Superseded by section 6.2: the repo gets the real V2 and its own Worker with the sign-in check; until then nobody deploys from it | v2 repo |
+| R3 | Medium | Orphaned `overyondr-website-v2` repo still claims `v2.overyondrdev.com` in its `wrangler.jsonc`, with no sign-in check. A deploy from it would take the v2 host away from the website Worker and could make V2 public. No such Worker exists today | **Closed** (November 2026): V2 now runs as its own Worker with the sign-in check (section 6.2) | v2 repo |
 | R4 | Resolved | Ad library accepts any Cloudflare Access token from the team (no audience or email-domain check) as a fallback | **Fixed** 27 Nov ([digital-ads-portal#3](https://github.com/Overyondrdev/digital-ads-portal/pull/3)): Google session only; checked live (fake Access token → 401) | `digital-ads-portal` |
 | R5 | Resolved | Ad library help article "Signing in" still describes one-time email codes and week-long sessions; the real sign-in is Google with 12-hour sessions | **Fixed** 27 Nov (digital-ads-portal#3) | `digital-ads-portal` |
 | R6 | Low | Open v1 PRs #20 (remove cards copy) and #29 (`PLATFORM.md`) touch nearby files; #30 merged 27 Nov. #29 is updated for the new repo layout and no longer overlaps #20 | Merge #20 and #29 in either order; then #29's author changes cards from "moving to" to "in" | v1 |
-| R7 | Medium | V2 lead forms show "sent" but only log the data when `PUBLIC_FORM_ENDPOINT` is unset (`v2/src/pages/get-started.astro`, footer newsletter) | Must be wired to HubSpot (or similar) before V2 launches | v1 `v2/` |
+| R7 | Medium | V2 lead forms show "sent" but only log the data when `PUBLIC_FORM_ENDPOINT` is unset (`src/pages/get-started.astro` in the V2 repo, footer newsletter) | Must be wired to HubSpot (or similar) before V2 launches | v2 repo |
 | R8 | Medium | Access-token fallbacks remain in the website, ad library and cards; Christmas cards still routes the old email-code sign-in API | Once Zero Trust shows 0 seats for a week, remove all Access fallbacks and `ACCESS_*` vars | all |
 | R9 | Low | Test plus-addresses (`name+test@`) can't sign in with Google, so role testing on live sites has no test accounts | Decide: dedicated Workspace test users, or test with colleagues | owner |
 | R10 | Low | `v1.overyondrdev.com` was missing from the `noindex` rules in `public/_headers` | **Fixed** in this PR | v1 |
@@ -129,7 +130,7 @@ V1 and V2 must not be confused: V2 is on its way to becoming the public main web
 - V2 code moves from `overyondr-website-v1/v2/` to **`Overyondrdev/overyondr-website-v2`** (its `main` is empty
   today; the orphaned early copy there is replaced). Own Worker **`overyondr-website-v2`** serving
   `v2.overyondrdev.com`, with its own copy of `session.js`, Workers Builds deploys, and the feedback script tag.
-- The V1 Worker stops serving `v2.` and `dist/__v2`; `v2/` and its CI steps are removed from the V1 repo.
+- **Done (November 2026):** the V1 Worker no longer serves `v2.` or `dist/__v2`; `v2/` and its CI steps are removed from the V1 repo.
 - Switch-over: the new Worker is verified first, then the `v2.overyondrdev.com` domain is moved to it in one step, then
   the V1 cleanup PR merges. Signed-out visitors must still land on the sign-in page throughout.
 - Later, the `overyondr.com` cutover will point at whichever site is signed off as the public site.
