@@ -156,8 +156,16 @@
     if (active) { active.setAttribute('aria-expanded', 'false'); active.removeAttribute('aria-activedescendant'); }
     items = []; index = -1;
   }
+  /** Modal dialogs (showModal) sit in the browser's top layer above everything in <body>: put the list inside the
+   *  field's open dialog so it shows on top and can be clicked; otherwise in <body>. */
+  function host() {
+    var d = active && active.closest && active.closest('dialog[open]');
+    var target = d || document.body;
+    if (box.parentNode !== target) target.appendChild(box);
+  }
   function render(list, q, heading) {
     ensureBox();
+    host();
     box.textContent = '';
     items = list;
     index = -1;
