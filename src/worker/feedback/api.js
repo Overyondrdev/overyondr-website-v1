@@ -266,6 +266,8 @@ async function admins(req, env, user, role) {
   const email = String(b.email || '').trim().toLowerCase();
   if (!/^[^@\s]+@overyondr\.com$/.test(email)) return err(400, 'Admins must have an @overyondr.com email address.');
   if (req.method === 'POST') {
+    // Re-adding an existing owner as "admin" would demote them; only an owner may change an owner's role.
+    if ((await roleOf(env.DB, email)) === 'owner' && role !== 'owner') return err(403, 'Only an owner can change an owner’s role.');
     const newRole = b.role === 'owner' && role === 'owner' ? 'owner' : 'admin';
     await env.DB.prepare('INSERT INTO admins (email, role, added_by, added_at) VALUES (?, ?, ?, ?) ON CONFLICT(email) DO UPDATE SET role = excluded.role')
       .bind(email, newRole, user.email, now()).run();
