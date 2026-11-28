@@ -62,7 +62,16 @@ Every name/email field on overyondrdev.com autofills from the **Yondr Team Conta
   dependencies, ARIA 1.2 combobox, at most 6 matches, recent picks on an empty field, works under strict CSPs
   (constructed stylesheet; no inline styles). Usage and rules: `docs/PLATFORM.md` §8.
 
-### Setup (once, owner, browser only)
+### Today: fed by the owner's Google Sheets connection (owner decision, 28 Nov 2026)
+
+Until the service account below is set up, a **scheduled Claude task** ("overyondrdev.com people directory refresh",
+4 times a day) reads the sheet's First, Last Name, E-Mail and Title columns through the owner's Google Sheets
+connector and loads them with `scripts/import-directory.mjs` (same rules: no phones or locations, bad rows skipped,
+20 % guard, leavers inactive), writing KV `yondr-directory` through the Cloudflare API. `directory:meta.source` is
+`owner-connector`; while it is and `DIRECTORY_SA_KEY` is unset, the Worker's own cron leaves the data alone. Adding the
+key below switches to the service account automatically at the next scheduled run (then disable the Claude task).
+
+### Setup of the service account (optional, owner, browser only)
 1. **Google Cloud** (console.cloud.google.com, project of the Yondr sign-in): *APIs & Services → Library →* **Google
    Sheets API → Enable**.
 2. *IAM & Admin → Service accounts → Create service account*: name `yondr-directory-reader`, no roles, Done.

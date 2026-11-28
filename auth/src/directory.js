@@ -115,7 +115,11 @@ export const domainsOf = (env) => String(env.ALLOWED_EMAIL_DOMAINS || 'overyondr
 /** Read the sheet and store the directory. Never throws: the outcome is written to KV_META (no personal data). */
 export async function syncDirectory(env, { fetchFn = fetch, now = new Date().toISOString() } = {}) {
   const meta = (await env.DIRECTORY.get(KV_META, 'json')) || {};
+  // Until the service account key is set, the owner's Google Sheets connection imports the sheet instead
+  // (scripts/import-directory.mjs, run by a scheduled Claude task). Leave that data and status alone.
+  if (!env.DIRECTORY_SA_KEY && meta.source === 'owner-connector') return meta;
   meta.last_attempt = now;
+  meta.source = 'service-account';
   try {
     if (!env.DIRECTORY_SA_KEY || !env.DIRECTORY_SHEET_ID) throw new Error('Not set up: DIRECTORY_SA_KEY or DIRECTORY_SHEET_ID is missing.');
     const { people: fresh, skipped } = parseRows(await readSheet(env, fetchFn), domainsOf(env));
