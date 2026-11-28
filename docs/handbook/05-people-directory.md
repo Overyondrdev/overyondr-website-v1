@@ -24,7 +24,7 @@ changes. The platform copies it automatically:
 
 | Step | What happens |
 | --- | --- |
-| 1. Read | The sign-in Worker (`yondr-auth`) reads the sheet **4 times a day** (01:23, 07:23, 13:23, 19:23 UTC) with a **read-only Google service account** (`yondr-directory-reader`), shared on that one sheet as *Viewer*. |
+| 1. Read | **4 times a day.** **Today** (owner decision, 28 Nov 2026): a scheduled Claude task reads only the name, email and title columns through the **owner's Google Sheets connection** and loads them with the same rules. **Later, optionally:** a read-only Google service account (`yondr-directory-reader`) lets the sign-in Worker read the sheet itself, without depending on the owner's connection. |
 | 2. Keep only what's needed | First name, last name, @overyondr.com email, title. **Phone numbers and locations never leave the sheet.** |
 | 3. Check | Rows without a valid @overyondr.com email are skipped and listed by row number. If an update would remove **more than 20 %** of people at once, it is **not applied** (a filter or sorting slip can't wipe the directory). |
 | 4. Store | KV `yondr-directory`. People removed from the sheet become *inactive*: no longer suggested, but old records still show their name. |
@@ -51,14 +51,18 @@ If a sync is missed, the next use of the picker after 7 hours triggers a catch-u
 Not for: client/customer fields (e.g. Christmas card recipients) and someone's own profile name.
 Full reference: `docs/PLATFORM.md` §8 and `auth/README.md` "People directory".
 
-## Setup (done once, by the owner)
+## Optional upgrade: a service account (owner)
+
+Not needed today. Do it if the directory should keep updating without the owner's Google connection (for example if
+the owner changes role). Once the key is added, the Worker takes over at its next scheduled run, and the Claude refresh
+task is switched off.
 
 1. Google Cloud (the sign-in project): enable **Google Sheets API**.
 2. Create service account `yondr-directory-reader` (no roles) → Keys → JSON key.
 3. Share the Team Contact List with the service account's email as **Viewer**.
 4. Cloudflare → `yondr-auth` → Settings → Variables and Secrets → Secret `DIRECTORY_SA_KEY` = the JSON file's content.
    Delete the downloaded file.
-5. Check: Ops Overview shows the people count.
+5. Check: Ops Overview shows the people count. Then disable the scheduled task "overyondrdev.com people directory refresh".
 
 The key is listed in the Ops **Keys** calendar. Rotating it: create a new JSON key, replace the secret, delete the old
 key in Google Cloud.

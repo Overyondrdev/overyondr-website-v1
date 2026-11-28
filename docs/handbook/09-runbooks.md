@@ -65,7 +65,9 @@ Never paste keys into chat, email or files.
 ## The people directory isn't updating
 
 1. Ops → Overview → "People directory": read the error.
-2. "Not set up": the `DIRECTORY_SA_KEY` secret is missing on `yondr-auth` ([setup](05-people-directory.md#setup-done-once-by-the-owner)).
+2. "Not updated for 13 hours": the scheduled task "overyondrdev.com people directory refresh" didn't run or the owner's
+   Google Sheets connection was disconnected. Reconnect Google Sheets in Claude (Settings → Connectors) or ask the hub
+   session to run the import. ("Not set up" means neither the task nor a service account has loaded it yet.)
 3. "Couldn't read the sheet (403/404)": the sheet isn't shared with the service account, or the Sheets API is off.
 4. "Not applied: N people would have been removed": check the sheet's filters and sorting. The update applies once
    the sheet is complete again.

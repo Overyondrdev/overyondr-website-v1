@@ -5,6 +5,7 @@ changes how the platform works or how we work.** Each entry gives the date, the 
 
 | Date | Decision | Why / notes | Where |
 | --- | --- | --- | --- |
+| 28 Nov 2026 | **Directory fed from the sheet through the owner's Google connection** for now (4×/day scheduled task); a service account is an optional later upgrade | Works immediately, no Google Cloud setup | [05](05-people-directory.md) |
 | 27 Nov 2026 | **Handbook = the single source of truth**, kept continually up to date; master in GitHub, reading copy in Drive | New people and agents must get up to speed from one place | This handbook |
 | 27 Nov 2026 | **People directory autofill on every person field**, now and in future, including the fields for adding users and admins. Data from the Yondr Team Contact List via a read-only service account; sync a few times a day (4×); show name and title (no city); never a long dropdown | Faster, error-free entry; one list for the whole platform | [05](05-people-directory.md), `docs/PLATFORM.md` §8 |
 | 27 Nov 2026 | **Every portal's Yondr logo returns to overyondrdev.com; headers are sticky** | Easy navigation across the portal, especially on long pages | All sites |

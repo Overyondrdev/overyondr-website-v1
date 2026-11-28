@@ -86,3 +86,33 @@ test('API: signed-out gets 401 with CORS only for overyondrdev.com origins', asy
   const pre = await worker.fetch(new Request('https://auth.overyondrdev.com/api/people', { method: 'OPTIONS', headers: { origin: 'https://overyondrdev.com' } }), env, {});
   assert.equal(pre.status, 204);
 });
+
+test('sync leaves owner-connector data alone until the service account key is set', async () => {
+  const env = { DIRECTORY: kv() };
+  await env.DIRECTORY.put('directory:meta', JSON.stringify({ source: 'owner-connector', ok: true, active: 5 }));
+  const m = await syncDirectory(env);
+  assert.equal(m.ok, true);
+  assert.equal(JSON.parse(env.DIRECTORY.m.get('directory:meta')).active, 5);
+});
+
+test('import script: same rules, writes a KV bulk body, guard refuses mass removal', async () => {
+  const { execFileSync, spawnSync } = await import('node:child_process');
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dir-'));
+  const rows = (n) => ['First\tLast Name\tE-Mail\tTitle', ...Array.from({ length: n }, (_, i) => `P${i}\tX\tp${i}@overyondr.com\tT`), 'Bad\tRow\tbad@gmail.com\tT'].join('\n');
+  fs.writeFileSync(path.join(dir, 'a.tsv'), rows(20));
+  fs.writeFileSync(path.join(dir, 'empty.json'), '{}');
+  const out = JSON.parse(execFileSync('node', ['scripts/import-directory.mjs', path.join(dir, 'a.tsv'), path.join(dir, 'empty.json')], { stdio: ['ignore', 'pipe', 'ignore'] }));
+  const data = JSON.parse(out[0].value);
+  const meta = JSON.parse(out[1].value);
+  assert.equal(data.people.length, 20);
+  assert.equal(meta.source, 'owner-connector');
+  assert.deepEqual(meta.skipped_rows, [22]);
+  fs.writeFileSync(path.join(dir, 'cur.json'), JSON.stringify({ data, meta }));
+  fs.writeFileSync(path.join(dir, 'b.tsv'), rows(10));
+  const r = spawnSync('node', ['scripts/import-directory.mjs', path.join(dir, 'b.tsv'), path.join(dir, 'cur.json')]);
+  assert.equal(r.status, 2);
+  assert.match(String(r.stderr), /Not applied/);
+});

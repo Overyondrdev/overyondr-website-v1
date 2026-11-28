@@ -16,18 +16,18 @@ _Updated 27 November 2026. The daily status report is the live view; this page i
   - nightly backups and the monthly restore drill;
   - issues, deploys and rollback, keys calendar, access review;
   - auto-fix built but **off**.
-- **People directory**: built and live. Suggestions start once the service account key is added (see below).
+- **People directory**: live with 103 people from the Team Contact List, refreshed 4 times a day through the owner's
+  Google connection.
 - **Security hygiene**: code scanning, Dependabot, pinned CI actions, a secret scan in CI, security headers.
 
 ## Needs the owner
 
 | # | Item | Why | How |
 | --- | --- | --- | --- |
-| 1 | Add the directory service account key | Turns on name/email suggestions everywhere | [05 → Setup](05-people-directory.md#setup-done-once-by-the-owner) |
-| 2 | Email IT: allow mail from overyondrdev.com; create the GitHub bot group address | Alerts reach work inboxes; robot account | Drafted email in the hub session |
-| 3 | Create the GitHub robot account `yondr-ops-bot` and move the auto-fix tokens to it | Auto-fix shouldn't depend on a personal account | Steps in the hub session; [07](07-auto-fix.md#switching-it-on-owner) |
-| 4 | Then: auto-fix end-to-end test, and decide whether to switch it on | Auto-fix | [07](07-auto-fix.md) |
-| 5 | Decide: Marketing Requests Assign/Reassign as short team dropdowns (recommended) or a team-only picker | People directory rule | Hub session |
+| 1 | Email IT: allow mail from overyondrdev.com; create the GitHub bot group address | Alerts reach work inboxes; robot account | Drafted email in the hub session |
+| 2 | Create the GitHub robot account `yondr-ops-bot` and move the auto-fix tokens to it | Auto-fix shouldn't depend on a personal account | Steps in the hub session; [07](07-auto-fix.md#switching-it-on-owner) |
+| 3 | Then: auto-fix end-to-end test, and decide whether to switch it on | Auto-fix | [07](07-auto-fix.md) |
+| 4 | Decide: Marketing Requests Assign/Reassign as short team dropdowns (recommended) or a team-only picker | People directory rule | Hub session |
 
 ## In progress / next
 
