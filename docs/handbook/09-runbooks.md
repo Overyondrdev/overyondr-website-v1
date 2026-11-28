@@ -89,6 +89,8 @@ Handbook**) are generated from it:
 3. The *00 · START HERE* index doc lists every chapter with its link.
 4. `docs/handbook/drive.json` records the folder and each chapter's Google Doc id. Update it when a chapter is
    re-published as a new doc, and move the old doc to the bin.
+5. Point the index doc's chapter link at the new doc (edit the link in place; the index's own id and URL never
+   change).
 
 The hub session does this after any handbook change and checks it daily. Don't edit the Drive copies by hand.
 
