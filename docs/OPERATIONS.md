@@ -1,5 +1,8 @@
 # overyondrdev.com operations hub
 
+> Part of the [overyondrdev.com Handbook](handbook/README.md), the single source of truth. This page keeps the
+> inventory, session rules and risk register.
+
 The one place that says **what exists, who is working on what, what is at risk and how we work**. It sits on top of
 the technical guide in `docs/PLATFORM.md` (sign-in, deploys, Cloudflare lessons), which you should also read.
 
@@ -59,7 +62,8 @@ Several Claude sessions work on this estate at once. To keep it calm:
 3. **Cross-cutting changes** (sign-in, `session.js`, DNS, Access, shared docs such as `CLAUDE.md`/`PLATFORM.md`) are
    announced in the PR description with "Affects: <other repos>". Before opening one, check for open PRs touching the
    same files and rebase after they merge, rather than racing.
-4. **Docs move with code.** A PR that changes behaviour updates the README/CLAUDE.md/help article that describes it.
+4. **Docs move with code.** A PR that changes behaviour updates the README/CLAUDE.md/help article that describes it,
+   and the [Handbook](handbook/README.md) when what it says changes (then republish it to Drive).
 5. **No new Worker, host, database or bucket** without adding it to section 1 and following the new-site checklist in
    `PLATFORM.md`.
 6. **`session.js` copies stay identical** in every repo (CI checks in each). A change to `auth/src/session.js` means a
