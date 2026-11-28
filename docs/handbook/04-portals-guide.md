@@ -17,6 +17,7 @@ _Screenshots below use example data._
 
 - A greeting with your first name, then the portals: **Website Review**, **Marketing Requests**, **Ad Campaigns**,
   **Christmas Card Request** (marked *Seasonal*).
+- Below them, **Coming soon**: **Asset Library**, **Deck Builder** and **Brand Guidelines** (shown, not clickable yet).
 - Keys **1–4** jump straight in; your **last visited** portal is marked.
 - Admins also see **Feedback dashboard** and **Yondr Ops** links.
 - On phones the portals stack and the header stays one row.

@@ -28,7 +28,8 @@ Nothing to do: everyone with an @overyondr.com Google account can sign in. To gi
 5. Add its name and one-line purpose to `SITES` in `auth/src/pages.js` (shown on the sign-in page), and deploy `auth`.
 6. Add the host to Ops: `GATE` in `yondr-ops/src/checks.js` (+ `EXPECTED_INVENTORY`, `WORKERS`, `BUILDS`).
 7. **(owner, recommended)** Add the host to the Access app "Yondr sites (Google sign-in)", which is Bypass.
-8. Add a portal tile: one entry in `portals` in `overyondr-website-v1/src/pages/portal.astro`.
+8. Add a portal tile: one entry in `portals` in `overyondr-website-v1/src/pages/portal.astro` (if it was announced, move
+   it out of `comingSoon` there).
 9. Header: Yondr logo → `https://overyondrdev.com/`, sticky header, person fields with the picker.
 10. Update this handbook ([Platform map](02-platform-map.md), [Portals guide](04-portals-guide.md)) and
     `docs/OPERATIONS.md` §1.
