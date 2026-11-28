@@ -84,7 +84,9 @@ Handbook**) are generated from it:
 1. Each chapter is converted to a Word file with its images: `pandoc <chapter>.md -o <chapter>.docx
    --resource-path=docs/handbook`.
 2. It is uploaded into the Handbook folder as a Google Doc, replacing the previous version of that chapter.
-3. The *Handbook index* doc lists every chapter with its link and the date and commit it was published from.
+3. The *00 · START HERE* index doc lists every chapter with its link.
+4. `docs/handbook/drive.json` records the folder and each chapter's Google Doc id. Update it when a chapter is
+   re-published as a new doc, and move the old doc to the bin.
 
 The hub session does this after any handbook change and checks it daily. Don't edit the Drive copies by hand.
 
