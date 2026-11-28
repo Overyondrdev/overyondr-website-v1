@@ -31,6 +31,10 @@ _Updated 27 November 2026. The daily status report is the live view; this page i
 
 ## In progress / next
 
+- **New portals, announced on the home page as Coming soon** (owner, 28 Nov 2026): **Asset Library**, **Deck Builder**,
+  **Brand Guidelines**. Each launches as its own site following [Runbooks → Add a new site](09-runbooks.md#add-a-new-site-or-portal),
+  then moves from `comingSoon` to `portals` in `src/pages/portal.astro`.
+
 - **V2 launch-quality checks** (accessibility, page speed, SEO) currently fail in CI (non-blocking). They must pass
   before V2 can replace overyondr.com.
 - **Christmas cards**: move email to Resend; per-rep lists; remove the old email-code sign-in and Access fallbacks
